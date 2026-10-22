@@ -80,12 +80,33 @@
             </div>
           </header>
 
-          <div class="map-stage"><div class="map-wrap"><div id="map" class="grid"></div></div></div>
+          <div class="map-stage">
+            <div class="board">
+              <div class="board-head">
+                <span class="seal" aria-hidden="true">OX</span>
+                <span class="board-title">ORDO XENOS · 战术投影</span>
+                <span class="board-meta" id="board-meta">—</span>
+              </div>
+              <div class="board-body">
+                <div class="ruler ruler-col" id="col-ruler" aria-hidden="true"></div>
+                <div class="ruler ruler-row" id="row-ruler" aria-hidden="true"></div>
+                <div id="map" class="grid"></div>
+              </div>
+              <div class="board-foot">
+                <span class="legend"><i class="swatch party"></i>小队</span>
+                <span class="legend"><i class="swatch enemy"></i>敌人</span>
+                <span class="legend"><i class="swatch cover"></i>掩体</span>
+                <span class="legend"><i class="swatch wall"></i>墙体</span>
+                <span class="board-hint" id="board-hint"></span>
+              </div>
+            </div>
+          </div>
 
           <div class="stage-foot">
             <div id="pending" class="pending" hidden></div>
             <div id="proposal" class="proposal" hidden></div>
             <div id="action-bar" class="action-bar"></div>
+            <p id="play-msg" class="msg" style="margin:8px 0 0"></p>
           </div>
 
           <footer class="composer">

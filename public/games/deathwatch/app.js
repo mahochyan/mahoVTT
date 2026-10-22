@@ -17,6 +17,7 @@ async function request(path, options = {}) {
   return body;
 }
 const newRequestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const say = (message) => { const target = document.getElementById('play').hidden ? $('start-msg') : $('play-msg'); if (target) target.textContent = message || ''; };
 const phaseName = (p) => ({briefing: '简报', exploration: '探索', combat: '战斗', debrief: '结算', victory: '胜利', defeat: '失败'})[p] || p;
 
 function show(which) {
@@ -43,7 +44,7 @@ async function boot() {
   } catch (error) {
     $('moduleState').textContent = '模块不可用';
     $('moduleDesc').textContent = error.message;
-    $('start-msg').textContent = error.message;
+    say(error.message);
   }
 }
 
@@ -235,6 +236,7 @@ async function openSession(id) {
 
 function renderPlay(state) {
   view = state;
+  say('');
   view.id = view.id || current;
   show('play');
   const active = view.actors.find((a) => a.id === view.activeActorId);
@@ -252,29 +254,112 @@ function renderPlay(state) {
   renderProposal();
 }
 
+const CHAPTER_HUE = {'ultramarines': 'ultra', 'blood-angels': 'blood', 'dark-angels': 'dark', 'space-wolves': 'wolf', 'black-templars': 'templar', 'storm-wardens': 'storm'};
+
+/** 与服务器同规则的路径预览：切比雪夫距离、斜向不切墙角、活体占位。 */
+function pathPreview() {
+  const active = view.actors.find((a) => a.id === view.activeActorId);
+  if (!active || !selected.cell || view.pending || active.controller !== 'player') return null;
+  const map = view.scene.map;
+  const blocked = new Set(view.actors.filter((a) => a.status === 'active' && a.id !== active.id).map((a) => `${a.x},${a.y}`));
+  const start = `${active.x},${active.y}`, goal = `${selected.cell.x},${selected.cell.y}`;
+  if (blocked.has(goal) || map[selected.cell.y][selected.cell.x] === '#') return null;
+  const prev = new Map([[start, null]]);
+  const queue = [[active.x, active.y]];
+  for (let i = 0; i < queue.length; i++) {
+    const [x, y] = queue[i];
+    if (`${x},${y}` === goal) {
+      const out = [];
+      let cur = goal;
+      while (cur !== start) { out.push(cur); cur = prev.get(cur); }
+      return out.reverse();
+    }
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      if (!dx && !dy) continue;
+      const nx = x + dx, ny = y + dy;
+      if (ny < 0 || ny >= map.length || nx < 0 || nx >= map[0].length) continue;
+      if (map[ny][nx] === '#' || blocked.has(`${nx},${ny}`) || prev.has(`${nx},${ny}`)) continue;
+      if (dx && dy && (map[y][nx] === '#' || map[ny][x] === '#')) continue;
+      prev.set(`${nx},${ny}`, `${x},${y}`); queue.push([nx, ny]);
+    }
+  }
+  return null;
+}
+
+let fitTimer = null;
+/** 按可用空间算出格子尺寸，保证整块棋盘不裁切、不出现内部滚动。 */
+function fitBoard(width, height) {
+  const board = document.querySelector('.board');
+  const area = document.querySelector('.map-stage');
+  const map = $('map');
+  if (!board || !area || !map) return;
+  // 用真实外框尺寸（头/脚/内边距/标尺）反推格子大小，避免拍脑袋的常量。
+  const chromeH = Math.max(60, board.offsetHeight - map.offsetHeight);
+  const chromeW = Math.max(40, board.offsetWidth - map.offsetWidth);
+  const availH = area.clientHeight - chromeH - (height - 1) - 6;
+  const availW = area.clientWidth - chromeW - (width - 1) - 6;
+  const cell = Math.max(11, Math.min(34, Math.floor(Math.min(availH / height, availW / width))));
+  board.style.setProperty('--cell', `${cell}px`);
+  $('col-ruler').style.gridTemplateColumns = `repeat(${width}, ${cell}px)`;
+  $('row-ruler').style.gridTemplateRows = `repeat(${height}, ${cell}px)`;
+  map.style.gridTemplateColumns = `repeat(${width}, ${cell}px)`;
+}
+addEventListener('resize', () => { clearTimeout(fitTimer); fitTimer = setTimeout(() => { if (view) renderMap(); }, 140); });
+
 function renderMap() {
   const map = view.scene.map;
+  const width = map[0].length, height = map.length;
   const tokens = new Map();
   for (const a of view.actors) if (a.status === 'active') tokens.set(`${a.x},${a.y}`, a);
+  const covers = new Set((view.scene.cover || []).map((c) => `${c.x},${c.y}`));
+  const path = pathPreview();
+  const pathSet = new Set(path || []);
+  const moveLimit = view.actors.find((a) => a.id === view.activeActorId);
   const html = [];
-  for (let y = 0; y < map.length; y++) {
-    for (let x = 0; x < map[0].length; x++) {
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const key = `${x},${y}`;
       const wall = map[y][x] === '#';
-      const a = tokens.get(`${x},${y}`);
-      const sel = selected.cell && selected.cell.x === x && selected.cell.y === y ? ' selected' : '';
-      const tok = a ? `<span class="token ${a.side === 'party' ? 'party' : 'enemy'}${a.id === view.activeActorId ? ' acting' : ''}${selected.target === a.id ? ' selected' : ''}" title="${esc(a.name)}">${esc(a.name.slice(0, 1))}</span>` : '';
-      html.push(`<button type="button" class="cell ${wall ? 'wall' : 'floor'}${sel}" data-x="${x}" data-y="${y}" aria-label="格 ${x},${y}">${tok}</button>`);
+      const a = tokens.get(key);
+      const cls = ['cell', wall ? 'wall' : 'floor'];
+      // 甲板接缝：每四格一条细线，比棋盘格更像舰体/巢都地面。
+      if (!wall && x % 4 === 0 && x > 0) cls.push('seam-x');
+      if (!wall && y % 4 === 0 && y > 0) cls.push('seam-y');
+      if (covers.has(key) && !wall) cls.push('cover');
+      if (pathSet.has(key)) cls.push('path');
+      if (selected.cell && selected.cell.x === x && selected.cell.y === y) cls.push('selected');
+      const hp = a ? Math.max(0, Math.min(1, 1 - (a.damage || 0) / Math.max(1, a.maxWounds || 1))) : 1;
+      const tok = a ? `<span class="token ${a.side === 'party' ? 'party' : 'enemy'}${a.side === 'party' ? ' hue-' + (CHAPTER_HUE[a.chapter] || 'ultra') : ''}${a.id === view.activeActorId ? ' acting' : ''}${selected.target === a.id ? ' selected' : ''}" style="--hp:${hp.toFixed(3)}" title="${esc(a.name)} · ${a.damage}/${a.maxWounds}">${esc(a.name.slice(0, 1))}</span>` : (covers.has(key) && !wall ? '<span class="cover-mark" title="掩体"></span>' : '');
+      html.push(`<button type="button" class="${cls.join(' ')}" data-x="${x}" data-y="${y}" aria-label="格 ${x},${y}">${tok}</button>`);
     }
   }
   $('map').innerHTML = html.join('');
-  $('map').style.gridTemplateColumns = `repeat(${map[0].length}, 28px)`;
+  $('map').style.gridTemplateColumns = `repeat(${width}, var(--cell, 30px))`;
+  $('col-ruler').innerHTML = Array.from({length: width}, (_, i) => `<span>${String.fromCharCode(65 + (i % 26))}</span>`).join('');
+  $('row-ruler').innerHTML = Array.from({length: height}, (_, i) => `<span>${String(i + 1).padStart(2, '0')}</span>`).join('');
+  $('col-ruler').style.gridTemplateColumns = `repeat(${width}, var(--cell, 30px))`;
+  $('row-ruler').style.gridTemplateRows = `repeat(${height}, var(--cell, 30px))`;
+  const narrow = innerWidth < 760;
+  $('board-meta').textContent = narrow ? `${width} × ${height}` : `${width} × ${height} 格 · 1 米/格`;
+  requestAnimationFrame(() => fitBoard(width, height));
+  const hint = $('board-hint');
+  if (path && moveLimit) {
+    hint.textContent = narrow ? `路径 ${path.length} 格` : `路径 ${path.length} 格 · ${path.length <= (moveLimit.ap >= 2 ? 10 : 5) ? '可达' : '超出半/全动作'}`;
+  } else if (selected.cell) {
+    hint.textContent = '该格不可达';
+  } else if (selected.target) {
+    const target = view.actors.find((a) => a.id === selected.target);
+    const active = view.actors.find((a) => a.id === view.activeActorId);
+    hint.textContent = active && target ? `目标 ${target.name} · 距离 ${Math.max(Math.abs(active.x - target.x), Math.abs(active.y - target.y))} 米` : '';
+  } else {
+    hint.textContent = narrow ? '点格预览 · 点敌锁定' : '点击地格预览路径，点击敌人锁定目标';
+  }
 }
-
 function actorCard(a) {
   const w = catalog.weapons[a.readied] || {name: a.readied};
   const inv = a.inventory?.[a.readied] || {};
   const status = a.status === 'active' ? (a.id === view.activeActorId ? '行动中' : '就绪') : a.status === 'unconscious' ? '失能' : a.status === 'dead' ? '阵亡' : a.status;
-  return `<article class="card">
+  return `<article class="card hue-${CHAPTER_HUE[a.chapter] || 'ultra'}">
     <h3>${esc(a.name)}</h3>
     <div class="sub">${esc((catalog.specialties.find((s) => s.id === a.specialty) || {}).name || a.specialty)} · ${esc((catalog.chapters.find((c) => c.id === a.chapter) || {}).name || a.chapter)}</div>
     <div class="stats">
@@ -361,7 +446,7 @@ async function askProposal() {
     renderProposal();
     $('input').value = '';
   } catch (error) {
-    $('start-msg').textContent = error.message;
+    say(error.message);
     const box = $('proposal');
     box.hidden = false;
     box.innerHTML = `<div class="who">提案失败</div><div class="error">${esc(error.message)}</div>`;
@@ -383,7 +468,7 @@ async function send(command, prefix) {
     renderPlay(r.state);
     await afterCommand();
   } catch (error) {
-    $('start-msg').textContent = error.message;
+    say(error.message);
   } finally {
     busy = false;
     if (view) renderActions();
@@ -399,7 +484,7 @@ async function afterCommand() {
       const r = await request(`/sessions/${current}/advance`, {method: 'POST', body: JSON.stringify({expectedVersion: view.version})});
       renderPlay(r.state);
     } catch (error) {
-      if (!/需要玩家操作|状态已更新|正在处理/.test(error.message)) $('start-msg').textContent = error.message;
+      if (!/需要玩家操作|状态已更新|正在处理/.test(error.message)) say(error.message);
       break;
     }
   }
@@ -409,7 +494,7 @@ async function advance() {
   try {
     const r = await request(`/sessions/${current}/advance`, {method: 'POST', body: JSON.stringify({expectedVersion: view.version})});
     renderPlay(r.state);
-  } catch (error) { $('start-msg').textContent = error.message; }
+  } catch (error) { say(error.message); }
 }
 
 /* ---------------- 动作栏 ---------------- */
