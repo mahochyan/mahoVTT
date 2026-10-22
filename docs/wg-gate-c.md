@@ -16,8 +16,8 @@
 
 ## 尚未接入
 
-- Pink Horror 的 Fear / On Fire / 死亡分裂（目前只有普通攻击与伤害）。
-- Guardian 的 Ruin 行动、Mob 组件分配（目前是单体 12 Wounds）。
+- Pink Horror 的 Fear / On Fire / 死亡分裂已实现简化版（Fear DN3、命中点燃、死亡分裂蓝色恐魔）。
+- Guardian 的 Ruin 行动已接入（花 1 Ruin 加伤）；Mob 组件分配仍是单体 12 Wounds。
 - 敌方多目标选择与多敌人同一轮行动队列（目前每轮一个敌人）。
 - 结局条件与奖励的完整审计。
 - 结局条件与奖励的完整审计。

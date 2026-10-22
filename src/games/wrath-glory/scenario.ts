@@ -46,6 +46,10 @@ export type ThreatSpec = {
     medium: number;
     long: number;
     attackPool?: number;
+    fear?: number;
+    onFire?: boolean;
+    deathSplit?: string;
+    ruin?: { cost: number; bonusDamage: number; text: string };
 };
 
 export type ScenarioPack = {

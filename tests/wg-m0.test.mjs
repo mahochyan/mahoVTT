@@ -112,3 +112,18 @@ test('Graveyard Shift dependency table is complete and test-linked', () => {
         assert.notEqual(dep.description.trim(), '', dep.id);
     }
 });
+
+
+test('private Graveyard Shift pack covers the registered threat dependencies', async (t) => {
+    const { existsSync } = await import('node:fs');
+    const path = new URL('../data/wg/packs/graveyard-shift/scenario.json', import.meta.url);
+    if (!existsSync(path))
+        return t.skip('private pack not installed');
+    const pack = JSON.parse(readFileSync(path, 'utf8'));
+    assert.equal(pack.threats['pink-horror'].fear, 3);
+    assert.equal(pack.threats['pink-horror'].onFire, true);
+    assert.equal(pack.threats['pink-horror'].deathSplit, 'blue-horror');
+    assert.ok(pack.threats['guardian'].ruin);
+    assert.ok(pack.scenes.some((s) => s.corruption?.dn === 1));
+    assert.ok(pack.scenes.some((s) => s.corruption?.dn === 3));
+});

@@ -57,6 +57,8 @@ type Actor = {
     attackPool?: number;
     down?: boolean;
     exhausted?: boolean;
+    onFire?: boolean;
+    special?: { fear?: number; onFire?: boolean; deathSplit?: string; ruin?: { cost: number; bonusDamage: number; text: string } };
 };
 
 type ShiftPending = {
@@ -214,6 +216,7 @@ function threatActor(spec: ScenarioPack['threats'][string]): Actor {
         maxShock: spec.maxShock,
         weapon: { id: spec.id + '-weapon', name: spec.name + '的攻击', damage: spec.damage, ed: spec.ed, short: spec.short, medium: spec.medium, long: spec.long },
         attackPool: spec.attackPool ?? 5,
+        special: { fear: spec.fear, onFire: spec.onFire, deathSplit: spec.deathSplit, ruin: spec.ruin },
     };
 }
 
@@ -230,6 +233,28 @@ function enterScene(state: SessionState, pack: ScenarioPack, sceneId: string): v
     state.log.push(`【${scene.part}】${scene.title}`);
     if (scene.corruption)
         resolveCorruption(state, scene.corruption);
+    if (scene.combat) {
+        const fear = scene.combat.enemies
+            .map((id) => pack.threats[id]?.fear)
+            .filter((dn): dn is number => typeof dn === 'number');
+        if (fear.length) {
+            const dn = Math.max(...fear);
+            state.log.push(`恐惧（Fear）检定 DN ${dn}。`);
+            for (const pc of state.party) {
+                const roll = rollTest(Math.max(1, pc.attributes.willpower - 1), dn, rng);
+                if (roll.success)
+                    state.log.push(`${pc.name} 压住了恐惧。`);
+                else {
+                    pc.shockTaken += 1;
+                    state.log.push(`${pc.name} 恐惧失败，受到 1 点冲击。`);
+                    if (pc.maxShock > 0 && pc.shockTaken > pc.maxShock) {
+                        pc.exhausted = true;
+                        state.log.push(`${pc.name} 力竭。`);
+                    }
+                }
+            }
+        }
+    }
     if (scene.combat?.intro)
         state.log.push(scene.combat.intro);
 }
@@ -301,6 +326,22 @@ function createDeterminationPending(state: SessionState, target: Actor, damage: 
 function enemyTurn(state: SessionState): void {
     if (state.pending || state.result)
         return;
+    for (const pc of state.party) {
+        if (!pc.onFire || pc.woundsTaken > pc.maxWounds)
+            continue;
+        pc.woundsTaken += 1;
+        pc.onFire = false;
+        state.log.push(`${pc.name} 身上的火焰造成 1 点创伤。`);
+        if (pc.woundsTaken > pc.maxWounds) {
+            pc.down = true;
+            state.log.push(`${pc.name} 进入濒死。`);
+        }
+    }
+    if (state.party.every((p) => p.woundsTaken > p.maxWounds)) {
+        state.result = 'defeat';
+        state.log.push('小队全灭，遭遇失败。');
+        return;
+    }
     const enemy = state.enemies.find((e) => e.woundsTaken <= e.maxWounds && e.weapon);
     if (!enemy) {
         state.round += 1;
@@ -321,8 +362,18 @@ function enemyTurn(state: SessionState): void {
         state.round += 1;
         return;
     }
-    const dmg = rollDamage(enemy.weapon!.damage, 0, rng);
+    let bonusDamage = 0;
+    if (enemy.special?.ruin && state.ruin >= enemy.special.ruin.cost) {
+        state.ruin -= enemy.special.ruin.cost;
+        bonusDamage = enemy.special.ruin.bonusDamage;
+        state.log.push(`${enemy.name} 消耗 ${enemy.special.ruin.cost} 点毁灭（Ruin）：${enemy.special.ruin.text}`);
+    }
+    const dmg = rollDamage(enemy.weapon!.damage + bonusDamage, 0, rng);
     state.log.push(`${enemy.name} 命中，伤害 ${dmg.total}（Resilience ${target.resilience}）。`);
+    if (enemy.special?.onFire) {
+        target.onFire = true;
+        state.log.push(`${target.name} 被点燃（On Fire）——下一次敌方回合受到 1 点创伤。`);
+    }
     if (dmg.total > target.resilience) {
         createDeterminationPending(state, target, dmg.total, enemy.name);
         return;
@@ -469,6 +520,17 @@ function finishAttack(state: SessionState, pending: ShiftPending, choice: 'damag
         return;
     }
     const pack = loadInstalledPack();
+    if (pack && down && target.special?.deathSplit) {
+        const spec = pack.threats[target.special.deathSplit];
+        if (spec) {
+            const split = threatActor(spec);
+            split.id = `${target.id}-split-${state.round}`;
+            split.name = `分裂的${spec.name}`;
+            state.enemies.push(split);
+            target.special = { ...target.special, deathSplit: undefined };
+            state.log.push(`${target.name} 死亡分裂出 ${split.name}。`);
+        }
+    }
     const advanced = pack ? advanceAfterCombat(state, pack) : false;
     if (!advanced && !state.result)
         enemyTurn(state);

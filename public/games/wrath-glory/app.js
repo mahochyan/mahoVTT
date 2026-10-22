@@ -35,7 +35,7 @@ function dieClass(face, index) {
 }
 
 function partyCard(actor, canAct) {
-  const status = actor.down ? '濒死' : actor.exhausted ? '力竭' : '就绪';
+  const status = actor.down ? '濒死' : actor.onFire ? '燃烧' : actor.exhausted ? '力竭' : '就绪';
   const attack = canAct && !actor.down
     ? `<button class="btn small primary" data-attack="${esc(actor.id)}">开火</button>`
     : '';
