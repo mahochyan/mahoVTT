@@ -146,6 +146,8 @@ async function main() {
     check('W&G pending decision resolves', await cdp.evaluate('document.querySelector("#pending").hidden'));
     await cdp.navigate(base + '/games/wrath-glory');
     check('W&G session survives reload', await cdp.waitFor('!document.querySelector("#play").hidden && document.querySelectorAll("#party .card").length === 3', 20000));
+    await cdp.evaluate(`(() => { const i = document.querySelector('#gm-input'); i.value = '观察训练场'; document.querySelector('#ask-gm').click(); })()`);
+    check('W&G GM panel responds', await cdp.waitFor('document.querySelector("#narration").textContent.includes("规则演示模式")', 20000));
 
     await cdp.navigate(base + '/campaigns/new');
     check('wizard explains no scenario', await cdp.waitFor('document.body.innerText.includes("还没有可直接游玩的剧本")'));

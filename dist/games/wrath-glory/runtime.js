@@ -231,7 +231,7 @@ function createDeterminationPending(state, target, damage, source) {
     };
     state.log.push(`${target.name} 将承受 ${woundCount} 点创伤（Wounds）；可以选择掷 Determination 把创伤转为冲击。`);
 }
-function enemyTurn(state) {
+function beginEnemyTurn(state) {
     if (state.pending || state.result)
         return;
     for (const pc of state.party) {
@@ -250,43 +250,55 @@ function enemyTurn(state) {
         state.log.push('小队全灭，遭遇失败。');
         return;
     }
-    const enemy = state.enemies.find((e) => e.woundsTaken <= e.maxWounds && e.weapon);
-    if (!enemy) {
-        state.round += 1;
+    state.enemyQueue = state.enemies
+        .filter((e) => e.woundsTaken <= e.maxWounds && e.weapon)
+        .map((e) => e.id);
+    processEnemyQueue(state);
+}
+function processEnemyQueue(state) {
+    if (state.pending || state.result)
         return;
+    const queue = state.enemyQueue || [];
+    while (queue.length) {
+        const enemyId = queue.shift();
+        const enemy = state.enemies.find((e) => e.id === enemyId);
+        if (!enemy || enemy.woundsTaken > enemy.maxWounds || !enemy.weapon)
+            continue;
+        const candidates = state.party.filter((p) => p.woundsTaken <= p.maxWounds);
+        if (!candidates.length) {
+            state.result = 'defeat';
+            state.enemyQueue = undefined;
+            state.log.push('小队全灭，遭遇失败。');
+            return;
+        }
+        const target = candidates[0];
+        const penalty = woundedPenalty(target.woundsTaken);
+        const roll = rollTest(enemy.attackPool ?? 5, target.defence + penalty, rng);
+        state.log.push(`${enemy.name} 反击 ${target.name}：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${penalty ? '，受伤 +1' : ''}）。`);
+        if (!roll.success) {
+            state.log.push(`${enemy.name} 未命中。`);
+            continue;
+        }
+        let bonusDamage = 0;
+        if (enemy.special?.ruin && state.ruin >= enemy.special.ruin.cost) {
+            state.ruin -= enemy.special.ruin.cost;
+            bonusDamage = enemy.special.ruin.bonusDamage;
+            state.log.push(`${enemy.name} 消耗 ${enemy.special.ruin.cost} 点毁灭（Ruin）：${enemy.special.ruin.text}`);
+        }
+        const dmg = rollDamage(enemy.weapon.damage + bonusDamage, 0, rng);
+        state.log.push(`${enemy.name} 命中，伤害 ${dmg.total}（Resilience ${target.resilience}）。`);
+        if (enemy.special?.onFire) {
+            target.onFire = true;
+            state.log.push(`${target.name} 被点燃（On Fire）——下一次敌方回合受到 1 点创伤。`);
+        }
+        if (dmg.total > target.resilience) {
+            state.enemyQueue = queue;
+            createDeterminationPending(state, target, dmg.total, enemy.name);
+            return;
+        }
+        state.log.push(...applyDamage(state, target, dmg.total, d3()));
     }
-    const candidates = state.party.filter((p) => p.woundsTaken <= p.maxWounds);
-    if (!candidates.length) {
-        state.result = 'defeat';
-        state.log.push('小队全灭，遭遇失败。');
-        return;
-    }
-    const target = candidates[0];
-    const penalty = woundedPenalty(target.woundsTaken);
-    const roll = rollTest(enemy.attackPool ?? 5, target.defence + penalty, rng);
-    state.log.push(`${enemy.name} 反击 ${target.name}：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${penalty ? '，受伤 +1' : ''}）。`);
-    if (!roll.success) {
-        state.log.push(`${enemy.name} 未命中。`);
-        state.round += 1;
-        return;
-    }
-    let bonusDamage = 0;
-    if (enemy.special?.ruin && state.ruin >= enemy.special.ruin.cost) {
-        state.ruin -= enemy.special.ruin.cost;
-        bonusDamage = enemy.special.ruin.bonusDamage;
-        state.log.push(`${enemy.name} 消耗 ${enemy.special.ruin.cost} 点毁灭（Ruin）：${enemy.special.ruin.text}`);
-    }
-    const dmg = rollDamage(enemy.weapon.damage + bonusDamage, 0, rng);
-    state.log.push(`${enemy.name} 命中，伤害 ${dmg.total}（Resilience ${target.resilience}）。`);
-    if (enemy.special?.onFire) {
-        target.onFire = true;
-        state.log.push(`${target.name} 被点燃（On Fire）——下一次敌方回合受到 1 点创伤。`);
-    }
-    if (dmg.total > target.resilience) {
-        createDeterminationPending(state, target, dmg.total, enemy.name);
-        return;
-    }
-    state.log.push(...applyDamage(state, target, dmg.total, d3()));
+    state.enemyQueue = undefined;
     state.round += 1;
 }
 function resolveDetermination(state, pending, choice) {
@@ -323,11 +335,12 @@ function resolveDetermination(state, pending, choice) {
         }
     }
     state.pending = null;
-    state.round += 1;
     if (state.party.every((p) => p.woundsTaken > p.maxWounds)) {
         state.result = 'defeat';
         state.log.push('小队全灭，遭遇失败。');
+        return;
     }
+    processEnemyQueue(state);
 }
 function applyChoice(state, pack, choiceId, actorId) {
     if (state.scenarioId !== 'graveyard-shift' || !state.sceneId)
@@ -394,7 +407,7 @@ function applyAttack(state, attackerId, targetId, actionId) {
     state.log.push(`${attacker.name} 向 ${target.name} 开火：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${attackPenalty ? '，受伤 +1' : ''}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
     if (!roll.success) {
         state.log.push('未命中。');
-        enemyTurn(state);
+        beginEnemyTurn(state);
         return { ok: true, hit: false, pending: !!state.pending };
     }
     state.log.push('命中。');
@@ -533,7 +546,7 @@ function finishAttack(state, pending, choice) {
     }
     const advanced = pack ? advanceAfterCombat(state, pack) : false;
     if (!advanced && !state.result)
-        enemyTurn(state);
+        beginEnemyTurn(state);
     else
         state.round += 1;
 }
