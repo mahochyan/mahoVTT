@@ -150,3 +150,15 @@ test('Graveyard Shift private pack supports investigation scenes when installed'
     assert.ok(moved.data.session.scenario.part.startsWith('Part II'));
     assert.ok(moved.data.session.scenario.choices.some((c) => c.id === 'to-boneyards'));
 });
+
+test('AI narrator endpoint returns text without mutating the session', async () => {
+    const created = await post('/api/games/wrath-glory/sessions', { scenarioId: 'training' });
+    const session = created.data.session;
+    const before = JSON.stringify(session.log);
+    const r = await post(`/api/games/wrath-glory/sessions/${session.id}/narrate`, { input: '训练场的雨声。' });
+    assert.equal(r.status, 200);
+    assert.equal(typeof r.data.text, 'string');
+    assert.ok(r.data.text.length > 0);
+    const loaded = await get(`/api/games/wrath-glory/sessions/${session.id}`);
+    assert.equal(JSON.stringify(loaded.data.session.log), before);
+});

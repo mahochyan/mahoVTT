@@ -28,6 +28,7 @@ export type ScenarioScene = {
     text: string;
     choices: ScenarioChoice[];
     combat?: { enemies: string[]; victory: string; intro?: string };
+    corruption?: { dn: number; text: string };
     ending?: { id: string; title: string; text: string };
 };
 
@@ -44,6 +45,7 @@ export type ThreatSpec = {
     short: number;
     medium: number;
     long: number;
+    attackPool?: number;
 };
 
 export type ScenarioPack = {
@@ -90,6 +92,8 @@ export function validateScenarioPack(pack: ScenarioPack): string[] {
             if (choice.requires?.clue && !pack.clues[choice.requires.clue])
                 errors.push(`choice ${scene.id}/${choice.id} requires unknown clue`);
         }
+        if (scene.corruption && (!Number.isInteger(scene.corruption.dn) || scene.corruption.dn < 0))
+            errors.push(`scene ${scene.id} has invalid Corruption DN`);
         if (scene.combat) {
             if (!ids.has(scene.combat.victory))
                 errors.push(`combat in ${scene.id} points to missing victory scene`);

@@ -2,9 +2,10 @@ import { randomInt } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { attackPool, damageVsResilience, rangeBand } from "./rules/formulas.js";
-import { rollDamage, rollTest, shiftableExalted } from "./rules/dice.js";
+import { attackPool, damageVsResilience, rangeBand, woundedPenalty } from "./rules/formulas.js";
+import { rollDamage, rollDetermination, rollTest, shiftableExalted } from "./rules/dice.js";
 import { WgStore } from "./store.js";
+import { narrateWg } from "./ai.js";
 import { findScene, loadScenarioPack, publicScene } from "./scenario.js";
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const DATA_DIR = process.env.SAGAS_DATA_DIR || join(ROOT, 'data');
@@ -119,6 +120,7 @@ function threatActor(spec) {
         shockTaken: 0,
         maxShock: spec.maxShock,
         weapon: { id: spec.id + '-weapon', name: spec.name + '的攻击', damage: spec.damage, ed: spec.ed, short: spec.short, medium: spec.medium, long: spec.long },
+        attackPool: spec.attackPool ?? 5,
     };
 }
 function enterScene(state, pack, sceneId) {
@@ -132,8 +134,22 @@ function enterScene(state, pack, sceneId) {
     if (scene.ending)
         state.result = 'victory';
     state.log.push(`【${scene.part}】${scene.title}`);
+    if (scene.corruption)
+        resolveCorruption(state, scene.corruption);
     if (scene.combat?.intro)
         state.log.push(scene.combat.intro);
+}
+function resolveCorruption(state, check) {
+    state.log.push(`腐化检定（DN ${check.dn}）：${check.text}`);
+    for (const pc of state.party) {
+        const roll = rollTest(pc.attributes.willpower, check.dn, rng);
+        if (roll.success)
+            state.log.push(`${pc.name} 抵抗住腐化（${roll.icons} 个图标）。`);
+        else {
+            state.ruin = Math.min(2 * state.party.length, state.ruin + 1);
+            state.log.push(`${pc.name} 腐化检定失败；GM 获得 1 点毁灭（Ruin）。`);
+        }
+    }
 }
 function createScenarioSession(id, pack) {
     const party = loadParty().map(pcFromPregen);
@@ -155,14 +171,105 @@ function createScenarioSession(id, pack) {
 }
 function advanceAfterCombat(state, pack) {
     if (!state.sceneId)
-        return;
+        return false;
     const scene = findScene(pack, state.sceneId);
     if (!scene.combat)
-        return;
+        return false;
     if (state.enemies.some((e) => e.woundsTaken <= e.maxWounds))
-        return;
+        return false;
     state.log.push('遭遇结束。');
     enterScene(state, pack, scene.combat.victory);
+    return true;
+}
+function createDeterminationPending(state, target, damage, source) {
+    const woundCount = damage - target.resilience;
+    const decisionId = crypto.randomUUID();
+    state.pending = {
+        decisionId,
+        actionId: `enemy-${state.round}`,
+        actorId: target.id,
+        targetId: source,
+        phase: 'determination',
+        allowedChoices: ['determination', 'accept'],
+        damageValue: damage,
+        resilience: target.resilience,
+        woundCount,
+        shockDie: randomInt(1, 4),
+        source,
+    };
+    state.log.push(`${target.name} 将承受 ${woundCount} 点创伤（Wounds）；可以选择掷 Determination 把创伤转为冲击。`);
+}
+function enemyTurn(state) {
+    if (state.pending || state.result)
+        return;
+    const enemy = state.enemies.find((e) => e.woundsTaken <= e.maxWounds && e.weapon);
+    if (!enemy) {
+        state.round += 1;
+        return;
+    }
+    const candidates = state.party.filter((p) => p.woundsTaken <= p.maxWounds);
+    if (!candidates.length) {
+        state.result = 'defeat';
+        state.log.push('小队全灭，遭遇失败。');
+        return;
+    }
+    const target = candidates[0];
+    const penalty = woundedPenalty(target.woundsTaken);
+    const roll = rollTest(enemy.attackPool ?? 5, target.defence + penalty, rng);
+    state.log.push(`${enemy.name} 反击 ${target.name}：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${penalty ? '，受伤 +1' : ''}）。`);
+    if (!roll.success) {
+        state.log.push(`${enemy.name} 未命中。`);
+        state.round += 1;
+        return;
+    }
+    const dmg = rollDamage(enemy.weapon.damage, 0, rng);
+    state.log.push(`${enemy.name} 命中，伤害 ${dmg.total}（Resilience ${target.resilience}）。`);
+    if (dmg.total > target.resilience) {
+        createDeterminationPending(state, target, dmg.total, enemy.name);
+        return;
+    }
+    state.log.push(...applyDamage(state, target, dmg.total, randomInt(1, 4)));
+    state.round += 1;
+}
+function resolveDetermination(state, pending, choice) {
+    const target = actor(state, pending.actorId);
+    if (!target) {
+        state.pending = null;
+        return;
+    }
+    let wounds = pending.woundCount;
+    let shock = 0;
+    if (choice === 'determination') {
+        const det = rollDetermination(target.attributes.toughness, rng);
+        const converted = Math.min(det.icons, wounds);
+        wounds -= converted;
+        shock += converted;
+        state.log.push(`${target.name} 掷 Determination：${det.faces.join('、')}，把 ${converted} 点创伤转为冲击。`);
+    }
+    else
+        state.log.push(`${target.name} 放弃 Determination，承受全部创伤。`);
+    if (shock) {
+        target.shockTaken += shock;
+        state.log.push(`${target.name} 受到 ${shock} 点冲击（Shock）。`);
+        if (target.maxShock > 0 && target.shockTaken > target.maxShock) {
+            target.exhausted = true;
+            state.log.push(`${target.name} 超过冲击上限，力竭（Exhausted）。`);
+        }
+    }
+    if (wounds) {
+        target.woundsTaken += wounds;
+        state.log.push(`${target.name} 受到 ${wounds} 点创伤（Wounds）。`);
+        if (target.woundsTaken > target.maxWounds) {
+            target.down = true;
+            state.log.push(`${target.name} 超过创伤上限，进入濒死（Dying）。`);
+        }
+    }
+    state.pending = null;
+    state.round += 1;
+    if (state.party.every((p) => p.woundsTaken > p.maxWounds)) {
+        state.result = 'defeat';
+        state.log.push('小队全灭，遭遇失败。');
+    }
 }
 function publicState(state) {
     if (state.scenarioId === 'graveyard-shift' && state.sceneId) {
@@ -245,19 +352,21 @@ function finishAttack(state, pending, choice) {
     const down = target.woundsTaken > target.maxWounds;
     if (down)
         state.log.push(`${target.name} 失能。`);
+    state.pending = null;
     if (state.scenarioId === 'training') {
         if (down) {
             state.result = 'victory';
             state.log.push('训练目标失能。训练遭遇完成。');
         }
+        state.round += 1;
+        return;
     }
-    else {
-        const pack = loadInstalledPack();
-        if (pack)
-            advanceAfterCombat(state, pack);
-    }
-    state.pending = null;
-    state.round += 1;
+    const pack = loadInstalledPack();
+    const advanced = pack ? advanceAfterCombat(state, pack) : false;
+    if (!advanced && !state.result)
+        enemyTurn(state);
+    else
+        state.round += 1;
 }
 const runtime = {
     descriptor,
@@ -304,6 +413,16 @@ const runtime = {
             const state = loaded.state;
             if (tail.length === 2 && method === 'GET')
                 return ok({ session: publicState(state) });
+            if (tail.length === 3 && tail[2] === 'narrate' && method === 'POST') {
+                const body = await req.readBody();
+                try {
+                    const text = await narrateWg(publicState(state), typeof body?.input === 'string' ? body.input : '');
+                    return ok({ text });
+                }
+                catch (error) {
+                    return fail('AI_NARRATION', error.message, 502);
+                }
+            }
             const body = await req.readBody();
             const requestId = typeof body?.requestId === 'string' ? body.requestId : '';
             if (!requestId)
@@ -383,11 +502,13 @@ const runtime = {
                     ballisticSkill: attacker.skills.ballisticSkill ?? 0,
                 });
                 const bonus = band === 'short' ? 1 : 0;
-                const roll = rollTest(pool + bonus, target.defence, rng);
+                const attackPenalty = woundedPenalty(attacker.woundsTaken);
+                const roll = rollTest(pool + bonus, target.defence + attackPenalty, rng);
                 state.lastRequests.push(requestId);
-                state.log.push(`${attacker.name} 向 ${target.name} 开火：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
+                state.log.push(`${attacker.name} 向 ${target.name} 开火：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${attackPenalty ? '，受伤 +1' : ''}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
                 if (!roll.success) {
                     state.log.push('未命中。');
+                    enemyTurn(state);
                     const saved = store.save(id, loaded.version, state, { type: 'attack.miss', payload: { requestId, attackerId: attacker.id } });
                     if (!saved)
                         return fail('VERSION_CONFLICT', '状态已变化。', 409);
@@ -430,11 +551,15 @@ const runtime = {
                     return fail('NO_DECISION', '当前没有待决选择。', 409);
                 if (body?.decisionId !== pending.decisionId)
                     return fail('BAD_DECISION', 'decisionId 不匹配。', 409);
-                if (!pending.allowedChoices.includes(body?.choice))
+                const choice = String(body?.choice ?? '');
+                if (!pending.allowedChoices.includes(choice))
                     return fail('BAD_CHOICE', '选择不在允许范围内。');
                 state.lastRequests.push(requestId);
-                finishAttack(state, pending, body.choice);
-                const saved = store.save(id, loaded.version, state, { type: 'attack.decision', payload: { requestId, decisionId: pending.decisionId, choice: body.choice } });
+                if (pending.phase === 'shift')
+                    finishAttack(state, pending, choice);
+                else
+                    resolveDetermination(state, pending, choice);
+                const saved = store.save(id, loaded.version, state, { type: 'attack.decision', payload: { requestId, decisionId: pending.decisionId, choice } });
                 if (!saved)
                     return fail('VERSION_CONFLICT', '状态已变化。', 409);
                 return ok({ session: publicState(state) });

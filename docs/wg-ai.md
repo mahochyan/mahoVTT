@@ -13,7 +13,8 @@ extraBody: { "enable_thinking": false }
 - `enable_thinking: false` 通过 `extraBody` 传给模型；当前端点接受该字段。没有它时，较长请求可能返回 `reasoning_content`。
 - 设置文件在 `data/settings.json`（git 忽略）。界面「设置 → AI」也能改。
 - 连通性检查：`POST /api/ai/ping`（服务端读取当前设置）。
-- 当前 W&G 页面尚未调用 AI；AI GM 工具层是 Gate D。
+- W&G 跑团页已接 `POST /sessions/:id/narrate`：模型只读公开状态与已结算事实，生成短叙述，不修改状态。
+- AI GM 的工具层（掷骰、扣血、花 Glory/Ruin）尚未开放；目前叙述与结算是分离的。
 
 ## 图像
 

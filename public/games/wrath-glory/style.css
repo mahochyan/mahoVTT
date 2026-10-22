@@ -67,6 +67,12 @@ h2 { font-size: 12px; letter-spacing: .12em; color: var(--muted); text-transform
 #log { margin: 0; padding-left: 20px; color: var(--muted); font-size: 13px; }
 #log li { margin: 4px 0; }
 #log li:last-child { color: var(--text); }
+.narration { margin: 16px 0 4px; border: 1px solid var(--line); border-radius: 12px; background: #0d1117; padding: 14px 16px; }
+.narration .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.narration h2 { margin: 0; }
+.ask-row { display: flex; gap: 8px; margin-top: 10px; }
+.ask-row input { flex: 1; min-width: 0; background: #0b0f15; border: 1px solid var(--line); border-radius: 9px; color: var(--text); padding: 9px 12px; font: inherit; }
+.ask-row input:focus { outline: 1px solid var(--accent); }
 .clues { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }
 .clue { border: 1px solid #2e3a2f; color: var(--good); background: #101611; padding: 3px 8px; border-radius: 999px; font-size: 11px; }
 .empty { color: var(--faint); font-size: 13px; }

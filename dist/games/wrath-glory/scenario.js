@@ -28,6 +28,8 @@ export function validateScenarioPack(pack) {
             if (choice.requires?.clue && !pack.clues[choice.requires.clue])
                 errors.push(`choice ${scene.id}/${choice.id} requires unknown clue`);
         }
+        if (scene.corruption && (!Number.isInteger(scene.corruption.dn) || scene.corruption.dn < 0))
+            errors.push(`scene ${scene.id} has invalid Corruption DN`);
         if (scene.combat) {
             if (!ids.has(scene.combat.victory))
                 errors.push(`combat in ${scene.id} points to missing victory scene`);

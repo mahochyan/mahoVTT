@@ -141,7 +141,7 @@ async function main() {
     check('W&G attack produces a result', await cdp.waitFor('document.querySelectorAll("#log li").length > 0 && (document.body.innerText.includes("开火") || document.body.innerText.includes("命中"))', 20000));
     await sleep(400);
     if (await cdp.evaluate('!document.querySelector("#pending").hidden'))
-        await cdp.evaluate('document.querySelector("[data-choice=damage]").click()');
+        await cdp.evaluate('document.querySelector("[data-pending-choice=damage]").click()');
     await sleep(500);
     check('W&G pending decision resolves', await cdp.evaluate('document.querySelector("#pending").hidden'));
     await cdp.navigate(base + '/games/wrath-glory');

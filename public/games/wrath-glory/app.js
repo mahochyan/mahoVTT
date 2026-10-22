@@ -35,7 +35,8 @@ function dieClass(face, index) {
 }
 
 function partyCard(actor, canAct) {
-  const attack = canAct
+  const status = actor.down ? '濒死' : actor.exhausted ? '力竭' : '就绪';
+  const attack = canAct && !actor.down
     ? `<button class="btn small primary" data-attack="${esc(actor.id)}">开火</button>`
     : '';
   return `<article class="card">
@@ -48,6 +49,7 @@ function partyCard(actor, canAct) {
       <div class="stat"><small>SHOCK</small><b>${actor.shockTaken}/${actor.maxShock}</b></div>
       <div class="stat"><small>AGILITY</small><b>${actor.attributes.agility}</b></div>
       <div class="stat"><small>BALLISTIC</small><b>${actor.skills.ballisticSkill ?? 0}</b></div>
+      <div class="stat"><small>STATUS</small><b>${status}</b></div>
     </div>
     <div class="actions">${attack}</div>
   </article>`;
@@ -91,13 +93,22 @@ function renderPending(s) {
     return;
   }
   box.hidden = false;
+  if (pending.phase === 'determination') {
+    box.innerHTML = `<h3>结算：Determination</h3>
+      <p class="lead small">${esc(pending.source)} 的伤害将造成 <b>${pending.woundCount}</b> 点创伤（Resilience ${pending.resilience}）。你可以掷 Toughness 骰，把每个图标转为 1 点冲击。</p>
+      <div class="actions">
+        <button class="btn primary" data-pending-choice="determination">掷 Determination（Toughness）</button>
+        <button class="btn ghost" data-pending-choice="accept">承受全部创伤</button>
+      </div>`;
+    return;
+  }
   box.innerHTML = `<h3>结算：转化尊崇图标</h3>
     <p class="lead small">命中后还有 <b>${pending.roll.shiftable}</b> 个尊崇图标可转化（Exalted）。每次测试最多 1 个转为荣耀。</p>
     <div class="dice">${pending.roll.faces.map((face, index) => `<span class="${dieClass(face, index)}" title="${index === 0 ? '怒火骰' : ''}">${glyph(face)}</span>`).join('')}</div>
     <div class="actions">
-      <button class="btn primary" data-choice="damage">全部转为额外伤害骰</button>
-      <button class="btn" data-choice="glory">1 点荣耀 + 其余伤害</button>
-      <button class="btn ghost" data-choice="skip">跳过</button>
+      <button class="btn primary" data-pending-choice="damage">全部转为额外伤害骰</button>
+      <button class="btn" data-pending-choice="glory">1 点荣耀 + 其余伤害</button>
+      <button class="btn ghost" data-pending-choice="skip">跳过</button>
     </div>`;
 }
 
@@ -178,6 +189,26 @@ async function choose(choiceId) {
   }
 }
 
+async function askGm() {
+  if (!session) return;
+  const input = $('gm-input').value.trim();
+  const button = $('ask-gm');
+  button.disabled = true;
+  $('narration').textContent = 'GM 正在读取场景…';
+  try {
+    const result = await request(`/sessions/${sessionId}/narrate`, {
+      method: 'POST',
+      body: JSON.stringify({ input }),
+    });
+    $('narration').textContent = result.text;
+    $('gm-input').value = '';
+  } catch (error) {
+    $('narration').textContent = `GM 暂时离线：${error.message}`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function decide(choice) {
   if (!session?.pending) return;
   try {
@@ -216,6 +247,8 @@ async function boot() {
 }
 
 
+$('ask-gm').addEventListener('click', askGm);
+$('gm-input').addEventListener('keydown', (event) => { if (event.key === 'Enter') askGm(); });
 $('restart-btn').addEventListener('click', () => {
   localStorage.removeItem(KEY);
   location.reload();
