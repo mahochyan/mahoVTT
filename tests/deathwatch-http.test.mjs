@@ -234,3 +234,25 @@ test('征用：预算内装备进入角色背包，超预算被拒绝且不产�
   const after = (await req('/api/games/deathwatch-d100/sessions')).data.sessions.length;
   assert.equal(after, before + 1, '只应成功创建一次');
 });
+
+test('导入自定义内容包：出现在目录、可开局、同版本不同内容被拒', async () => {
+  const {BUILTIN} = await import('../modules/deathwatch/content.mjs');
+  const pack = structuredClone(BUILTIN);
+  pack.id = 'test-pack';
+  pack.version = '0.0.1';
+  pack.title = '测试用私有副本';
+  const first = await req('/api/games/deathwatch-d100/missions', pack);
+  assert.equal(first.status, 201, JSON.stringify(first.data));
+  const root = await req('/api/games/deathwatch-d100');
+  assert.ok(root.data.missions.some(m => m.id === 'test-pack'));
+  const created = await req('/api/games/deathwatch-d100/sessions', {
+    title: '自定义包开局', missionId: 'test-pack', missionVersion: '0.0.1',
+    leaderId: 'pc', oathId: 'astartes', squad: squad(),
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.data));
+  assert.equal(created.data.state.mission.id, 'test-pack');
+  const changed = structuredClone(pack);
+  changed.title = '同版本不同内容';
+  const conflict = await req('/api/games/deathwatch-d100/missions', changed);
+  assert.equal(conflict.status, 409);
+});

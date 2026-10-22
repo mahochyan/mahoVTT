@@ -417,10 +417,18 @@ export function validateCommand(state,command,authority){
   const active=activeActor(state);
   need(active,'TURN','当前没有行动角色。',409);
   const actorId=c.actorId??active.id;
-  need(actorId===active.id,'NOT_YOUR_TURN',`现在是 ${active.name} 的行动。`,409);
-  if(authority?.source==='player')need(active.controller==='player','CONTROL','你不能操作这名角色。',403);
+  // Inside combat the acting character is fixed by initiative order. Outside combat
+  // the player commands the team, so any active party member may act (e.g. after the
+  // main character was downed).
+  let a=active;
+  if(state.combat){
+    need(actorId===active.id,'NOT_YOUR_TURN',`现在是 ${active.name} 的行动。`,409);
+  }else{
+    a=state.actors.find(x=>x.id===actorId)??active;
+    need(a.side==='party'&&a.status==='active','ACTOR','该角色当前无法行动。',409);
+  }
+  if(authority?.source==='player')need(a.controller==='player','CONTROL','你不能操作这名角色。',403);
   if(authority?.source==='ai')need(c.type!=='manual'&&c.type!=='gm_resolve'&&c.type!=='debrief','PERMISSION','模型不能执行该操作。',403);
-  const a=active;
   const scene=state.mission.scenes.find(s=>s.id===state.sceneId);
   switch(c.type){
     case 'move':{
@@ -919,7 +927,8 @@ export function observation(state){
   return {
     id:state.id,title:state.title,version:state.version,phase:state.phase,sceneId:state.sceneId,
     rulesetId:state.rulesetId,weaponProfile:state.weaponProfile,cohesion:state.cohesion,oath:state.oath,leaderId:state.leaderId,
-    scene:{id:scene.id,name:scene.name,description:scene.description,map:scene.map,exits:scene.exits,objects:scene.objects,cover:scene.cover??[],ref:scene.ref},
+    scene:{id:scene.id,name:scene.name,description:scene.description,map:scene.map,exits:scene.exits,cover:scene.cover??[],ref:scene.ref,
+      objects:(scene.objects??[]).map(o=>({...o,choices:o.choices.map(c=>({...c,done:!!state.flags[`done:${o.id}:${c.id}`]}))}))},
     actors:state.actors.map(a=>a.side==='party'?partyView(a):enemyView(a)),
     activeActorId:activeActor(state)?.id??null,
     combat:state.combat,
