@@ -446,9 +446,11 @@ const server = createServer(async (req, res) => {
         if (method !== 'GET' && method !== 'HEAD')
             throw new GameError('METHOD', '不支持这个请求方法。', 405);
         const platformPage = path === '/' || path === '/games' || /^\/(campaigns|characters|worlds|library|settings)(\/|$)/.test(path);
-        let file = path.startsWith('/c/') ? join(ROOT, 'public/index.html')
-            : platformPage ? join(ROOT, 'public/platform.html')
-                : pathResolve(ROOT, 'public', '.' + decodeURIComponent(path));
+        const wgPage = path === '/games/wrath-glory' || path === '/games/wrath-glory/';
+        let file = wgPage ? join(ROOT, 'public/games/wrath-glory/index.html')
+            : path.startsWith('/c/') ? join(ROOT, 'public/index.html')
+                : platformPage ? join(ROOT, 'public/platform.html')
+                    : pathResolve(ROOT, 'public', '.' + decodeURIComponent(path));
         const root = pathResolve(ROOT, 'public') + sep;
         if (!file.startsWith(root) || !existsSync(file))
             throw new GameError('NOT_FOUND', '文件不存在。', 404);

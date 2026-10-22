@@ -118,7 +118,7 @@ test('平台接口：剧本目录为空、角色可创建、旧战役入口拒�
 
     const games = await get('/api/games');
     assert.equal(games.status, 200);
-    assert.deepEqual(games.data.games, []);
+    assert.ok(games.data.games.some((g) => g.id === 'wrath-glory'));
 });
 
 test('世界与内容库为空，旧世界详情返回 404', async () => {

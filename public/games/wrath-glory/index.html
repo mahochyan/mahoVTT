@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>怒火与荣耀 · 训练遭遇</title>
+  <link rel="stylesheet" href="/games/wrath-glory/style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="back" href="/games" data-link>← 游戏厅</a>
+    <div class="brand"><b>怒火与荣耀</b><span>Wrath &amp; Glory · C7 规则演示</span></div>
+    <span class="tag">非官方授权 · 原创 demo</span>
+  </header>
+
+  <main>
+    <section id="start" class="panel">
+      <p class="eyebrow">TRAINING ENCOUNTER</p>
+      <h1>训练遭遇</h1>
+      <p class="lead">三人小队在训练场校准武器。目标是一台静止的训练机仆；本演示只验证 C7 的骰池、图标、怒火骰、转化与伤害结算。</p>
+      <div id="start-party" class="cards"></div>
+      <div class="actions">
+        <button id="start-btn" class="btn primary">开始训练</button>
+        <span id="start-msg" class="msg"></span>
+      </div>
+      <p class="fine">公开 demo 使用原创预置队与训练目标。官方 Graveyard Shift 适配包需要本地私有内容。</p>
+    </section>
+
+    <section id="play" hidden>
+      <div class="bar">
+        <div><span class="eyebrow">SCENE</span><h1 id="scene-title">训练场</h1></div>
+        <div class="pools">
+          <span class="pool">荣耀 <b id="glory">0</b></span>
+          <span class="pool">毁灭 <b id="ruin">0</b></span>
+          <span class="pool">轮次 <b id="round">1</b></span>
+        </div>
+      </div>
+      <p id="scene-text" class="lead small"></p>
+
+      <div class="grid">
+        <section>
+          <h2>小队</h2>
+          <div id="party" class="cards"></div>
+        </section>
+        <section>
+          <h2>目标</h2>
+          <div id="enemy" class="cards"></div>
+          <div id="pending" class="pending" hidden></div>
+        </section>
+      </div>
+
+      <section class="log-panel">
+        <h2>行动记录</h2>
+        <ol id="log"></ol>
+      </section>
+
+      <div id="end" class="actions" hidden>
+        <button id="restart-btn" class="btn ghost">重新开始</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/games/wrath-glory/app.js"></script>
+</body>
+</html>

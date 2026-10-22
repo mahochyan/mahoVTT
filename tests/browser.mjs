@@ -131,7 +131,21 @@ async function main() {
     check('dashboard shows empty-scenario state', await cdp.waitFor('document.body.innerText.includes("还没有可玩的剧本")'));
 
     await cdp.navigate(base + '/games');
-    check('game hall shows empty state', await cdp.waitFor('document.body.innerText.includes("游戏厅还空着")'));
+    check('game hall lists Wrath & Glory', await cdp.waitFor('document.body.innerText.includes("怒火与荣耀")'));
+
+    await cdp.navigate(base + '/games/wrath-glory');
+    check('W&G start screen renders', await cdp.waitFor('!!document.querySelector("#start-btn")'));
+    await cdp.evaluate('document.querySelector("#start-btn").click()');
+    check('W&G session starts', await cdp.waitFor('!document.querySelector("#play").hidden && document.querySelectorAll("#party .card").length === 3', 20000));
+    await cdp.evaluate('document.querySelector("[data-attack]").click()');
+    check('W&G attack produces a result', await cdp.waitFor('document.querySelectorAll("#log li").length > 0 && (document.body.innerText.includes("开火") || document.body.innerText.includes("命中"))', 20000));
+    await sleep(400);
+    if (await cdp.evaluate('!document.querySelector("#pending").hidden'))
+        await cdp.evaluate('document.querySelector("[data-choice=damage]").click()');
+    await sleep(500);
+    check('W&G pending decision resolves', await cdp.evaluate('document.querySelector("#pending").hidden'));
+    await cdp.navigate(base + '/games/wrath-glory');
+    check('W&G session survives reload', await cdp.waitFor('!document.querySelector("#play").hidden && document.querySelectorAll("#party .card").length === 3', 20000));
 
     await cdp.navigate(base + '/campaigns/new');
     check('wizard explains no scenario', await cdp.waitFor('document.body.innerText.includes("还没有可直接游玩的剧本")'));
@@ -159,6 +173,9 @@ async function main() {
     await cdp.navigate(base + '/');
     await cdp.waitFor('!!document.querySelector(".hero")');
     check('dashboard mobile has no horizontal overflow', await cdp.evaluate('document.documentElement.scrollWidth <= innerWidth'));
+    await cdp.navigate(base + '/games/wrath-glory');
+    await cdp.waitFor('!document.querySelector("#play").hidden', 20000);
+    check('W&G mobile has no horizontal overflow', await cdp.evaluate('document.documentElement.scrollWidth <= innerWidth'));
 
     check('no console errors', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | '));
     cdp.close();

@@ -1,0 +1,119 @@
+import test, { after, before } from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+let app, base, dataDir;
+
+async function freePort() {
+    const s = createServer();
+    await new Promise((r) => s.listen(0, '127.0.0.1', r));
+    const port = s.address().port;
+    await new Promise((r) => s.close(r));
+    return port;
+}
+async function get(path) {
+    const r = await fetch(base + path);
+    return { status: r.status, data: await r.json().catch(() => null) };
+}
+async function post(path, body) {
+    const r = await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    return { status: r.status, data: await r.json().catch(() => null) };
+}
+
+before(async () => {
+    dataDir = mkdtempSync(join(tmpdir(), 'graylight-wg-'));
+    const port = await freePort();
+    base = `http://127.0.0.1:${port}`;
+    app = spawn(process.execPath, ['dist/server.js'], {
+        cwd: new URL('../', import.meta.url),
+        env: { ...process.env, PORT: String(port), SAGAS_DATA_DIR: dataDir, AI_PROVIDER: 'mock' },
+        stdio: ['ignore', 'ignore', 'pipe'],
+    });
+    app.stderr.on('data', () => {});
+    for (let i = 0; i < 100; i++) {
+        try {
+            if ((await fetch(base + '/api/health')).ok) return;
+        }
+        catch { }
+        await sleep(40);
+    }
+    throw new Error('W&G test server did not start');
+});
+
+after(async () => {
+    if (app && app.exitCode === null) {
+        const done = new Promise((r) => app.once('exit', r));
+        app.kill('SIGKILL');
+        await done;
+    }
+    if (dataDir) rmSync(dataDir, { recursive: true, force: true });
+});
+
+test('W&G module is registered and exposes a training scenario', async () => {
+    const listing = await get('/api/games/wrath-glory');
+    assert.equal(listing.status, 200);
+    assert.equal(listing.data.game.id, 'wrath-glory');
+    assert.equal(listing.data.game.rulesetId, 'wg-c7');
+    assert.equal(listing.data.party.length, 3);
+    assert.equal(listing.data.scenarios[0].id, 'training');
+});
+
+test('session creation, attack, persistence, and idempotent replay', async () => {
+    const created = await post('/api/games/wrath-glory/sessions', { scenarioId: 'training' });
+    assert.equal(created.status, 201);
+    const id = created.data.session.id;
+    assert.equal(created.data.session.party.length, 3);
+    assert.equal(created.data.session.enemies.length, 1);
+    assert.equal(created.data.session.rulesRevision, 'c7-2020-07-24-errata');
+
+    const first = await post(`/api/games/wrath-glory/sessions/${id}/commands`, {
+        requestId: 'req-attack-1',
+        command: { type: 'attack', attackerId: 'demo-guardsman', targetId: 'training-servitor' },
+    });
+    assert.equal(first.status, 200);
+    assert.ok(first.data.session.log.some((line) => line.includes('开火')));
+
+    const replay = await post(`/api/games/wrath-glory/sessions/${id}/commands`, {
+        requestId: 'req-attack-1',
+        command: { type: 'attack', attackerId: 'demo-guardsman', targetId: 'training-servitor' },
+    });
+    assert.equal(replay.status, 200);
+    assert.equal(replay.data.session.log.length, first.data.session.log.length);
+
+    const loaded = await get(`/api/games/wrath-glory/sessions/${id}`);
+    assert.equal(loaded.status, 200);
+    assert.equal(loaded.data.session.id, id);
+    assert.ok(loaded.data.session.log.length >= 3);
+
+    if (replay.data.session.pending) {
+        const pending = replay.data.session.pending;
+        const decided = await post(`/api/games/wrath-glory/sessions/${id}/decisions`, {
+            requestId: 'req-decision-1',
+            decisionId: pending.decisionId,
+            choice: 'damage',
+        });
+        assert.equal(decided.status, 200);
+        assert.equal(decided.data.session.pending, null);
+        const again = await post(`/api/games/wrath-glory/sessions/${id}/decisions`, {
+            requestId: 'req-decision-1',
+            decisionId: pending.decisionId,
+            choice: 'damage',
+        });
+        assert.equal(again.status, 200);
+        assert.equal(again.data.session.pending, null);
+    }
+});
+
+test('unknown scenario and missing session return explicit errors', async () => {
+    const bad = await post('/api/games/wrath-glory/sessions', { scenarioId: 'graveyard-shift' });
+    assert.equal(bad.status, 404);
+    assert.equal(bad.data.error.code, 'SCENARIO_NOT_FOUND');
+    const missing = await get('/api/games/wrath-glory/sessions/not-a-session');
+    assert.equal(missing.status, 404);
+    assert.equal(missing.data.error.code, 'SESSION_NOT_FOUND');
+});

@@ -1,14 +1,20 @@
-/** First-tier lobby registry. Games register a descriptor + isolated runtime.
- * The old demo scenarios were removed; the registry is intentionally empty
- * until a ready-to-play scenario pack is installed. */
-export const games = [];
-const active = new Map();
+import { wrathGloryRuntime } from "./wrath-glory/runtime.js";
+/** First-tier lobby registry. Modules register a descriptor + isolated runtime;
+ * the hall does not know their rules or save schema. */
+const registry = new Map();
+export function registerGame(runtime) {
+    const id = runtime.descriptor.id;
+    if (registry.has(id))
+        throw new Error(`Game "${id}" is already registered.`);
+    registry.set(id, runtime);
+}
 export function listGames() {
-    return games.map(g => ({ ...g, features: [...g.features] }));
+    return [...registry.values()].map(r => ({ ...r.descriptor, features: [...r.descriptor.features] }));
 }
 export function findGame(id) {
-    return games.find(g => g.id === id);
+    return registry.get(id)?.descriptor;
 }
+registerGame(wrathGloryRuntime);
 /** All second-tier modules use a stable, isolated API namespace. */
 export async function gameRequest(path, method, readBody) {
     if (path === '/api/games' && method === 'GET')
@@ -19,7 +25,7 @@ export async function gameRequest(path, method, readBody) {
     const game = findGame(m[1]);
     if (!game)
         return { status: 404, data: { error: { code: 'GAME_NOT_FOUND', message: '未找到游戏模块。' } } };
-    const runtime = active.get(game.id);
+    const runtime = registry.get(game.id);
     if (!m[2] && method === 'GET' && !runtime)
         return { status: 200, data: { game } };
     if (!runtime)
