@@ -175,3 +175,18 @@ test('AI GM endpoint returns a proposal without bypassing the rules engine', asy
     const loaded = await get(`/api/games/wrath-glory/sessions/${session.id}`);
     assert.equal(JSON.stringify(loaded.data.session.log), before);
 });
+
+test('battlefield token movement is persisted in the session', async () => {
+    const created = await post('/api/games/wrath-glory/sessions', { scenarioId: 'training' });
+    const session = created.data.session;
+    const actor = session.party[0];
+    assert.ok(actor.position);
+    const moved = await post(`/api/games/wrath-glory/sessions/${session.id}/commands`, {
+        requestId: 'req-move-1',
+        command: { type: 'move', actorId: actor.id, x: 10, y: 9 },
+    });
+    assert.equal(moved.status, 200);
+    assert.deepEqual(moved.data.session.party[0].position, { x: 10, y: 9 });
+    const loaded = await get(`/api/games/wrath-glory/sessions/${session.id}`);
+    assert.deepEqual(loaded.data.session.party[0].position, { x: 10, y: 9 });
+});

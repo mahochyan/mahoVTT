@@ -14,6 +14,8 @@ let shownTab = 'party';
 let lastRenderedLine = '';
 let lastSceneHeading = '';
 const checkAttempts = new Map();
+let selectedToken = null;
+let boardCollapsed = false;
 
 async function request(path, options = {}) {
   const response = await fetch(API + path, {
@@ -281,6 +283,119 @@ function activateSheet(name) {
   });
 }
 
+function tokenDistance(actor, target) {
+  return Math.hypot(actor.position.x - target.position.x, actor.position.y - target.position.y);
+}
+
+function boardSummary(s, actorId) {
+  const who = s.party.find((p) => p.id === actorId) || s.party[0];
+  const target = (s.enemies || [])[0];
+  if (!who || !target)
+    return '拖动棋子调整站位';
+  return `${who.name} 与 ${target.name} 相距 ${tokenDistance(who, target).toFixed(0)} 米`;
+}
+
+function setTokenPosition(node, actor, arena) {
+  node.style.left = `${(actor.position.x / arena.width) * 100}%`;
+  node.style.top = `${(actor.position.y / arena.height) * 100}%`;
+}
+
+function renderBoard(s) {
+  const panel = $('board-panel');
+  const hasEnemies = (s.enemies || []).length > 0;
+  panel.hidden = !hasEnemies;
+  if (!hasEnemies)
+    return;
+  const arena = s.arena || { width: 32, height: 24 };
+  const board = $('board');
+  board.style.backgroundSize = `calc(100% / ${arena.width / 2}) calc(100% / ${arena.height / 2})`;
+  const tokens = $('tokens');
+  tokens.replaceChildren();
+  const all = [...s.party, ...s.enemies];
+  for (const actor of all) {
+    const node = document.createElement('button');
+    node.type = 'button';
+    node.className = `token ${actor.kind === 'enemy' ? 'enemy' : 'pc'}${actor.id === selectedToken ? ' selected' : ''}`;
+    node.dataset.actor = actor.id;
+    node.title = `${actor.name} · ${actor.position.x.toFixed(0)} 米 / ${actor.position.y.toFixed(0)} 米`;
+    node.setAttribute('aria-label', `${actor.name}，坐标 ${actor.position.x.toFixed(0)} 米、${actor.position.y.toFixed(0)} 米`);
+    node.textContent = actor.name.replace('·', '').slice(0, 2);
+    setTokenPosition(node, actor, arena);
+    let dragging = false;
+    let moved = false;
+    const moveTo = (clientX, clientY) => {
+      const rect = board.getBoundingClientRect();
+      const x = Math.max(0, Math.min(arena.width, ((clientX - rect.left) / rect.width) * arena.width));
+      const y = Math.max(0, Math.min(arena.height, ((clientY - rect.top) / rect.height) * arena.height));
+      actor.position = { x: Math.round(x * 2) / 2, y: Math.round(y * 2) / 2 };
+      setTokenPosition(node, actor, arena);
+      $('board-range').textContent = boardSummary(s, selectedToken || actor.id);
+      moved = true;
+    };
+    node.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      selectedToken = actor.id;
+      dragging = true;
+      moved = false;
+      node.setPointerCapture(event.pointerId);
+      node.classList.add('dragging');
+      document.querySelectorAll('.token').forEach((t) => t.classList.toggle('selected', t.dataset.actor === actor.id));
+      $('board-range').textContent = boardSummary(s, actor.id);
+    });
+    node.addEventListener('pointermove', (event) => {
+      if (dragging)
+        moveTo(event.clientX, event.clientY);
+    });
+    node.addEventListener('pointerup', (event) => {
+      if (!dragging)
+        return;
+      dragging = false;
+      node.classList.remove('dragging');
+      if (moved)
+        void moveToken(actor, s);
+    });
+    node.addEventListener('click', () => {
+      selectedToken = actor.id;
+      document.querySelectorAll('.token').forEach((t) => t.classList.toggle('selected', t.dataset.actor === actor.id));
+      $('board-range').textContent = boardSummary(s, actor.id);
+    });
+    node.addEventListener('keydown', (event) => {
+      const step = event.shiftKey ? 4 : 2;
+      const delta = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[event.key];
+      if (!delta)
+        return;
+      event.preventDefault();
+      actor.position = {
+        x: Math.max(0, Math.min(arena.width, actor.position.x + delta[0])),
+        y: Math.max(0, Math.min(arena.height, actor.position.y + delta[1])),
+      };
+      setTokenPosition(node, actor, arena);
+      void moveToken(actor, s);
+    });
+    tokens.append(node);
+  }
+  $('board-range').textContent = boardSummary(s, selectedToken || s.party[0]?.id);
+  board.hidden = boardCollapsed;
+  $('board-toggle').textContent = boardCollapsed ? '展开战场' : '收起战场';
+}
+
+async function moveToken(actor, s) {
+  if (!sessionId || s.pending || s.result)
+    return;
+  try {
+    const result = await request(`/sessions/${sessionId}/commands`, {
+      method: 'POST',
+      body: JSON.stringify({
+        requestId: newRequestId(),
+        command: { type: 'move', actorId: actor.id, x: actor.position.x, y: actor.position.y },
+      }),
+    });
+    renderPlay(result.session);
+  } catch (error) {
+    appendChat('fact', `移动失败：${error.message}`);
+  }
+}
+
 function renderPlay(s) {
   session = s;
   const scenario = s.scenario;
@@ -304,6 +419,7 @@ function renderPlay(s) {
   $('no-target').hidden = hasEnemies;
   $('party').innerHTML = s.party.map((a) => partyCard(a, canAct)).join('');
   $('enemy').innerHTML = hasEnemies ? s.enemies.map(enemyCard).join('') : '';
+  renderBoard(s);
   renderPending(s);
   $('log').innerHTML = s.log.slice(-30).map((line) => `<li>${esc(line)}</li>`).join('');
   $('end').hidden = !s.result;
@@ -447,6 +563,7 @@ async function boot() {
 
 
 document.querySelectorAll('[data-sheet-tab]').forEach((button) => button.addEventListener('click', () => activateSheet(button.dataset.sheetTab)));
+$('board-toggle').addEventListener('click', () => { boardCollapsed = !boardCollapsed; $('board').hidden = boardCollapsed; $('board-toggle').textContent = boardCollapsed ? '展开战场' : '收起战场'; });
 $('ask-gm').addEventListener('click', askGm);
 $('gm-input').addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); askGm(); } });
 $('to-bottom').addEventListener('click', () => { $('chat').scrollTop = $('chat').scrollHeight; $('to-bottom').hidden = true; });

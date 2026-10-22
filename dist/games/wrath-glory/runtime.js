@@ -65,10 +65,11 @@ function pcFromPregen(p) {
         shockTaken: 0,
         maxShock: p.attributes.willpower + p.tier,
         weapon: WEAPONS[p.id] || null,
+        position: { x: 6, y: 8 },
     };
 }
 function createSession(id) {
-    const party = loadParty().map(pcFromPregen);
+    const party = loadParty().map((p, i) => ({ ...pcFromPregen(p), position: { x: 6, y: 8 + i * 6 } }));
     return {
         schemaVersion: 1,
         gameId: 'wrath-glory',
@@ -94,6 +95,7 @@ function createSession(id) {
                 shockTaken: 0,
                 maxShock: 2,
                 weapon: null,
+                position: { x: 16, y: 12 },
             }],
         glory: 0,
         ruin: 3,
@@ -129,6 +131,7 @@ function threatActor(spec) {
         maxShock: spec.maxShock,
         weapon: { id: spec.id + '-weapon', name: spec.name + '的攻击', damage: spec.damage, ed: spec.ed, short: spec.short, medium: spec.medium, long: spec.long },
         attackPool: spec.attackPool ?? 5,
+        position: { x: 16, y: 12 },
         special: { fear: spec.fear, onFire: spec.onFire, deathSplit: spec.deathSplit, ruin: spec.ruin },
         mob: spec.mob ? { ...spec.mob, destroyed: 0 } : undefined,
     };
@@ -141,7 +144,8 @@ function enterScene(state, pack, sceneId) {
     state.scenePart = scene.part;
     state.scene = scene.text;
     state.ending = scene.ending || null;
-    state.enemies = scene.combat ? scene.combat.enemies.map((id) => threatActor(pack.threats[id])) : [];
+    state.arena = scene.combat ? { width: 32, height: 24 } : { width: 32, height: 24 };
+    state.enemies = scene.combat ? scene.combat.enemies.map((id, i) => ({ ...threatActor(pack.threats[id]), position: { x: 20, y: 12 + i * 6 } })) : [];
     if (scene.ending)
         state.result = 'victory';
     if (changed)
@@ -186,7 +190,7 @@ function resolveCorruption(state, check) {
     }
 }
 function createScenarioSession(id, pack) {
-    const party = loadParty().map(pcFromPregen);
+    const party = loadParty().map((p, i) => ({ ...pcFromPregen(p), position: { x: 6, y: 8 + i * 6 } }));
     const state = {
         ...createSession(id),
         scenarioId: 'graveyard-shift',
@@ -274,6 +278,12 @@ function processEnemyQueue(state) {
             return;
         }
         const target = candidates[0];
+        const distance = distanceMeters(enemy, target);
+        const band = rangeBand(distance, enemy.weapon.short, enemy.weapon.medium, enemy.weapon.long);
+        if (band === 'out') {
+            state.log.push(`${enemy.name} 与 ${target.name} 相距 ${distance.toFixed(0)} 米，超出射程，无法攻击。`);
+            continue;
+        }
         const penalty = woundedPenalty(target.woundsTaken);
         const roll = rollTest(enemy.attackPool ?? 5, target.defence + penalty, rng);
         state.log.push(`${enemy.name} 反击 ${target.name}：${roll.faces.join('、')}，${roll.icons} 个图标（防御 ${target.defence}${penalty ? '，受伤 +1' : ''}）。`);
@@ -387,6 +397,11 @@ function applyChoice(state, pack, choiceId, actorId) {
     enterScene(state, pack, choice.next);
     return { ok: true };
 }
+function distanceMeters(a, b) {
+    const dx = a.position.x - b.position.x;
+    const dy = a.position.y - b.position.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
 function applyAttack(state, attackerId, targetId, actionId) {
     const attacker = state.party.find((a) => a.id === attackerId);
     const target = state.enemies.find((a) => a.id === targetId);
@@ -394,7 +409,7 @@ function applyAttack(state, attackerId, targetId, actionId) {
         return { ok: false, code: 'BAD_TARGET', message: '攻击者或目标无效。', status: 404 };
     if (!attacker.weapon)
         return { ok: false, code: 'NO_WEAPON', message: '该角色没有可用武器。' };
-    const distance = 12;
+    const distance = distanceMeters(attacker, target);
     const band = rangeBand(distance, attacker.weapon.short, attacker.weapon.medium, attacker.weapon.long);
     if (band === 'out')
         return { ok: false, code: 'OUT_OF_RANGE', message: '目标超出武器射程。' };
@@ -407,8 +422,9 @@ function applyAttack(state, attackerId, targetId, actionId) {
     });
     const bonus = band === 'short' ? 1 : 0;
     const attackPenalty = woundedPenalty(attacker.woundsTaken);
-    const roll = rollTest(pool + bonus, target.defence + attackPenalty, rng);
-    state.log.push(`${attacker.name} 向 ${target.name} 开火：${roll.faces.join('、')}，${roll.icons} 个图标（防御 ${target.defence}${attackPenalty ? '，受伤 +1' : ''}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
+    const rangePenalty = band === 'long' ? 2 : 0;
+    const roll = rollTest(pool + bonus, target.defence + attackPenalty + rangePenalty, rng);
+    state.log.push(`${attacker.name} 与 ${target.name} 相距 ${distance.toFixed(0)} 米，开火：${roll.faces.join('、')}，${roll.icons} 个图标（防御 ${target.defence}${rangePenalty ? '，远距 +2' : ''}${attackPenalty ? '，受伤 +1' : ''}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
     if (!roll.success) {
         state.log.push('未命中。');
         beginEnemyTurn(state);
@@ -663,6 +679,23 @@ const runtime = {
                     return fail('VERSION_CONFLICT', '状态已变化，请刷新后重试。', 409);
                 if (state.pending)
                     return fail('PENDING_DECISION', '请先完成当前选择。', 409);
+                if (body?.command?.type === 'move') {
+                    const who = state.party.find((a) => a.id === body.command.actorId);
+                    if (!who)
+                        return fail('BAD_TARGET', '找不到该角色。', 404);
+                    const x = Number(body.command.x);
+                    const y = Number(body.command.y);
+                    const arena = state.arena || { width: 32, height: 24 };
+                    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > arena.width || y > arena.height)
+                        return fail('BAD_MOVE', '棋子位置超出战场。');
+                    who.position = { x, y };
+                    state.lastRequests.push(requestId);
+                    state.log.push(`${who.name} 移动到 ${x.toFixed(0)} 米 / ${y.toFixed(0)} 米。`);
+                    const saved = store.save(id, loaded.version, state, { type: 'move', payload: { requestId, actorId: who.id, x, y } });
+                    if (!saved)
+                        return fail('VERSION_CONFLICT', '状态已变化。', 409);
+                    return ok({ session: publicState(state) });
+                }
                 if (body?.command?.type === 'choose') {
                     const pack = loadInstalledPack();
                     if (!pack)

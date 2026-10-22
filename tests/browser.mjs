@@ -137,6 +137,9 @@ async function main() {
     check('W&G start screen renders', await cdp.waitFor('!!document.querySelector("[data-start=training]")'));
     await cdp.evaluate('document.querySelector("[data-start=training]").click()');
     check('W&G session starts', await cdp.waitFor('!document.querySelector("#play").hidden && document.querySelectorAll("#party .card").length === 3', 20000));
+    check('battlefield tokens render', await cdp.evaluate('document.querySelectorAll("#tokens .token").length >= 4'));
+    await cdp.evaluate(`(() => { const t = document.querySelector('#tokens .token'); t.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); })()`);
+    check('token moves with the arrow keys', await cdp.waitFor('document.querySelector("#tokens .token").getAttribute("title").includes("8 米")', 20000));
     await cdp.evaluate('document.querySelector("[data-attack]").click()');
     check('W&G attack produces a result', await cdp.waitFor('document.querySelectorAll("#log li").length > 0 && (document.body.innerText.includes("开火") || document.body.innerText.includes("命中"))', 20000));
     await sleep(400);
