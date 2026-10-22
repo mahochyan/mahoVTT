@@ -148,6 +148,8 @@ async function main() {
     check('W&G session survives reload', await cdp.waitFor('!document.querySelector("#play").hidden && document.querySelectorAll("#party .card").length === 3', 20000));
     await cdp.evaluate(`(() => { const i = document.querySelector('#gm-input'); i.value = '观察训练场'; document.querySelector('#ask-gm').click(); })()`);
     check('W&G GM panel responds', await cdp.waitFor('document.querySelector("#narration").textContent.includes("规则演示模式")', 20000));
+    await cdp.evaluate(`(() => { const i = document.querySelector('#gm-input'); i.value = '继续观察'; i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); })()`);
+    check('Enter sends the composer without Shift', await cdp.waitFor('document.querySelector("#gm-input").value === ""', 20000));
 
     await cdp.navigate(base + '/campaigns/new');
     check('wizard explains no scenario', await cdp.waitFor('document.body.innerText.includes("还没有可直接游玩的剧本")'));
@@ -198,6 +200,10 @@ async function main() {
         await cdp.navigate(base + '/games/wrath-glory');
         await cdp.waitFor('!document.querySelector("#play").hidden', 20000);
         check('wide viewport keeps three columns', await cdp.evaluate('document.querySelector(".app-shell").getBoundingClientRect().width > 1700 && getComputedStyle(document.querySelector(".sheet")).display !== "none"'));
+        check('chat text is at least 15px', await cdp.evaluate('parseFloat(getComputedStyle(document.querySelector(".msg.gm")).fontSize) >= 15'));
+        check('status labels are at least 12px', await cdp.evaluate('parseFloat(getComputedStyle(document.querySelector(".stat small")).fontSize) >= 12'));
+        check('primary buttons are at least 40px tall', await cdp.evaluate('document.querySelector("#ask-gm").getBoundingClientRect().height >= 40'));
+        check('sheet tabs are at least 40px tall', await cdp.evaluate('document.querySelector(".sheet-tabs button").getBoundingClientRect().height >= 40'));
     }
     else
         console.log('SKIP: private Graveyard Shift pack is not installed');

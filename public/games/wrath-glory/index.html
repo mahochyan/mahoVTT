@@ -54,14 +54,15 @@
               <div class="msg-role">主持人</div>
               <div id="scene-text" class="scene-text"></div>
             </article>
-            <div id="chat-stream" class="chat-stream"></div>
-            <article id="narration" class="msg gm">雨声压低了远处的钟声。你想做什么？</article>
+            <div id="chat-stream" class="chat-stream" aria-live="polite"></div>
+            <article id="narration" class="msg gm" aria-live="polite">雨声压低了远处的钟声。你想做什么？</article>
             <div id="pending" class="pending" hidden></div>
             <div id="choices" class="choices"></div>
             <div id="end" class="end-card" hidden>
               <p>这段冒险已经结束。</p>
               <button id="restart-btn" class="btn ghost">重新开始</button>
             </div>
+            <button id="to-bottom" class="btn small to-bottom" hidden>回到底部</button>
           </div>
 
           <footer class="composer">

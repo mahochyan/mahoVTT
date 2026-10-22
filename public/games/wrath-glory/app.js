@@ -119,6 +119,8 @@ function renderPending(s) {
 
 function appendChat(role, text) {
   if (!text) return;
+  const chat = $('chat');
+  const nearBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 90;
   const node = document.createElement('article');
   node.className = `msg ${role}`;
   if (role === 'fact')
@@ -132,8 +134,10 @@ function appendChat(role, text) {
     node.append(label, body);
   }
   $('chat-stream').append(node);
-  const chat = $('chat');
-  chat.scrollTop = chat.scrollHeight;
+  if (nearBottom)
+    chat.scrollTop = chat.scrollHeight;
+  else
+    $('to-bottom').hidden = false;
 }
 
 function syncChat(s) {
@@ -227,7 +231,8 @@ async function attack(attackerId) {
     });
     renderPlay(result.session);
   } catch (error) {
-    $('scene-text').textContent = `结算失败：${error.message}`;
+    appendChat('fact', `结算失败：${error.message}`);
+    $('narration').textContent = `结算失败：${error.message}`;
   }
 }
 
@@ -245,7 +250,8 @@ async function choose(choiceId) {
     });
     renderPlay(result.session);
   } catch (error) {
-    $('scene-text').textContent = `结算失败：${error.message}`;
+    appendChat('fact', `结算失败：${error.message}`);
+    $('narration').textContent = `结算失败：${error.message}`;
   }
 }
 
@@ -267,8 +273,10 @@ async function askGm() {
     $('gm-input').value = '';
   } catch (error) {
     $('narration').textContent = `主持人暂时离线：${error.message}`;
+    appendChat('fact', `主持人暂时离线：${error.message}`);
   } finally {
     button.disabled = false;
+    $('gm-input').focus();
   }
 }
 
@@ -285,7 +293,8 @@ async function decide(choice) {
     });
     renderPlay(result.session);
   } catch (error) {
-    $('scene-text').textContent = `结算失败：${error.message}`;
+    appendChat('fact', `结算失败：${error.message}`);
+    $('narration').textContent = `结算失败：${error.message}`;
   }
 }
 
@@ -312,7 +321,9 @@ async function boot() {
 
 document.querySelectorAll('[data-sheet-tab]').forEach((button) => button.addEventListener('click', () => activateSheet(button.dataset.sheetTab)));
 $('ask-gm').addEventListener('click', askGm);
-$('gm-input').addEventListener('keydown', (event) => { if (event.key === 'Enter') askGm(); });
+$('gm-input').addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); askGm(); } });
+$('to-bottom').addEventListener('click', () => { $('chat').scrollTop = $('chat').scrollHeight; $('to-bottom').hidden = true; });
+$('chat').addEventListener('scroll', () => { const chat = $('chat'); $('to-bottom').hidden = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 90; });
 $('restart-btn').addEventListener('click', () => {
   localStorage.removeItem(KEY);
   location.reload();

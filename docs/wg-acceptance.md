@@ -39,12 +39,13 @@ content:       private Graveyard Shift pack (local, not in public repo)
 - Shift / Determination 仍由玩家选择，AI 不替玩家花 Wrath/Glory。
 - 证据：真实端点手工走查（`docs/wg-ai.md`）、AI mock 测试、浏览器 GM 面板检查。
 - 界面：中央聊天流 + 左右侧栏；1440/1920 宽度下三栏常驻，可见文案无英文标签。
+- 人机交互检查见 `docs/wg-ux-check.md`。
 
 ## 命令与结果
 
 ```text
 npm test              -> 88/88
-npm run test:browser  -> 26/26 (private pack installed; includes 1440/1920 三栏布局与无英文可见文案检查)
+npm run test:browser  -> 31/31 (private pack installed; includes 1440/1920 三栏布局、无英文可见文案、字号与回车发送检查)
 npm run verify        -> ok
 POST /api/ai/ping     -> ok, 3 models
 ```
