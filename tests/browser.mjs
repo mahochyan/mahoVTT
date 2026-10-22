@@ -179,6 +179,22 @@ async function main() {
     await cdp.waitFor('!document.querySelector("#play").hidden', 20000);
     check('W&G mobile has no horizontal overflow', await cdp.evaluate('document.documentElement.scrollWidth <= innerWidth'));
 
+    await cdp.viewport(1440, 1000);
+    await cdp.navigate(base + '/games/wrath-glory');
+    await cdp.evaluate('localStorage.removeItem("wg-training-session"); location.reload()');
+    await sleep(700);
+    await cdp.waitFor('!!document.querySelector("[data-start]")');
+    const hasGraveyard = await cdp.evaluate('!!document.querySelector("[data-start=graveyard-shift]")');
+    if (hasGraveyard) {
+        await cdp.evaluate('document.querySelector("[data-start=graveyard-shift]").click()');
+        check('Graveyard Shift opens', await cdp.waitFor('!document.querySelector("#play").hidden && document.body.innerText.includes("停尸间")', 20000));
+        check('Graveyard scene art loads', await cdp.waitFor('!!document.querySelector("#scene-art:not([hidden]) img")', 20000));
+        await cdp.evaluate('document.querySelector("[data-choice]").click()');
+        check('Graveyard choice resolves', await cdp.waitFor('document.querySelectorAll("#log li").length > 1 && (document.body.innerText.includes("线索") || document.body.innerText.includes("检定"))', 20000));
+    }
+    else
+        console.log('SKIP: private Graveyard Shift pack is not installed');
+
     check('no console errors', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | '));
     cdp.close();
 }

@@ -57,3 +57,16 @@ tests/            Node 测试 + 浏览器冒烟
 1. 定义“剧本包”格式：封面、预设队伍、开场、地图、目标、遭遇、结局。
 2. 从 `/games` 一键进入，跳过建世界/建角色向导。
 3. 先做一个 30–60 分钟、可存可续的完整短篇，再复制第二部。
+
+
+## 怒火与荣耀（W&G）
+
+`/games/wrath-glory` 是按 C7 核心规则实现的 AI 跑团模块，当前为 v1：
+
+- d6 图标骰池、怒火骰、Shift、Wrath/Glory/Ruin
+- 敌人回合、Determination、Wounded/Dying、Corruption
+- Graveyard Shift 五段流程与四个结局
+- AI GM：本地端点叙述，并可提出/执行经过服务端校验的场景选择与攻击
+- 官方内容包放在本地 `data/wg/packs/graveyard-shift/`，不入公开仓库；公开 demo 仍可玩训练遭遇
+
+本地 AI 默认配置见 `docs/wg-ai.md`；Gate 验收见 `docs/wg-acceptance.md`。

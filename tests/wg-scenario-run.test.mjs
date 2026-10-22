@@ -137,3 +137,55 @@ test('Graveyard Shift can be completed end-to-end with the rules engine', async 
     assert.equal(s.result, 'victory', JSON.stringify({ scene: s.scenario?.id, log: s.log?.slice(-8) }));
     assert.ok(s.scenario?.ending, 'scenario should expose an ending');
 });
+
+async function reachRevelations() {
+    const created = await post('/api/games/wrath-glory/sessions', { scenarioId: 'graveyard-shift' });
+    assert.equal(created.status, 201);
+    const sid = created.data.session.id;
+    let s = created.data.session;
+    s = await command(sid, { type: 'choose', choiceId: 'to-barastyr' });
+    s = await chooseUntil(sid, s, 'librarium', (x) => (x.clues || []).includes('necropolis-location'));
+    s = await command(sid, { type: 'choose', choiceId: 'to-boneyards' });
+    s = await chooseUntil(sid, s, 'navigate-guided', (x) => x.scenario.id === 'necropolis', 5);
+    assert.equal(s.scenario.id, 'necropolis');
+    s = await command(sid, { type: 'choose', choiceId: 'to-descent' });
+    for (let i = 0; i < 100 && !s.result && s.scenario?.id !== 'revelations'; i++) {
+        if (s.pending) {
+            s = await decide(sid, s.pending);
+            continue;
+        }
+        if (s.enemies.length) {
+            const attacker = s.party.find((p) => p.woundsTaken <= p.maxWounds && p.weapon);
+            const target = s.enemies.find((e) => e.woundsTaken <= e.maxWounds);
+            if (!attacker || !target) break;
+            s = await command(sid, { type: 'attack', attackerId: attacker.id, targetId: target.id });
+            continue;
+        }
+        break;
+    }
+    assert.equal(s.scenario.id, 'revelations', JSON.stringify(s.log.slice(-6)));
+    return { sid, s };
+}
+
+test('Graveyard Shift reaches the destroy and keep endings', async (t) => {
+    const listing = await get('/api/games/wrath-glory');
+    if (!listing.data.scenarios.some((s) => s.id === 'graveyard-shift'))
+        return t.skip('private pack not installed');
+    for (const [choice, ending] of [['destroy', 'destroy'], ['keep', 'keep']]) {
+        const { sid, s } = await reachRevelations();
+        const done = await command(sid, { type: 'choose', choiceId: choice });
+        assert.equal(done.result, 'victory');
+        assert.equal(done.scenario.ending.id, ending);
+    }
+});
+
+test('Graveyard Shift reaches the handover ending', async (t) => {
+    const listing = await get('/api/games/wrath-glory');
+    if (!listing.data.scenarios.some((s) => s.id === 'graveyard-shift'))
+        return t.skip('private pack not installed');
+    const { sid } = await reachRevelations();
+    let s = await command(sid, { type: 'choose', choiceId: 'signal-mendax' });
+    s = await command(sid, { type: 'choose', choiceId: 'hand-over' });
+    assert.equal(s.result, 'victory');
+    assert.equal(s.scenario.ending.id, 'handover');
+});
