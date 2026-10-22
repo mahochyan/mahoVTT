@@ -1,7 +1,7 @@
 import {readFileSync,existsSync,statSync} from 'node:fs';
 import {join} from 'node:path';
 import {need,DWError} from './rules.mjs';
-import {observation,activeActor,parseCommand,fallbackCommand,resolve} from './engine.mjs';
+import {observation,activeActor,parseCommand,fallbackCommand,validateCommand} from './engine.mjs';
 import {SKILLS,WEAPONS} from './catalog.mjs';
 const SAFE=new Set(['move','attack','aim','ready','reload','clear_jam','stance','end_turn','interact','travel','medicae','squad_mode','solo_mode','power','skill','stand','support']);
 const glossary={'半自动':'semi auto','全自动':'full auto','小队':'squad mode','命运':'fate','护甲':'armour','闪避':'dodge','格挡':'parry','灵能':'psychic','恐惧':'fear','凝聚':'cohesion','医疗':'medicae','伤害':'damage','重伤':'critical','誓言':'oath','征用':'requisition','单兵':'solo mode','群体':'horde','力量':'strength','掩体':'cover'};
@@ -18,7 +18,7 @@ function context(s,kind){const v=observation(s);const out={rules:s.rulesetId,pro
 async function completion(config,messages,{tokens=1200}={}){
  need(config.mode==='openai'&&config.model,'AI_CONFIG','请在大厅配置模型地址和模型 ID。');
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),Math.min(config.timeoutMs??45000,180000));
- try{const r=await fetch(config.baseUrl.replace(/\/$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',...(config.apiKey?{Authorization:'Bearer '+config.apiKey}:{})},body:JSON.stringify({...config.extraBody,model:config.model,messages,stream:false,temperature:0.25,max_tokens:Math.min(config.maxTokens??tokens,tokens)}),signal:controller.signal});
+ try{const r=await fetch(config.baseUrl.replace(/\/$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',...(config.apiKey?{Authorization:'Bearer '+config.apiKey}:{})},body:JSON.stringify({...config.extraBody,model:config.model,messages,stream:false,temperature:0.25,max_tokens:Math.min(config.maxTokens??tokens,tokens),chat_template_kwargs:{thinking:false}}),signal:controller.signal});
  need(r.ok,'AI_HTTP',`模型接口 HTTP ${r.status}。`,502);const payload=await r.json();const text=payload.choices?.[0]?.message?.content;need(typeof text==='string'&&text.length>0&&text.length<30000,'AI_CONTENT','未收到最终 content；reasoning_content 不作为行动或叙事。',502);need(payload.choices?.[0]?.finish_reason!=='length','AI_TRUNCATED','模型输出截断。',502);return text;
  }catch(e){if(e instanceof DWError)throw e;throw new DWError('AI_NETWORK',controller.signal.aborted?'模型超时；已保存的游戏事实不变。':'模型连接失败；已保存的游戏事实不变。',502);}finally{clearTimeout(timer);}
 }
@@ -34,8 +34,10 @@ export async function plan(config,s,input,actorId,companion=false){
  const text=await completion(config,[{role:'system',content:prompt},{role:'user',content:ctx+'\n'+(companion?'规则策略参考：'+JSON.stringify(fallback):'玩家意图：'+input.slice(0,2000))+(error?'\n修复上次错误：'+error:'')}],{tokens:700});
  try{const clean=text.replace(/<think>[\s\S]*?<\/think>/g,'').replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');const p=JSON.parse(clean.slice(clean.indexOf('{'),clean.lastIndexOf('}')+1));const c=parseCommand(p.command);
  need(SAFE.has(c.type)&&(!c.actorId||c.actorId===actorId)&&!c.fateBonus,'AI_PERMISSION','AI 尝试越权。');c.actorId=actorId;
- // Validate on a deterministic disposable copy. This NEVER commits or supplies real dice.
- resolve(s,c,companion?'auto':'player',sides=>Math.max(1,Math.floor(sides/2)));
+ // Legality is decided WITHOUT rolling dice: validateCommand never calls the RNG and
+ // never writes. The previous draft rolled a fake d100 here, which let a lucky fake
+ // result change whether a proposal looked legal.
+ validateCommand(s,c,{source:companion?'auto':'player'});
  return {command:c,source:config.model,line:typeof p.line==='string'?p.line.slice(0,180):''};
  }catch(e){error=e.message;if(attempt===1)throw new DWError('AI_PLAN','两次行动提案均未通过校验：'+error,422);}
  }throw new DWError('AI_PLAN','没有可用提案。');
