@@ -127,3 +127,21 @@ test('private Graveyard Shift pack covers the registered threat dependencies', a
     assert.ok(pack.scenes.some((s) => s.corruption?.dn === 1));
     assert.ok(pack.scenes.some((s) => s.corruption?.dn === 3));
 });
+
+test('private Tier 1 pregens have auditable XP budgets', async (t) => {
+    const { existsSync } = await import('node:fs');
+    const path = new URL('../data/wg/packs/graveyard-shift/pregens.json', import.meta.url);
+    if (!existsSync(path))
+        return t.skip('private pregens not installed');
+    const party = JSON.parse(readFileSync(path, 'utf8'));
+    assert.equal(party.pregens.length, 3);
+    for (const p of party.pregens) {
+        assert.deepEqual(validatePregen(p), [], p.id);
+        assert.equal(p.tier, 1);
+        const b = p.build;
+        assert.ok(b, p.id);
+        assert.equal(b.startingXp, 100);
+        assert.equal(b.archetypeXp + b.attributeXp + b.skillXp + b.talentXp + b.unspentXp, b.startingXp);
+        assert.equal(b.startingXp - b.unspentXp, p.xpCost);
+    }
+});

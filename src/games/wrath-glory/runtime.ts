@@ -6,7 +6,7 @@ import type { GameDescriptor, GameReply, GameRequest, GameRuntime } from '../con
 import { attackPool, damageVsResilience, type RangeBand, rangeBand, woundedPenalty } from './rules/formulas.ts';
 import { rollDamage, rollDetermination, rollPool, rollTest, shiftableExalted } from './rules/dice.ts';
 import { WgStore } from './store.ts';
-import { narrateWg } from './ai.ts';
+import { gmDecide, narrateWg } from './ai.ts';
 import { findScene, loadScenarioPack, publicScene, type ScenarioPack } from './scenario.ts';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
@@ -423,6 +423,50 @@ function resolveDetermination(state: SessionState, pending: DeterminationPending
     }
 }
 
+type ChoiceResult = { ok: true } | { ok: false; code: string; message: string; status?: number };
+
+function applyChoice(state: SessionState, pack: ScenarioPack, choiceId: string, actorId?: string): ChoiceResult {
+    if (state.scenarioId !== 'graveyard-shift' || !state.sceneId)
+        return { ok: false, code: 'BAD_COMMAND', message: '当前会话没有剧本场景。' };
+    const scene = findScene(pack, state.sceneId);
+    const choice = scene.choices.find((c) => c.id === choiceId);
+    if (!choice)
+        return { ok: false, code: 'BAD_CHOICE', message: '场景中没有这个选择。', status: 404 };
+    if (choice.requires?.clue && !(state.clues || []).includes(choice.requires.clue))
+        return { ok: false, code: 'MISSING_CLUE', message: '缺少必要的线索。', status: 409 };
+    if (choice.requires?.flag && !state.flags?.[choice.requires.flag])
+        return { ok: false, code: 'MISSING_FLAG', message: '缺少必要的前置条件。', status: 409 };
+    const who = state.party.find((a) => a.id === actorId) || state.party[0];
+    let success = true;
+    if (choice.test) {
+        const attribute = who.attributes[choice.test.attribute];
+        const skill = choice.test.skill ? (who.skills[choice.test.skill] || 0) : 0;
+        const wounded = who.woundsTaken > 0 ? 1 : 0;
+        const roll = rollTest(attribute + skill, choice.test.dn + wounded, rng);
+        success = roll.success;
+        state.log.push(`${who.name} 进行 ${choice.test.attribute}${choice.test.skill ? ' + ' + choice.test.skill : ''} 检定：${roll.faces.join('、')}，${roll.icons} 个图标（DN ${choice.test.dn}${wounded ? '，受伤 +1' : ''}）。`);
+    }
+    const branch = success ? choice.success : choice.failure;
+    if (branch?.text)
+        state.log.push(branch.text);
+    if (branch?.clue && !(state.clues || []).includes(branch.clue)) {
+        state.clues = [...(state.clues || []), branch.clue];
+        state.log.push(`获得线索：${pack.clues[branch.clue] || branch.clue}。`);
+    }
+    if (branch?.flag) {
+        state.flags = { ...(state.flags || {}), [branch.flag]: true };
+        state.log.push(`标记：${branch.flag}。`);
+    }
+    if (branch?.shock) {
+        who.shockTaken += branch.shock;
+        state.log.push(`${who.name} 受到 ${branch.shock} 点冲击。`);
+        if (who.shockTaken > who.maxShock)
+            state.log.push(`${who.name} 力竭。`);
+    }
+    enterScene(state, pack, choice.next);
+    return { ok: true };
+}
+
 function publicState(state: SessionState) {
     if (state.scenarioId === 'graveyard-shift' && state.sceneId) {
         const pack = loadInstalledPack();
@@ -599,6 +643,35 @@ const runtime: GameRuntime = {
                 }
             }
 
+            if (tail.length === 3 && tail[2] === 'gm' && method === 'POST') {
+                const body = await req.readBody() as any;
+                if (state.pending)
+                    return fail('PENDING_DECISION', '请先完成当前选择，再让 GM 推进。', 409);
+                const pack = loadInstalledPack();
+                if (!pack)
+                    return fail('SCENARIO_NOT_INSTALLED', '当前没有可推进的剧本包。', 404);
+                const view = publicState(state) as any;
+                const choices = (view?.scenario?.choices || []) as { id: string; label: string }[];
+                try {
+                    const decision = await gmDecide(view, typeof body?.input === 'string' ? body.input : '', choices);
+                    if (decision.choiceId) {
+                        const applied = applyChoice(state, pack, decision.choiceId, body?.actorId);
+                        if (applied.ok) {
+                            state.lastRequests.push(`gm-${crypto.randomUUID()}`);
+                            const saved = store.save(id, loaded.version, state, { type: 'ai.choose', payload: { choiceId: decision.choiceId } });
+                            if (!saved)
+                                return fail('VERSION_CONFLICT', '状态已变化。', 409);
+                            return ok({ text: decision.narration, action: { type: 'choose', choiceId: decision.choiceId }, session: publicState(state) });
+                        }
+                        return ok({ text: decision.narration, action: null, warning: applied.message, session: publicState(state) });
+                    }
+                    return ok({ text: decision.narration, action: null, session: publicState(state) });
+                }
+                catch (error) {
+                    return fail('AI_GM', (error as Error).message, 502);
+                }
+            }
+
             const body = await req.readBody() as any;
             const requestId = typeof body?.requestId === 'string' ? body.requestId : '';
             if (!requestId)
@@ -613,49 +686,14 @@ const runtime: GameRuntime = {
                     return fail('PENDING_DECISION', '请先完成当前选择。', 409);
 
                 if (body?.command?.type === 'choose') {
-                    if (state.scenarioId !== 'graveyard-shift' || !state.sceneId)
-                        return fail('BAD_COMMAND', '当前会话没有剧本场景。');
                     const pack = loadInstalledPack();
                     if (!pack)
                         return fail('SCENARIO_NOT_INSTALLED', '剧本包已被移除。', 404);
-                    const scene = findScene(pack, state.sceneId);
-                    const choice = scene.choices.find((c) => c.id === body.command.choiceId);
-                    if (!choice)
-                        return fail('BAD_CHOICE', '场景中没有这个选择。', 404);
-                    if (choice.requires?.clue && !(state.clues || []).includes(choice.requires.clue))
-                        return fail('MISSING_CLUE', '缺少必要的线索。', 409);
-                    if (choice.requires?.flag && !state.flags?.[choice.requires.flag])
-                        return fail('MISSING_FLAG', '缺少必要的前置条件。', 409);
-                    const who = state.party.find((a) => a.id === body.command.actorId) || state.party[0];
-                    let success = true;
-                    if (choice.test) {
-                        const attribute = who.attributes[choice.test.attribute];
-                        const skill = choice.test.skill ? (who.skills[choice.test.skill] || 0) : 0;
-                        const wounded = who.woundsTaken > 0 ? 1 : 0;
-                        const roll = rollTest(attribute + skill, choice.test.dn + wounded, rng);
-                        success = roll.success;
-                        state.log.push(`${who.name} 进行 ${choice.test.attribute}${choice.test.skill ? ' + ' + choice.test.skill : ''} 检定：${roll.faces.join('、')}，${roll.icons} 个图标（DN ${choice.test.dn}${wounded ? '，受伤 +1' : ''}）。`);
-                    }
-                    const branch = success ? choice.success : choice.failure;
-                    if (branch?.text)
-                        state.log.push(branch.text);
-                    if (branch?.clue && !(state.clues || []).includes(branch.clue)) {
-                        state.clues = [...(state.clues || []), branch.clue];
-                        state.log.push(`获得线索：${pack.clues[branch.clue] || branch.clue}。`);
-                    }
-                    if (branch?.flag) {
-                        state.flags = { ...(state.flags || {}), [branch.flag]: true };
-                        state.log.push(`标记：${branch.flag}。`);
-                    }
-                    if (branch?.shock) {
-                        who.shockTaken += branch.shock;
-                        state.log.push(`${who.name} 受到 ${branch.shock} 点冲击。`);
-                        if (who.shockTaken > who.maxShock)
-                            state.log.push(`${who.name} 力竭。`);
-                    }
+                    const result = applyChoice(state, pack, body.command.choiceId, body.command.actorId);
+                    if (!result.ok)
+                        return fail(result.code, result.message, result.status ?? 400);
                     state.lastRequests.push(requestId);
-                    enterScene(state, pack, choice.next);
-                    const saved = store.save(id, loaded.version, state, { type: 'scenario.choose', payload: { requestId, choiceId: choice.id, success } });
+                    const saved = store.save(id, loaded.version, state, { type: 'scenario.choose', payload: { requestId, choiceId: body.command.choiceId } });
                     if (!saved)
                         return fail('VERSION_CONFLICT', '状态已变化。', 409);
                     return ok({ session: publicState(state) });

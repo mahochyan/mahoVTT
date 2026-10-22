@@ -162,3 +162,16 @@ test('AI narrator endpoint returns text without mutating the session', async () 
     const loaded = await get(`/api/games/wrath-glory/sessions/${session.id}`);
     assert.equal(JSON.stringify(loaded.data.session.log), before);
 });
+
+test('AI GM endpoint returns a proposal without bypassing the rules engine', async () => {
+    const created = await post('/api/games/wrath-glory/sessions', { scenarioId: 'training' });
+    const session = created.data.session;
+    const before = JSON.stringify(session.log);
+    const r = await post(`/api/games/wrath-glory/sessions/${session.id}/gm`, { input: '我向训练机仆开火。' });
+    assert.equal(r.status, 200);
+    assert.equal(typeof r.data.text, 'string');
+    assert.ok(r.data.text.length > 0);
+    assert.equal(r.data.action, null);
+    const loaded = await get(`/api/games/wrath-glory/sessions/${session.id}`);
+    assert.equal(JSON.stringify(loaded.data.session.log), before);
+});

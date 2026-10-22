@@ -196,11 +196,14 @@ async function askGm() {
   button.disabled = true;
   $('narration').textContent = 'GM 正在读取场景…';
   try {
-    const result = await request(`/sessions/${sessionId}/narrate`, {
+    const result = await request(`/sessions/${sessionId}/gm`, {
       method: 'POST',
       body: JSON.stringify({ input }),
     });
-    $('narration').textContent = result.text;
+    if (result.session)
+      renderPlay(result.session);
+    const action = result.action?.type === 'choose' ? '（GM 已按你的描述推进场景）' : '';
+    $('narration').textContent = `${result.text}${action}${result.warning ? `（${result.warning}）` : ''}`;
     $('gm-input').value = '';
   } catch (error) {
     $('narration').textContent = `GM 暂时离线：${error.message}`;
