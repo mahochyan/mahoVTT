@@ -191,7 +191,11 @@ function appendCheckCard(match) {
   const numbers = document.createElement('span');
   numbers.className = 'check-numbers';
   numbers.textContent = `${icons} / ${dn}`;
-  summary.append(name, result, numbers);
+  numbers.title = '成功数 / 难度';
+  const toggle = document.createElement('span');
+  toggle.className = 'check-toggle';
+  toggle.textContent = '明细';
+  summary.append(name, result, numbers, toggle);
   if (attempt > 1) {
     const repeat = document.createElement('span');
     repeat.className = 'check-repeat';

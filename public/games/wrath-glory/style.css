@@ -148,4 +148,6 @@ h2 { font-size: 13px; letter-spacing: .1em; color: var(--muted); text-transform:
 .check-result.failure { color: var(--bad); background: #1a1113; border: 1px solid #3d2629; }
 .check-numbers { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
 .check-repeat { color: var(--faint); font-size: 12px; }
+.check-toggle { color: var(--faint); border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; font-size: 11px; }
+.check-card[open] .check-toggle { color: var(--text); border-color: var(--accent); }
 .check-body { border-top: 1px solid #1c2531; padding: 7px 12px 9px; color: var(--muted); font-size: 13px; display: grid; gap: 3px; }

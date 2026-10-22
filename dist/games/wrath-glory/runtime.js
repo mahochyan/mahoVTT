@@ -198,7 +198,7 @@ function createScenarioSession(id, pack) {
         flags: {},
         ending: null,
         result: null,
-        log: ['墓地夜班：原创中文改编，共五幕；官方数值请以本地规则书核对。'],
+        log: [],
     };
     enterScene(state, pack, pack.startScene);
     return state;
