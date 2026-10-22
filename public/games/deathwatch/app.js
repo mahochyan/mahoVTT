@@ -107,13 +107,12 @@ function fillCreation() {
     const stats = el('div', 'attrs');
     const preview = el('div', 'draft');
     box.append(name, chapter, specialty, choice, preview);
-    box._fields.attrs = stats;
     const onChange = () => { syncChoice(); syncSpec(id); };
     chapter.onchange = onChange;
     specialty.onchange = onChange;
     c1.onchange = onChange;
     c2.onchange = onChange;
-    box._fields = { name, chapter, specialty, c1, c2, choice };
+    box._fields = { name, chapter, specialty, c1, c2, choice, attrs: stats };
     slots.append(box);
   }
   const leader = $('#leader');
