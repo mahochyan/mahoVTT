@@ -11,6 +11,9 @@ let sessionId = localStorage.getItem(KEY);
 let renderedSessionId = null;
 let renderedLog = 0;
 let shownTab = 'party';
+let lastRenderedLine = '';
+let lastSceneHeading = '';
+const checkAttempts = new Map();
 
 async function request(path, options = {}) {
   const response = await fetch(API + path, {
@@ -117,6 +120,116 @@ function renderPending(s) {
     </div>`;
 }
 
+const LOG_TERMS = [
+  ['Graveyard Shift', '墓地夜班'],
+  ['Intro / Part I', '序章 · 第一幕'],
+  ['Part II', '第二幕'],
+  ['Part III', '第三幕'],
+  ['Part IV', '第四幕'],
+  ['Part V', '第五幕'],
+  ['intellect', '智力'],
+  ['investigation', '调查'],
+  ['awareness', '觉察'],
+  ['athletics', '运动'],
+  ['persuasion', '说服'],
+  ['insight', '洞察'],
+  ['intimidation', '威吓'],
+  ['scholar', '学识'],
+  ['stealth', '潜行'],
+  ['survival', '生存'],
+  ['ballisticSkill', '射击'],
+  ['weaponSkill', '格斗'],
+  ['Defence', '防御'],
+  ['Resilience', '抗性'],
+  ['Shock', '冲击'],
+  ['Wounds', '创伤'],
+  ['Determination', '决心检定'],
+  ['Exalted', '尊崇图标'],
+  ['Glory', '荣耀'],
+  ['Ruin', '毁灭'],
+  ['DN ', '难度 '],
+  ['Tier', '等级'],
+  ['五个 Part', '共五幕'],
+];
+
+function localiseLog(text) {
+  let out = String(text);
+  for (const [from, to] of LOG_TERMS)
+    out = out.split(from).join(to);
+  return out;
+}
+
+function appendSceneDivider(part, title) {
+  const node = document.createElement('div');
+  node.className = 'scene-divider';
+  const p = document.createElement('span');
+  p.textContent = part;
+  const h = document.createElement('b');
+  h.textContent = title;
+  node.append(p, h);
+  $('chat-stream').append(node);
+}
+
+function appendCheckCard(match) {
+  const [, who, skillRaw, facesRaw, iconsRaw, dnRaw, extra] = match;
+  const skill = skillRaw.replaceAll('+', '＋');
+  const icons = Number(iconsRaw);
+  const dn = Number(dnRaw);
+  const success = icons >= dn;
+  const attemptKey = `${skill}|${success}`;
+  const attempt = (checkAttempts.get(attemptKey) || 0) + 1;
+  checkAttempts.set(attemptKey, attempt);
+  const details = document.createElement('details');
+  details.className = 'check-card';
+  const summary = document.createElement('summary');
+  const name = document.createElement('span');
+  name.className = 'check-title';
+  name.textContent = skill;
+  const result = document.createElement('span');
+  result.className = `check-result ${success ? 'success' : 'failure'}`;
+  result.textContent = success ? '成功' : '失败';
+  const numbers = document.createElement('span');
+  numbers.className = 'check-numbers';
+  numbers.textContent = `${icons} / ${dn}`;
+  summary.append(name, result, numbers);
+  if (attempt > 1) {
+    const repeat = document.createElement('span');
+    repeat.className = 'check-repeat';
+    repeat.textContent = `第 ${attempt} 次`;
+    summary.append(repeat);
+  }
+  const body = document.createElement('div');
+  body.className = 'check-body';
+  const dice = document.createElement('div');
+  dice.textContent = `骰面：${facesRaw.split('、').join('、')}`;
+  const outcome = document.createElement('div');
+  outcome.textContent = `${who} · ${success ? `达成难度 ${dn}` : `未达到难度 ${dn}`}${extra ? `（${extra.replace(/^，/, '')}）` : ''}`;
+  body.append(dice, outcome);
+  details.append(summary, body);
+  $('chat-stream').append(details);
+}
+
+function appendLogLine(line) {
+  const text = localiseLog(line).trim();
+  if (!text || text === lastRenderedLine)
+    return;
+  lastRenderedLine = text;
+  const scene = text.match(/^【(.+?)】(.+)$/);
+  if (scene) {
+    if (text === lastSceneHeading)
+      return;
+    lastSceneHeading = text;
+    appendSceneDivider(scene[1], scene[2]);
+    return;
+  }
+  const check = text.match(/^(.+?) 进行 (.+?) 检定：(.+?)，(\d+) 个图标（难度 (\d+)(.*?)）。$/);
+  if (check) {
+    appendCheckCard(check);
+    return;
+  }
+  appendChat('fact', text);
+}
+
 function appendChat(role, text) {
   if (!text) return;
   const chat = $('chat');
@@ -145,9 +258,12 @@ function syncChat(s) {
     $('chat-stream').replaceChildren();
     renderedSessionId = s.id;
     renderedLog = 0;
+    lastRenderedLine = '';
+    lastSceneHeading = '';
+    checkAttempts.clear();
   }
   for (const line of s.log.slice(renderedLog))
-    appendChat('fact', line);
+    appendLogLine(line);
   renderedLog = s.log.length;
 }
 

@@ -192,7 +192,9 @@ async function main() {
         check('Graveyard Shift opens', await cdp.waitFor('!document.querySelector("#play").hidden && document.body.innerText.includes("停尸间")', 20000));
         check('Graveyard scene art loads', await cdp.waitFor('!!document.querySelector("#scene-art:not([hidden]) img")', 20000));
         await cdp.evaluate('document.querySelector("[data-choice]").click()');
-        check('Graveyard choice resolves', await cdp.waitFor('document.querySelectorAll("#log li").length > 1 && (document.body.innerText.includes("线索") || document.body.innerText.includes("检定"))', 20000));
+        check('Graveyard choice resolves', await cdp.waitFor('document.querySelectorAll("#chat-stream .check-card").length > 0', 20000));
+        const cardInfo = await cdp.evaluate(`(() => ({ cards: document.querySelectorAll('.check-card').length, summaries: [...document.querySelectorAll('.check-card summary')].map((x) => x.innerText), stream: (document.querySelector('#chat-stream')?.innerText || '').slice(-300) }))()`);
+        check('check result is a structured card', cardInfo.cards > 0 && cardInfo.summaries.some((x) => /成功|失败/.test(x)), JSON.stringify(cardInfo));
         check('desktop shell uses wide layout', await cdp.evaluate('document.querySelector(".app-shell").getBoundingClientRect().width > 1300'));
         const latinWords = await cdp.evaluate('(document.querySelector("main").innerText.match(/[A-Za-z]+/g) || [])');
         check('W&G visible text has no English labels', latinWords.length === 0, latinWords.slice(0, 8).join(','));

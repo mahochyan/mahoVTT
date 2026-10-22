@@ -135,6 +135,7 @@ function threatActor(spec) {
 }
 function enterScene(state, pack, sceneId) {
     const scene = findScene(pack, sceneId);
+    const changed = state.sceneId !== scene.id;
     state.sceneId = scene.id;
     state.sceneTitle = scene.title;
     state.scenePart = scene.part;
@@ -143,7 +144,8 @@ function enterScene(state, pack, sceneId) {
     state.enemies = scene.combat ? scene.combat.enemies.map((id) => threatActor(pack.threats[id])) : [];
     if (scene.ending)
         state.result = 'victory';
-    state.log.push(`【${scene.part}】${scene.title}`);
+    if (changed)
+        state.log.push(`【${scene.part}】${scene.title}`);
     if (scene.corruption)
         resolveCorruption(state, scene.corruption);
     if (scene.combat) {
