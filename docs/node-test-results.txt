@@ -1,0 +1,356 @@
+TAP version 13
+# Subtest: HTTP 创建、读取战役，公开视图无 DM 秘密
+ok 1 - HTTP 创建、读取战役，公开视图无 DM 秘密
+  ---
+  duration_ms: 181.439292
+  type: 'test'
+  ...
+# Subtest: OpenAI 兼容模型列表与密钥隐藏
+ok 2 - OpenAI 兼容模型列表与密钥隐藏
+  ---
+  duration_ms: 29.283869
+  type: 'test'
+  ...
+# Subtest: 真实 HTTP JSON 计划 + 中文 SSE 叙事，推理字段不显示
+ok 3 - 真实 HTTP JSON 计划 + 中文 SSE 叙事，推理字段不显示
+  ---
+  duration_ms: 56.225397
+  type: 'test'
+  ...
+# Subtest: 重复 HTTP 请求不会重复结算
+ok 4 - 重复 HTTP 请求不会重复结算
+  ---
+  duration_ms: 26.779593
+  type: 'test'
+  ...
+# Subtest: 两次非法 JSON 后失败，原状态不变
+ok 5 - 两次非法 JSON 后失败，原状态不变
+  ---
+  duration_ms: 36.480643
+  type: 'test'
+  ...
+# Subtest: 模型 500 不污染游戏状态
+ok 6 - 模型 500 不污染游戏状态
+  ---
+  duration_ms: 12.888931
+  type: 'test'
+  ...
+# Subtest: 流不完整：事实保留，重试只生成叙事
+ok 7 - 流不完整：事实保留，重试只生成叙事
+  ---
+  duration_ms: 33.17192
+  type: 'test'
+  ...
+# Subtest: Origin 防护拒绝跨站写操作
+ok 8 - Origin 防护拒绝跨站写操作
+  ---
+  duration_ms: 1.550725
+  type: 'test'
+  ...
+# Subtest: 人工改卡版本冲突不覆盖较新状态
+ok 9 - 人工改卡版本冲突不覆盖较新状态
+  ---
+  duration_ms: 14.257884
+  type: 'test'
+  ...
+# Subtest: 自由骰留骰史，但状态版本和 HP 不变
+ok 10 - 自由骰留骰史，但状态版本和 HP 不变
+  ---
+  duration_ms: 8.230474
+  type: 'test'
+  ...
+# Subtest: HTTP 导出导入为独立存档，不复制密钥
+ok 11 - HTTP 导出导入为独立存档，不复制密钥
+  ---
+  duration_ms: 17.995139
+  type: 'test'
+  ...
+# Subtest: 真实 SIGKILL 后已提交回合恢复，重发原 ID 不重做
+ok 12 - 真实 SIGKILL 后已提交回合恢复，重发原 ID 不重做
+  ---
+  duration_ms: 139.162115
+  type: 'test'
+  ...
+# Subtest: 计划尚未返回时 SIGKILL，重启后未执行动作标为失败
+ok 13 - 计划尚未返回时 SIGKILL，重启后未执行动作标为失败
+  ---
+  duration_ms: 127.877786
+  type: 'test'
+  ...
+# (node:2925) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: 骰子表达式、修正值与固定 RNG
+ok 14 - 骰子表达式、修正值与固定 RNG
+  ---
+  duration_ms: 2.394271
+  type: 'test'
+  ...
+# Subtest: 拒绝超量、非法骰子与非法 RNG
+ok 15 - 拒绝超量、非法骰子与非法 RNG
+  ---
+  duration_ms: 0.3806
+  type: 'test'
+  ...
+# Subtest: 优势和劣势只允许单个 d20
+ok 16 - 优势和劣势只允许单个 d20
+  ---
+  duration_ms: 0.258307
+  type: 'test'
+  ...
+# Subtest: 暴击只翻倍伤害骰，属性修正不变
+ok 17 - 暴击只翻倍伤害骰，属性修正不变
+  ---
+  duration_ms: 0.175653
+  type: 'test'
+  ...
+# Subtest: 原始状态不被规则函数修改
+ok 18 - 原始状态不被规则函数修改
+  ---
+  duration_ms: 2.828262
+  type: 'test'
+  ...
+# Subtest: AI 不能提交伤害、HP 或额外字段
+ok 19 - AI 不能提交伤害、HP 或额外字段
+  ---
+  duration_ms: 0.149454
+  type: 'test'
+  ...
+# Subtest: 玩家不能控制敌人或队友
+ok 20 - 玩家不能控制敌人或队友
+  ---
+  duration_ms: 0.357116
+  type: 'test'
+  ...
+# Subtest: 天然 1 未命中，但消耗动作
+ok 21 - 天然 1 未命中，但消耗动作
+  ---
+  duration_ms: 0.541161
+  type: 'test'
+  ...
+# Subtest: 天然 20 暴击且伤害结果不超过 HP 下限
+ok 22 - 天然 20 暴击且伤害结果不超过 HP 下限
+  ---
+  duration_ms: 0.649344
+  type: 'test'
+  ...
+# Subtest: 已消耗动作不能再次攻击
+ok 23 - 已消耗动作不能再次攻击
+  ---
+  duration_ms: 0.705118
+  type: 'test'
+  ...
+# Subtest: 攻击超距拒绝，无骰子或状态变化
+ok 24 - 攻击超距拒绝，无骰子或状态变化
+  ---
+  duration_ms: 0.383185
+  type: 'test'
+  ...
+# Subtest: 药水库存、治疗钳制和附赠动作
+ok 25 - 药水库存、治疗钳制和附赠动作
+  ---
+  duration_ms: 0.305638
+  type: 'test'
+  ...
+# Subtest: 满血或无药水不浪费资源
+ok 26 - 满血或无药水不浪费资源
+  ---
+  duration_ms: 0.288953
+  type: 'test'
+  ...
+# Subtest: 关闭的门阻挡寻路与视线
+ok 27 - 关闭的门阻挡寻路与视线
+  ---
+  duration_ms: 0.917716
+  type: 'test'
+  ...
+# Subtest: 可穿过友军但不能停在友军格
+ok 28 - 可穿过友军但不能停在友军格
+  ---
+  duration_ms: 0.1804
+  type: 'test'
+  ...
+# Subtest: 斜行不可穿墙角
+ok 29 - 斜行不可穿墙角
+  ---
+  duration_ms: 0.103986
+  type: 'test'
+  ...
+# Subtest: 开锁失败是 resolved 动作，不是非法命令
+ok 30 - 开锁失败是 resolved 动作，不是非法命令
+  ---
+  duration_ms: 1.405148
+  type: 'test'
+  ...
+# Subtest: 不能越过存活守卫取得任务钥匙
+ok 31 - 不能越过存活守卫取得任务钥匙
+  ---
+  duration_ms: 0.228393
+  type: 'test'
+  ...
+# Subtest: 容器一次性，换请求也不能再领取
+ok 32 - 容器一次性，换请求也不能再领取
+  ---
+  duration_ms: 0.612619
+  type: 'test'
+  ...
+# Subtest: 玩家视图不包含 DM 笔记、隐藏敌人或人格全文
+ok 33 - 玩家视图不包含 DM 笔记、隐藏敌人或人格全文
+  ---
+  duration_ms: 3.599288
+  type: 'test'
+  ...
+# Subtest: JSON 围栏与 think 内容隔离
+ok 34 - JSON 围栏与 think 内容隔离
+  ---
+  duration_ms: 0.328843
+  type: 'test'
+  ...
+# Subtest: SSE 解析支持 UTF-8 字节切分与 CRLF
+ok 35 - SSE 解析支持 UTF-8 字节切分与 CRLF
+  ---
+  duration_ms: 4.130405
+  type: 'test'
+  ...
+# Subtest: 同一 seed 的规则骰子可复现
+ok 36 - 同一 seed 的规则骰子可复现
+  ---
+  duration_ms: 0.275423
+  type: 'test'
+  ...
+# Subtest: 完整冒险：六敌人、三主步骤、三可选目标、结局
+ok 37 - 完整冒险：六敌人、三主步骤、三可选目标、结局
+  ---
+  duration_ms: 134.110894
+  type: 'test'
+  ...
+# Subtest: 完整冒险的多个固定随机序列均可通关
+ok 38 - 完整冒险的多个固定随机序列均可通关
+  ---
+  duration_ms: 453.182402
+  type: 'test'
+  ...
+# Subtest: 奖励重复交付不会再发放
+ok 39 - 奖励重复交付不会再发放
+  ---
+  duration_ms: 86.192571
+  type: 'test'
+  ...
+# Subtest: 状态导入基础校验：HP、ID、枚举、位置和碰撞
+ok 40 - 状态导入基础校验：HP、ID、枚举、位置和碰撞
+  ---
+  duration_ms: 1.135093
+  type: 'test'
+  ...
+# Subtest: 战斗胜利后对倒地队员急救，不让探索卡死
+ok 41 - 战斗胜利后对倒地队员急救，不让探索卡死
+  ---
+  duration_ms: 0.585829
+  type: 'test'
+  ...
+# Subtest: 可以与可见同伴对话，不会改名或消耗隐藏资源
+ok 42 - 可以与可见同伴对话，不会改名或消耗隐藏资源
+  ---
+  duration_ms: 0.319349
+  type: 'test'
+  ...
+# Subtest: 移动到通道中的敌人仍可见且可被攻击
+ok 43 - 移动到通道中的敌人仍可见且可被攻击
+  ---
+  duration_ms: 4.088502
+  type: 'test'
+  ...
+# (node:2926) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: 幂等请求只创建一个回合
+ok 44 - 幂等请求只创建一个回合
+  ---
+  duration_ms: 12.11487
+  type: 'test'
+  ...
+# Subtest: 同 ID 不同内容返回 409
+ok 45 - 同 ID 不同内容返回 409
+  ---
+  duration_ms: 1.79343
+  type: 'test'
+  ...
+# Subtest: 事务同时落库状态、镜像、骰子、事件与事实
+ok 46 - 事务同时落库状态、镜像、骰子、事件与事实
+  ---
+  duration_ms: 5.457856
+  type: 'test'
+  ...
+# Subtest: 已提交请求重复返回旧回合，不重复发事件
+ok 47 - 已提交请求重复返回旧回合，不重复发事件
+  ---
+  duration_ms: 2.132408
+  type: 'test'
+  ...
+# Subtest: 租约内另一请求不能抢占
+ok 48 - 租约内另一请求不能抢占
+  ---
+  duration_ms: 1.397757
+  type: 'test'
+  ...
+# Subtest: 租约过期重入后，迟到执行者不能写库或释放新租约
+ok 49 - 租约过期重入后，迟到执行者不能写库或释放新租约
+  ---
+  duration_ms: 2.383745
+  type: 'test'
+  ...
+# Subtest: 模型期间人工改卡令旧计划失效
+ok 50 - 模型期间人工改卡令旧计划失效
+  ---
+  duration_ms: 2.402864
+  type: 'test'
+  ...
+# Subtest: 叙事失败、重试不修改游戏状态
+ok 51 - 叙事失败、重试不修改游戏状态
+  ---
+  duration_ms: 5.145057
+  type: 'test'
+  ...
+# Subtest: 旧叙事尝试不能覆盖新叙事
+ok 52 - 旧叙事尝试不能覆盖新叙事
+  ---
+  duration_ms: 2.37364
+  type: 'test'
+  ...
+# Subtest: 进程恢复区分尚未结算与已结算叙事
+ok 53 - 进程恢复区分尚未结算与已结算叙事
+  ---
+  duration_ms: 2.793249
+  type: 'test'
+  ...
+# Subtest: 提交发生错误时回滚整个事务
+ok 54 - 提交发生错误时回滚整个事务
+  ---
+  duration_ms: 1.832559
+  type: 'test'
+  ...
+# Subtest: 导出导入保留状态、实体引用和全部记录
+ok 55 - 导出导入保留状态、实体引用和全部记录
+  ---
+  duration_ms: 251.135908
+  type: 'test'
+  ...
+# Subtest: 错误校验和与越界存档拒绝，原库不受污染
+ok 56 - 错误校验和与越界存档拒绝，原库不受污染
+  ---
+  duration_ms: 3.758637
+  type: 'test'
+  ...
+# Subtest: 不同存档使用相同内容 ID 但互不污染
+ok 57 - 不同存档使用相同内容 ID 但互不污染
+  ---
+  duration_ms: 1.842514
+  type: 'test'
+  ...
+1..57
+# tests 57
+# suites 0
+# pass 57
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 789.544326

@@ -1,0 +1,13 @@
+{
+  "archiveExtracted": true,
+  "nodeModulesPresent": false,
+  "health": true,
+  "staticAssets": true,
+  "campaignCreated": true,
+  "questAccepted": true,
+  "stateVersion": 1,
+  "SSECompleted": true,
+  "verifyScript": true,
+  "node": "v22.16.0",
+  "environment": "Linux x64, fresh extracted directory"
+}

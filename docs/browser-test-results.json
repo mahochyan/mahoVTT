@@ -1,0 +1,31 @@
+{
+  "transport": "isolated HTTP bridge",
+  "passed": 6,
+  "results": [
+    {
+      "test": "create campaign and render character/map",
+      "pass": true
+    },
+    {
+      "test": "quest and free-text streaming action",
+      "pass": true
+    },
+    {
+      "test": "stale manual edit rejected without overwriting HP",
+      "pass": true
+    },
+    {
+      "test": "UI direct attack executes authoritative dice/combat",
+      "pass": true
+    },
+    {
+      "test": "broken narration retries without rerolling or changing HP",
+      "pass": true
+    },
+    {
+      "test": "player-only worldbook, mobile width, no JS exceptions",
+      "pass": true
+    }
+  ],
+  "pageErrors": []
+}

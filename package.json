@@ -1,0 +1,23 @@
+{
+  "name": "graylight-sagas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "灰灯纪事：本地 AI 地下城，完整可玩冒险与服务端权威规则。",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "node dist/server.js",
+    "test": "node scripts/test.mjs",
+    "build": "tsc -p tsconfig.json",
+    "ai:ping": "node scripts/ai-ping.mjs",
+    "test:e2e": "python tests/e2e.py",
+    "verify": "node scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "@types/node": "25.1.0"
+  }
+}

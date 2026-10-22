@@ -1,0 +1,939 @@
+{
+  "format": "graylight-save",
+  "formatVersion": 1,
+  "contentVersion": "1.0.0",
+  "exportedAt": "2026-10-22T06:18:05.474Z",
+  "state": {
+    "schemaVersion": 1,
+    "contentVersion": "1.0.0",
+    "id": "122827c8-715a-4d03-94c0-086b481d5c61",
+    "name": "灰灯镇：无声钟塔",
+    "playerName": "旅人",
+    "version": 6,
+    "createdAt": "2026-10-22T06:18:05.425Z",
+    "worldTime": 36,
+    "status": "playing",
+    "actors": [
+      {
+        "id": "pc",
+        "name": "旅人",
+        "role": "战士",
+        "x": 14,
+        "y": 15,
+        "kind": "pc",
+        "controller": "player",
+        "faction": "party",
+        "hp": 36,
+        "maxHp": 36,
+        "tempHp": 0,
+        "ac": 16,
+        "speed": 6,
+        "attack": 5,
+        "damage": "1d8+3",
+        "range": 1,
+        "weapon": "短剑",
+        "dex": 2,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 2
+        },
+        "resources": {
+          "heal": 0,
+          "secondWind": 1
+        },
+        "conditions": [],
+        "roomId": "hall",
+        "description": "",
+        "personality": ""
+      },
+      {
+        "id": "ranger",
+        "name": "沈鸢",
+        "role": "游侠",
+        "x": 13,
+        "y": 14,
+        "kind": "companion",
+        "controller": "ai",
+        "faction": "party",
+        "hp": 28,
+        "maxHp": 28,
+        "tempHp": 0,
+        "ac": 14,
+        "speed": 6,
+        "attack": 5,
+        "damage": "1d6+3",
+        "range": 12,
+        "weapon": "短弓",
+        "dex": 2,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 2
+        },
+        "resources": {
+          "heal": 0,
+          "secondWind": 0
+        },
+        "conditions": [],
+        "roomId": "hall",
+        "description": "",
+        "personality": "沈鸢曾替商队勘路，熟悉碎石脚步声与弓弦受潮的手感。她偏爱有遮蔽的射击位置，先处理脆弱远程目标，不会为了漂亮战果阻断队友撤退。说话简洁，偶尔用干涩的玩笑缓和紧张。她可以反对你的策略，但不会替你做决定。固定称呼：沈鸢。"
+      },
+      {
+        "id": "cleric",
+        "name": "洛恩",
+        "role": "牧师",
+        "x": 13,
+        "y": 15,
+        "kind": "companion",
+        "controller": "ai",
+        "faction": "party",
+        "hp": 30,
+        "maxHp": 30,
+        "tempHp": 0,
+        "ac": 15,
+        "speed": 6,
+        "attack": 5,
+        "damage": "1d6+2",
+        "range": 1,
+        "weapon": "铜柄短杖",
+        "dex": 2,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 2
+        },
+        "resources": {
+          "heal": 4,
+          "secondWind": 0
+        },
+        "conditions": [],
+        "roomId": "hall",
+        "description": "",
+        "personality": "洛恩侍奉守夜之灯，认为先把伤口包扎好，再讨论信仰比较实际。他优先救起倒地者，再照顾重伤队友；没有需要治疗的人时会用灯辉术作战。治疗有次数限制，不能通过叙事凭空恢复。说话温和而具体，不说空洞神谕。固定称呼：洛恩。"
+      },
+      {
+        "id": "g1",
+        "name": "灰齿哨兵",
+        "role": "哥布林",
+        "x": 13,
+        "y": 14,
+        "kind": "enemy",
+        "controller": "engine",
+        "faction": "hostile",
+        "hp": 0,
+        "maxHp": 9,
+        "tempHp": 0,
+        "ac": 11,
+        "speed": 6,
+        "attack": 3,
+        "damage": "1d4+1",
+        "range": 1,
+        "weapon": "短剑",
+        "dex": 1,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 0
+        },
+        "resources": {
+          "heal": 0,
+          "secondWind": 0
+        },
+        "conditions": [
+          {
+            "id": "downed",
+            "remainingRounds": -1
+          }
+        ],
+        "roomId": "hall",
+        "description": "",
+        "personality": ""
+      },
+      {
+        "id": "g2",
+        "name": "灰齿守卫",
+        "role": "哥布林",
+        "x": 19,
+        "y": 14,
+        "kind": "enemy",
+        "controller": "engine",
+        "faction": "hostile",
+        "hp": 10,
+        "maxHp": 10,
+        "tempHp": 0,
+        "ac": 12,
+        "speed": 6,
+        "attack": 3,
+        "damage": "1d4+1",
+        "range": 1,
+        "weapon": "短剑",
+        "dex": 1,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 0
+        },
+        "resources": {
+          "heal": 0,
+          "secondWind": 0
+        },
+        "conditions": [],
+        "roomId": "guard",
+        "description": "",
+        "personality": ""
+      },
+      {
+        "id": "g3",
+        "name": "灰齿刀手",
+        "role": "哥布林",
+        "x": 21,
+        "y": 18,
+        "kind": "enemy",
+        "controller": "engine",
+        "faction": "hostile",
+        "hp": 10,
+        "maxHp": 10,
+        "tempHp": 0,
+        "ac": 12,
+        "speed": 6,
+        "attack": 3,
+        "damage": "1d4+1",
+        "range": 1,
+        "weapon": "短剑",
+        "dex": 1,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 0
+        },
+        "resources": {
+          "heal": 0,
+          "secondWind": 0
+        },
+        "conditions": [],
+        "roomId": "guard",
+        "description": "",
+        "personality": ""
+      },
+      {
+        "id": "g4",
+        "name": "灰齿弓手",
+        "role": "弓手",
+        "x": 23,
+        "y": 14,
+        "kind": "enemy",
+        "controller": "engine",
+        "faction": "hostile",
+        "hp": 8,
+        "maxHp": 8,
+        "tempHp": 0,
+        "ac": 11,
+        "speed": 6,
+        "attack": 3,
+        "damage": "1d4+1",
+        "range": 10,
+        "weapon": "短弓",
+        "dex": 1,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 0
+        },
+        "resources": {
+          "heal": 0,
+          "secondWind": 0
+        },
+        "conditions": [],
+        "roomId": "guard",
+        "description": "",
+        "personality": ""
+      },
+      {
+        "id": "g5",
+        "name": "灰齿斥候",
+        "role": "弓手",
+        "x": 23,
+        "y": 18,
+        "kind": "enemy",
+        "controller": "engine",
+        "faction": "hostile",
+        "hp": 8,
+        "maxHp": 8,
+        "tempHp": 0,
+        "ac": 11,
+        "speed": 6,
+        "attack": 3,
+        "damage": "1d4+1",
+        "range": 10,
+        "weapon": "短弓",
+        "dex": 1,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 0
+        },
+        "resources": {
+          "heal": 0,
+          "secondWind": 0
+        },
+        "conditions": [],
+        "roomId": "guard",
+        "description": "",
+        "personality": ""
+      },
+      {
+        "id": "guardian",
+        "name": "祭坛守卫",
+        "role": "构装体",
+        "x": 24,
+        "y": 6,
+        "kind": "enemy",
+        "controller": "engine",
+        "faction": "hostile",
+        "hp": 28,
+        "maxHp": 28,
+        "tempHp": 0,
+        "ac": 14,
+        "speed": 6,
+        "attack": 4,
+        "damage": "1d8+2",
+        "range": 1,
+        "weapon": "短剑",
+        "dex": 1,
+        "skills": {
+          "athletics": 5,
+          "perception": 3,
+          "thieves_tools": 2
+        },
+        "inventory": {
+          "potion": 0
+        },
+        "resources": {
+          "heal": 0,
+          "secondWind": 0
+        },
+        "conditions": [],
+        "roomId": "altar",
+        "description": "",
+        "personality": ""
+      }
+    ],
+    "objects": [
+      {
+        "id": "ileya",
+        "name": "伊蕾娅",
+        "kind": "npc",
+        "x": 5,
+        "y": 14,
+        "roomId": "entry",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "守灯人。接受委托，或交付祭坛钥匙。"
+      },
+      {
+        "id": "camp",
+        "name": "营地火盆",
+        "kind": "rest",
+        "x": 2,
+        "y": 14,
+        "roomId": "entry",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "非战斗时长休。恢复 HP 与职业能力，不补充药水。"
+      },
+      {
+        "id": "door_entry",
+        "name": "营地石门",
+        "kind": "door",
+        "x": 9,
+        "y": 15,
+        "roomId": "entry",
+        "open": true,
+        "locked": false,
+        "looted": false,
+        "description": "推开石门。"
+      },
+      {
+        "id": "door_guard",
+        "name": "守卫室木门",
+        "kind": "door",
+        "x": 15,
+        "y": 15,
+        "roomId": "hall",
+        "open": true,
+        "locked": false,
+        "looted": false,
+        "description": "门后有兵器的声音。"
+      },
+      {
+        "id": "door_store",
+        "name": "储藏室门",
+        "kind": "door",
+        "x": 12,
+        "y": 10,
+        "roomId": "hall",
+        "open": false,
+        "locked": true,
+        "looted": false,
+        "description": "旧锁仍能工作。可撬锁，也可以强行推开。"
+      },
+      {
+        "id": "door_west",
+        "name": "祭坛侧门",
+        "kind": "door",
+        "x": 16,
+        "y": 6,
+        "roomId": "store",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "一扇未上锁的铜门。"
+      },
+      {
+        "id": "door_north",
+        "name": "祭坛铁门",
+        "kind": "door",
+        "x": 22,
+        "y": 11,
+        "roomId": "guard",
+        "open": false,
+        "locked": true,
+        "looted": false,
+        "description": "可以强行推开，不需要任务钥匙。"
+      },
+      {
+        "id": "supply",
+        "name": "守卫补给箱",
+        "kind": "chest",
+        "x": 17,
+        "y": 18,
+        "roomId": "guard",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "两瓶药水与十枚金币。"
+      },
+      {
+        "id": "store_chest",
+        "name": "旧药箱",
+        "kind": "chest",
+        "x": 14,
+        "y": 8,
+        "roomId": "store",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "两瓶尚未失效的药水。"
+      },
+      {
+        "id": "ledger",
+        "name": "维护账簿",
+        "kind": "clue",
+        "x": 14,
+        "y": 4,
+        "roomId": "store",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "查看维护记录。"
+      },
+      {
+        "id": "inscription",
+        "name": "调谐铭文",
+        "kind": "clue",
+        "x": 10,
+        "y": 8,
+        "roomId": "store",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "阅读留下余振的方法。"
+      },
+      {
+        "id": "migu",
+        "name": "米咕",
+        "kind": "npc",
+        "x": 10,
+        "y": 4,
+        "roomId": "store",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "一名躲藏的哥布林搬运工。"
+      },
+      {
+        "id": "altar",
+        "name": "调谐祭坛",
+        "kind": "altar",
+        "x": 26,
+        "y": 6,
+        "roomId": "altar",
+        "open": false,
+        "locked": false,
+        "looted": false,
+        "description": "守卫倒下后可以校准或取走钥匙。"
+      }
+    ],
+    "combat": {
+      "id": "ed753637-3c51-442d-9a95-6f13f3d1147e",
+      "order": [
+        "pc",
+        "ranger",
+        "g4",
+        "g5",
+        "cleric",
+        "g2",
+        "g3"
+      ],
+      "active": 0,
+      "round": 1,
+      "serial": 1,
+      "actionUsed": false,
+      "bonusUsed": false,
+      "movementUsed": 0
+    },
+    "discovered": [
+      "entry",
+      "hall",
+      "guard"
+    ],
+    "flags": {
+      "accepted": true,
+      "key": false,
+      "returned": false,
+      "ledger": false,
+      "inscription": false,
+      "rescued": false,
+      "calibrated": false
+    },
+    "claims": [
+      "defeat:g1"
+    ],
+    "gold": 0,
+    "xp": 15,
+    "journal": [
+      "雨丝顺着营地的帆布边缘落下。北坡的钟塔像一枚折断的指针，插在没有钟声的夜色里。伊蕾娅把一盏修好的铜灯推向你：『请把调谐钥匙带回来。若遇见还活着的人，也请带他们走。』沈鸢检查弓弦，洛恩把最后一卷绷带收进衣袋。此刻，决定权在你。",
+      "接受伊蕾娅的委托：取回调谐钥匙，报酬六十金币。",
+      "裂石走廊：狭长石廊被铜管穿过。北面的木门通向旧储藏室，东侧传来武器磕碰的声音。",
+      "守卫室：折断的长桌被用作掩体。墙角堆着灰齿群的行囊，北面铁门通往祭坛下层。"
+    ],
+    "summary": "你与沈鸢、洛恩来到灰灯镇的钟塔营地。",
+    "summaryThroughVersion": 0,
+    "ending": null
+  },
+  "turns": [
+    {
+      "id": "a7239adf-8395-4c45-81bf-cb1e133043e7",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "request_id": "example-0",
+      "request_hash": "d4748cb1ab2e58fe860f9e52657776d76b3f42b52cc51188afc4004453ad4bae",
+      "input": "示例行动",
+      "source": "player",
+      "plan_json": "[{\"type\":\"talk\",\"actorId\":\"pc\",\"targetId\":\"ileya\"}]",
+      "base_version": 0,
+      "resolution_status": "resolved",
+      "narration_status": "done",
+      "facts_json": "[{\"type\":\"quest_step_completed\",\"text\":\"接受委托：取回祭坛钥匙，再交给伊蕾娅。\",\"actorId\":\"pc\",\"data\":{\"stepId\":\"accept\"}},{\"type\":\"npc_talked\",\"text\":\"伊蕾娅：「钥匙在祭坛上。先确保你们都能回来。」\",\"actorId\":\"pc\",\"data\":{\"npcId\":\"ileya\"}}]",
+      "narrative": "接受委托：取回祭坛钥匙，再交给伊蕾娅。\n伊蕾娅：「钥匙在祭坛上。先确保你们都能回来。」",
+      "error": null,
+      "model": "seeded-rules-demo",
+      "created_at": "2026-10-22T06:18:05.437Z",
+      "epoch": 1,
+      "narration_attempt": 0,
+      "latency_ms": 0,
+      "context_json": "{\"schemaVersion\":1,\"contentVersion\":\"1.0.0\",\"id\":\"122827c8-715a-4d03-94c0-086b481d5c61\",\"name\":\"灰灯镇：无声钟塔\",\"playerName\":\"旅人\",\"version\":1,\"createdAt\":\"2026-10-22T06:18:05.425Z\",\"worldTime\":6,\"status\":\"playing\",\"actors\":[{\"id\":\"pc\",\"name\":\"旅人\",\"role\":\"战士\",\"x\":4,\"y\":15,\"kind\":\"pc\",\"controller\":\"player\",\"faction\":\"party\",\"hp\":36,\"maxHp\":36,\"tempHp\":0,\"ac\":16,\"speed\":6,\"attack\":5,\"damage\":\"1d8+3\",\"range\":1,\"weapon\":\"短剑\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":1},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"ranger\",\"name\":\"沈鸢\",\"role\":\"游侠\",\"x\":3,\"y\":16,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":5,\"damage\":\"1d6+3\",\"range\":12,\"weapon\":\"短弓\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"沈鸢曾替商队勘路，熟悉碎石脚步声与弓弦受潮的手感。她偏爱有遮蔽的射击位置，先处理脆弱远程目标，不会为了漂亮战果阻断队友撤退。说话简洁，偶尔用干涩的玩笑缓和紧张。她可以反对你的策略，但不会替你做决定。固定称呼：沈鸢。\"},{\"id\":\"cleric\",\"name\":\"洛恩\",\"role\":\"牧师\",\"x\":4,\"y\":16,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":30,\"maxHp\":30,\"tempHp\":0,\"ac\":15,\"speed\":6,\"attack\":5,\"damage\":\"1d6+2\",\"range\":1,\"weapon\":\"铜柄短杖\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":4,\"secondWind\":0},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"洛恩侍奉守夜之灯，认为先把伤口包扎好，再讨论信仰比较实际。他优先救起倒地者，再照顾重伤队友；没有需要治疗的人时会用灯辉术作战。治疗有次数限制，不能通过叙事凭空恢复。说话温和而具体，不说空洞神谕。固定称呼：洛恩。\"},{\"id\":\"g1\",\"name\":\"灰齿哨兵\",\"role\":\"哥布林\",\"x\":13,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":9,\"maxHp\":9,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g2\",\"name\":\"灰齿守卫\",\"role\":\"哥布林\",\"x\":19,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g3\",\"name\":\"灰齿刀手\",\"role\":\"哥布林\",\"x\":21,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g4\",\"name\":\"灰齿弓手\",\"role\":\"弓手\",\"x\":23,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g5\",\"name\":\"灰齿斥候\",\"role\":\"弓手\",\"x\":23,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"guardian\",\"name\":\"祭坛守卫\",\"role\":\"构装体\",\"x\":24,\"y\":6,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":4,\"damage\":\"1d8+2\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"altar\",\"description\":\"\",\"personality\":\"\"}],\"objects\":[{\"id\":\"ileya\",\"name\":\"伊蕾娅\",\"kind\":\"npc\",\"x\":5,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守灯人。接受委托，或交付祭坛钥匙。\"},{\"id\":\"camp\",\"name\":\"营地火盆\",\"kind\":\"rest\",\"x\":2,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"非战斗时长休。恢复 HP 与职业能力，不补充药水。\"},{\"id\":\"door_entry\",\"name\":\"营地石门\",\"kind\":\"door\",\"x\":9,\"y\":15,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"推开石门。\"},{\"id\":\"door_guard\",\"name\":\"守卫室木门\",\"kind\":\"door\",\"x\":15,\"y\":15,\"roomId\":\"hall\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"门后有兵器的声音。\"},{\"id\":\"door_store\",\"name\":\"储藏室门\",\"kind\":\"door\",\"x\":12,\"y\":10,\"roomId\":\"hall\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"旧锁仍能工作。可撬锁，也可以强行推开。\"},{\"id\":\"door_west\",\"name\":\"祭坛侧门\",\"kind\":\"door\",\"x\":16,\"y\":6,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一扇未上锁的铜门。\"},{\"id\":\"door_north\",\"name\":\"祭坛铁门\",\"kind\":\"door\",\"x\":22,\"y\":11,\"roomId\":\"guard\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"可以强行推开，不需要任务钥匙。\"},{\"id\":\"supply\",\"name\":\"守卫补给箱\",\"kind\":\"chest\",\"x\":17,\"y\":18,\"roomId\":\"guard\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶药水与十枚金币。\"},{\"id\":\"store_chest\",\"name\":\"旧药箱\",\"kind\":\"chest\",\"x\":14,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶尚未失效的药水。\"},{\"id\":\"ledger\",\"name\":\"维护账簿\",\"kind\":\"clue\",\"x\":14,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"查看维护记录。\"},{\"id\":\"inscription\",\"name\":\"调谐铭文\",\"kind\":\"clue\",\"x\":10,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"阅读留下余振的方法。\"},{\"id\":\"migu\",\"name\":\"米咕\",\"kind\":\"npc\",\"x\":10,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一名躲藏的哥布林搬运工。\"},{\"id\":\"altar\",\"name\":\"调谐祭坛\",\"kind\":\"altar\",\"x\":26,\"y\":6,\"roomId\":\"altar\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守卫倒下后可以校准或取走钥匙。\"}],\"combat\":null,\"discovered\":[\"entry\"],\"flags\":{\"accepted\":true,\"key\":false,\"returned\":false,\"ledger\":false,\"inscription\":false,\"rescued\":false,\"calibrated\":false},\"claims\":[],\"gold\":0,\"xp\":0,\"journal\":[\"雨丝顺着营地的帆布边缘落下。北坡的钟塔像一枚折断的指针，插在没有钟声的夜色里。伊蕾娅把一盏修好的铜灯推向你：『请把调谐钥匙带回来。若遇见还活着的人，也请带他们走。』沈鸢检查弓弦，洛恩把最后一卷绷带收进衣袋。此刻，决定权在你。\",\"接受伊蕾娅的委托：取回调谐钥匙，报酬六十金币。\"],\"summary\":\"你与沈鸢、洛恩来到灰灯镇的钟塔营地。\",\"summaryThroughVersion\":0,\"ending\":null}"
+    },
+    {
+      "id": "736f9178-ba26-4fb6-acc3-a64904bf58b0",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "request_id": "example-1",
+      "request_hash": "873a7d14f918828122152d94e1e8e107f2052bb8abe131d0226c2bdd313ce62b",
+      "input": "示例行动",
+      "source": "player",
+      "plan_json": "[{\"type\":\"move\",\"actorId\":\"pc\",\"path\":[{\"x\":5,\"y\":15},{\"x\":6,\"y\":15},{\"x\":7,\"y\":15},{\"x\":8,\"y\":15}]}]",
+      "base_version": 1,
+      "resolution_status": "resolved",
+      "narration_status": "done",
+      "facts_json": "[{\"type\":\"moved\",\"text\":\"旅人移动 4 格。\",\"actorId\":\"pc\",\"data\":{\"from\":{\"x\":4,\"y\":15},\"to\":{\"x\":8,\"y\":15},\"steps\":4}},{\"type\":\"moved\",\"text\":\"沈鸢跟随队伍。\",\"actorId\":\"ranger\",\"data\":{\"from\":{\"x\":3,\"y\":16},\"to\":{\"x\":7,\"y\":14},\"steps\":4}},{\"type\":\"moved\",\"text\":\"洛恩跟随队伍。\",\"actorId\":\"cleric\",\"data\":{\"from\":{\"x\":4,\"y\":16},\"to\":{\"x\":7,\"y\":15},\"steps\":3}}]",
+      "narrative": "旅人移动 4 格。\n沈鸢跟随队伍。\n洛恩跟随队伍。",
+      "error": null,
+      "model": "seeded-rules-demo",
+      "created_at": "2026-10-22T06:18:05.451Z",
+      "epoch": 2,
+      "narration_attempt": 0,
+      "latency_ms": 0,
+      "context_json": "{\"schemaVersion\":1,\"contentVersion\":\"1.0.0\",\"id\":\"122827c8-715a-4d03-94c0-086b481d5c61\",\"name\":\"灰灯镇：无声钟塔\",\"playerName\":\"旅人\",\"version\":2,\"createdAt\":\"2026-10-22T06:18:05.425Z\",\"worldTime\":12,\"status\":\"playing\",\"actors\":[{\"id\":\"pc\",\"name\":\"旅人\",\"role\":\"战士\",\"x\":8,\"y\":15,\"kind\":\"pc\",\"controller\":\"player\",\"faction\":\"party\",\"hp\":36,\"maxHp\":36,\"tempHp\":0,\"ac\":16,\"speed\":6,\"attack\":5,\"damage\":\"1d8+3\",\"range\":1,\"weapon\":\"短剑\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":1},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"ranger\",\"name\":\"沈鸢\",\"role\":\"游侠\",\"x\":7,\"y\":14,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":5,\"damage\":\"1d6+3\",\"range\":12,\"weapon\":\"短弓\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"沈鸢曾替商队勘路，熟悉碎石脚步声与弓弦受潮的手感。她偏爱有遮蔽的射击位置，先处理脆弱远程目标，不会为了漂亮战果阻断队友撤退。说话简洁，偶尔用干涩的玩笑缓和紧张。她可以反对你的策略，但不会替你做决定。固定称呼：沈鸢。\"},{\"id\":\"cleric\",\"name\":\"洛恩\",\"role\":\"牧师\",\"x\":7,\"y\":15,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":30,\"maxHp\":30,\"tempHp\":0,\"ac\":15,\"speed\":6,\"attack\":5,\"damage\":\"1d6+2\",\"range\":1,\"weapon\":\"铜柄短杖\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":4,\"secondWind\":0},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"洛恩侍奉守夜之灯，认为先把伤口包扎好，再讨论信仰比较实际。他优先救起倒地者，再照顾重伤队友；没有需要治疗的人时会用灯辉术作战。治疗有次数限制，不能通过叙事凭空恢复。说话温和而具体，不说空洞神谕。固定称呼：洛恩。\"},{\"id\":\"g1\",\"name\":\"灰齿哨兵\",\"role\":\"哥布林\",\"x\":13,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":9,\"maxHp\":9,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g2\",\"name\":\"灰齿守卫\",\"role\":\"哥布林\",\"x\":19,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g3\",\"name\":\"灰齿刀手\",\"role\":\"哥布林\",\"x\":21,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g4\",\"name\":\"灰齿弓手\",\"role\":\"弓手\",\"x\":23,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g5\",\"name\":\"灰齿斥候\",\"role\":\"弓手\",\"x\":23,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"guardian\",\"name\":\"祭坛守卫\",\"role\":\"构装体\",\"x\":24,\"y\":6,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":4,\"damage\":\"1d8+2\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"altar\",\"description\":\"\",\"personality\":\"\"}],\"objects\":[{\"id\":\"ileya\",\"name\":\"伊蕾娅\",\"kind\":\"npc\",\"x\":5,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守灯人。接受委托，或交付祭坛钥匙。\"},{\"id\":\"camp\",\"name\":\"营地火盆\",\"kind\":\"rest\",\"x\":2,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"非战斗时长休。恢复 HP 与职业能力，不补充药水。\"},{\"id\":\"door_entry\",\"name\":\"营地石门\",\"kind\":\"door\",\"x\":9,\"y\":15,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"推开石门。\"},{\"id\":\"door_guard\",\"name\":\"守卫室木门\",\"kind\":\"door\",\"x\":15,\"y\":15,\"roomId\":\"hall\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"门后有兵器的声音。\"},{\"id\":\"door_store\",\"name\":\"储藏室门\",\"kind\":\"door\",\"x\":12,\"y\":10,\"roomId\":\"hall\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"旧锁仍能工作。可撬锁，也可以强行推开。\"},{\"id\":\"door_west\",\"name\":\"祭坛侧门\",\"kind\":\"door\",\"x\":16,\"y\":6,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一扇未上锁的铜门。\"},{\"id\":\"door_north\",\"name\":\"祭坛铁门\",\"kind\":\"door\",\"x\":22,\"y\":11,\"roomId\":\"guard\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"可以强行推开，不需要任务钥匙。\"},{\"id\":\"supply\",\"name\":\"守卫补给箱\",\"kind\":\"chest\",\"x\":17,\"y\":18,\"roomId\":\"guard\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶药水与十枚金币。\"},{\"id\":\"store_chest\",\"name\":\"旧药箱\",\"kind\":\"chest\",\"x\":14,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶尚未失效的药水。\"},{\"id\":\"ledger\",\"name\":\"维护账簿\",\"kind\":\"clue\",\"x\":14,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"查看维护记录。\"},{\"id\":\"inscription\",\"name\":\"调谐铭文\",\"kind\":\"clue\",\"x\":10,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"阅读留下余振的方法。\"},{\"id\":\"migu\",\"name\":\"米咕\",\"kind\":\"npc\",\"x\":10,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一名躲藏的哥布林搬运工。\"},{\"id\":\"altar\",\"name\":\"调谐祭坛\",\"kind\":\"altar\",\"x\":26,\"y\":6,\"roomId\":\"altar\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守卫倒下后可以校准或取走钥匙。\"}],\"combat\":null,\"discovered\":[\"entry\"],\"flags\":{\"accepted\":true,\"key\":false,\"returned\":false,\"ledger\":false,\"inscription\":false,\"rescued\":false,\"calibrated\":false},\"claims\":[],\"gold\":0,\"xp\":0,\"journal\":[\"雨丝顺着营地的帆布边缘落下。北坡的钟塔像一枚折断的指针，插在没有钟声的夜色里。伊蕾娅把一盏修好的铜灯推向你：『请把调谐钥匙带回来。若遇见还活着的人，也请带他们走。』沈鸢检查弓弦，洛恩把最后一卷绷带收进衣袋。此刻，决定权在你。\",\"接受伊蕾娅的委托：取回调谐钥匙，报酬六十金币。\"],\"summary\":\"你与沈鸢、洛恩来到灰灯镇的钟塔营地。\",\"summaryThroughVersion\":0,\"ending\":null}"
+    },
+    {
+      "id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "request_id": "example-2",
+      "request_hash": "d9d2cba10596bc0b87313eb88e528696643c75c9da47fc41acd364602d5566ef",
+      "input": "示例行动",
+      "source": "player",
+      "plan_json": "[{\"type\":\"interact\",\"actorId\":\"pc\",\"targetId\":\"door_entry\",\"interactionId\":\"force\"}]",
+      "base_version": 2,
+      "resolution_status": "resolved",
+      "narration_status": "done",
+      "facts_json": "[{\"type\":\"door_opened\",\"text\":\"营地石门打开了。\",\"actorId\":\"pc\",\"data\":{\"objectId\":\"door_entry\"}},{\"type\":\"room_discovered\",\"text\":\"发现「裂石走廊」。狭长石廊被铜管穿过。北面的木门通向旧储藏室，东侧传来武器磕碰的声音。\",\"actorId\":\"pc\",\"data\":{\"roomId\":\"hall\"}},{\"type\":\"encounter_started\",\"text\":\"进入战斗。按先攻顺序行动。\",\"actorId\":\"pc\",\"data\":{\"order\":[\"cleric\",\"ranger\",\"pc\",\"g1\"]}},{\"type\":\"turn_started\",\"text\":\"轮到洛恩。\",\"actorId\":\"pc\"}]",
+      "narrative": "营地石门打开了。\n发现「裂石走廊」。狭长石廊被铜管穿过。北面的木门通向旧储藏室，东侧传来武器磕碰的声音。\n进入战斗。按先攻顺序行动。\n轮到洛恩。",
+      "error": null,
+      "model": "seeded-rules-demo",
+      "created_at": "2026-10-22T06:18:05.457Z",
+      "epoch": 3,
+      "narration_attempt": 0,
+      "latency_ms": 0,
+      "context_json": "{\"schemaVersion\":1,\"contentVersion\":\"1.0.0\",\"id\":\"122827c8-715a-4d03-94c0-086b481d5c61\",\"name\":\"灰灯镇：无声钟塔\",\"playerName\":\"旅人\",\"version\":3,\"createdAt\":\"2026-10-22T06:18:05.425Z\",\"worldTime\":18,\"status\":\"playing\",\"actors\":[{\"id\":\"pc\",\"name\":\"旅人\",\"role\":\"战士\",\"x\":8,\"y\":15,\"kind\":\"pc\",\"controller\":\"player\",\"faction\":\"party\",\"hp\":36,\"maxHp\":36,\"tempHp\":0,\"ac\":16,\"speed\":6,\"attack\":5,\"damage\":\"1d8+3\",\"range\":1,\"weapon\":\"短剑\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":1},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"ranger\",\"name\":\"沈鸢\",\"role\":\"游侠\",\"x\":7,\"y\":14,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":5,\"damage\":\"1d6+3\",\"range\":12,\"weapon\":\"短弓\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"沈鸢曾替商队勘路，熟悉碎石脚步声与弓弦受潮的手感。她偏爱有遮蔽的射击位置，先处理脆弱远程目标，不会为了漂亮战果阻断队友撤退。说话简洁，偶尔用干涩的玩笑缓和紧张。她可以反对你的策略，但不会替你做决定。固定称呼：沈鸢。\"},{\"id\":\"cleric\",\"name\":\"洛恩\",\"role\":\"牧师\",\"x\":7,\"y\":15,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":30,\"maxHp\":30,\"tempHp\":0,\"ac\":15,\"speed\":6,\"attack\":5,\"damage\":\"1d6+2\",\"range\":1,\"weapon\":\"铜柄短杖\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":4,\"secondWind\":0},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"洛恩侍奉守夜之灯，认为先把伤口包扎好，再讨论信仰比较实际。他优先救起倒地者，再照顾重伤队友；没有需要治疗的人时会用灯辉术作战。治疗有次数限制，不能通过叙事凭空恢复。说话温和而具体，不说空洞神谕。固定称呼：洛恩。\"},{\"id\":\"g1\",\"name\":\"灰齿哨兵\",\"role\":\"哥布林\",\"x\":13,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":9,\"maxHp\":9,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g2\",\"name\":\"灰齿守卫\",\"role\":\"哥布林\",\"x\":19,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g3\",\"name\":\"灰齿刀手\",\"role\":\"哥布林\",\"x\":21,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g4\",\"name\":\"灰齿弓手\",\"role\":\"弓手\",\"x\":23,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g5\",\"name\":\"灰齿斥候\",\"role\":\"弓手\",\"x\":23,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"guardian\",\"name\":\"祭坛守卫\",\"role\":\"构装体\",\"x\":24,\"y\":6,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":4,\"damage\":\"1d8+2\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"altar\",\"description\":\"\",\"personality\":\"\"}],\"objects\":[{\"id\":\"ileya\",\"name\":\"伊蕾娅\",\"kind\":\"npc\",\"x\":5,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守灯人。接受委托，或交付祭坛钥匙。\"},{\"id\":\"camp\",\"name\":\"营地火盆\",\"kind\":\"rest\",\"x\":2,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"非战斗时长休。恢复 HP 与职业能力，不补充药水。\"},{\"id\":\"door_entry\",\"name\":\"营地石门\",\"kind\":\"door\",\"x\":9,\"y\":15,\"roomId\":\"entry\",\"open\":true,\"locked\":false,\"looted\":false,\"description\":\"推开石门。\"},{\"id\":\"door_guard\",\"name\":\"守卫室木门\",\"kind\":\"door\",\"x\":15,\"y\":15,\"roomId\":\"hall\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"门后有兵器的声音。\"},{\"id\":\"door_store\",\"name\":\"储藏室门\",\"kind\":\"door\",\"x\":12,\"y\":10,\"roomId\":\"hall\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"旧锁仍能工作。可撬锁，也可以强行推开。\"},{\"id\":\"door_west\",\"name\":\"祭坛侧门\",\"kind\":\"door\",\"x\":16,\"y\":6,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一扇未上锁的铜门。\"},{\"id\":\"door_north\",\"name\":\"祭坛铁门\",\"kind\":\"door\",\"x\":22,\"y\":11,\"roomId\":\"guard\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"可以强行推开，不需要任务钥匙。\"},{\"id\":\"supply\",\"name\":\"守卫补给箱\",\"kind\":\"chest\",\"x\":17,\"y\":18,\"roomId\":\"guard\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶药水与十枚金币。\"},{\"id\":\"store_chest\",\"name\":\"旧药箱\",\"kind\":\"chest\",\"x\":14,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶尚未失效的药水。\"},{\"id\":\"ledger\",\"name\":\"维护账簿\",\"kind\":\"clue\",\"x\":14,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"查看维护记录。\"},{\"id\":\"inscription\",\"name\":\"调谐铭文\",\"kind\":\"clue\",\"x\":10,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"阅读留下余振的方法。\"},{\"id\":\"migu\",\"name\":\"米咕\",\"kind\":\"npc\",\"x\":10,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一名躲藏的哥布林搬运工。\"},{\"id\":\"altar\",\"name\":\"调谐祭坛\",\"kind\":\"altar\",\"x\":26,\"y\":6,\"roomId\":\"altar\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守卫倒下后可以校准或取走钥匙。\"}],\"combat\":{\"id\":\"f503c764-0eae-4dc1-9173-ca7a8b97b24b\",\"order\":[\"cleric\",\"ranger\",\"pc\",\"g1\"],\"active\":0,\"round\":1,\"serial\":1,\"actionUsed\":false,\"bonusUsed\":false,\"movementUsed\":0},\"discovered\":[\"entry\",\"hall\"],\"flags\":{\"accepted\":true,\"key\":false,\"returned\":false,\"ledger\":false,\"inscription\":false,\"rescued\":false,\"calibrated\":false},\"claims\":[],\"gold\":0,\"xp\":0,\"journal\":[\"雨丝顺着营地的帆布边缘落下。北坡的钟塔像一枚折断的指针，插在没有钟声的夜色里。伊蕾娅把一盏修好的铜灯推向你：『请把调谐钥匙带回来。若遇见还活着的人，也请带他们走。』沈鸢检查弓弦，洛恩把最后一卷绷带收进衣袋。此刻，决定权在你。\",\"接受伊蕾娅的委托：取回调谐钥匙，报酬六十金币。\",\"裂石走廊：狭长石廊被铜管穿过。北面的木门通向旧储藏室，东侧传来武器磕碰的声音。\"],\"summary\":\"你与沈鸢、洛恩来到灰灯镇的钟塔营地。\",\"summaryThroughVersion\":0,\"ending\":null}"
+    },
+    {
+      "id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "request_id": "example-3",
+      "request_hash": "01a9d0549c239b1e0f4e7b5e35b1858a7c8d4e7e3d5a895e0dbf3fd00011d24e",
+      "input": "示例行动",
+      "source": "player",
+      "plan_json": "[{\"type\":\"use_ability\",\"actorId\":\"cleric\",\"abilityId\":\"radiance\",\"targetId\":\"g1\"}]",
+      "base_version": 3,
+      "resolution_status": "resolved",
+      "narration_status": "done",
+      "facts_json": "[{\"type\":\"attack_rolled\",\"text\":\"洛恩攻击灰齿哨兵：22 对 AC 11。\",\"actorId\":\"cleric\",\"targetId\":\"g1\",\"data\":{\"diceId\":\"81267107-f650-4a63-abbc-466bec1922a9\",\"total\":22,\"ac\":11,\"natural\":17}},{\"type\":\"hit\",\"text\":\"命中。\",\"actorId\":\"cleric\",\"targetId\":\"g1\",\"data\":{}},{\"type\":\"damage_dealt\",\"text\":\"灰齿哨兵受到 11 点伤害，HP 9 → 0。\",\"actorId\":\"cleric\",\"targetId\":\"g1\",\"data\":{\"before\":9,\"after\":0,\"amount\":11,\"temp\":0}},{\"type\":\"defeated\",\"text\":\"灰齿哨兵被击败。\",\"actorId\":\"cleric\",\"targetId\":\"g1\",\"data\":{}},{\"type\":\"xp_granted\",\"text\":\"队伍获得 15 点经验。\",\"actorId\":\"cleric\",\"data\":{\"amount\":15,\"sourceId\":\"g1\"}},{\"type\":\"encounter_ended\",\"text\":\"战斗结束。HP 与消耗品保持当前数值；你重新带队探索。\",\"actorId\":\"cleric\"}]",
+      "narrative": "洛恩攻击灰齿哨兵：22 对 AC 11。\n命中。\n灰齿哨兵受到 11 点伤害，HP 9 → 0。\n灰齿哨兵被击败。\n队伍获得 15 点经验。\n战斗结束。HP 与消耗品保持当前数值；你重新带队探索。",
+      "error": null,
+      "model": "seeded-rules-demo",
+      "created_at": "2026-10-22T06:18:05.459Z",
+      "epoch": 4,
+      "narration_attempt": 0,
+      "latency_ms": 0,
+      "context_json": "{\"schemaVersion\":1,\"contentVersion\":\"1.0.0\",\"id\":\"122827c8-715a-4d03-94c0-086b481d5c61\",\"name\":\"灰灯镇：无声钟塔\",\"playerName\":\"旅人\",\"version\":4,\"createdAt\":\"2026-10-22T06:18:05.425Z\",\"worldTime\":24,\"status\":\"playing\",\"actors\":[{\"id\":\"pc\",\"name\":\"旅人\",\"role\":\"战士\",\"x\":8,\"y\":15,\"kind\":\"pc\",\"controller\":\"player\",\"faction\":\"party\",\"hp\":36,\"maxHp\":36,\"tempHp\":0,\"ac\":16,\"speed\":6,\"attack\":5,\"damage\":\"1d8+3\",\"range\":1,\"weapon\":\"短剑\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":1},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"ranger\",\"name\":\"沈鸢\",\"role\":\"游侠\",\"x\":7,\"y\":14,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":5,\"damage\":\"1d6+3\",\"range\":12,\"weapon\":\"短弓\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"沈鸢曾替商队勘路，熟悉碎石脚步声与弓弦受潮的手感。她偏爱有遮蔽的射击位置，先处理脆弱远程目标，不会为了漂亮战果阻断队友撤退。说话简洁，偶尔用干涩的玩笑缓和紧张。她可以反对你的策略，但不会替你做决定。固定称呼：沈鸢。\"},{\"id\":\"cleric\",\"name\":\"洛恩\",\"role\":\"牧师\",\"x\":7,\"y\":15,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":30,\"maxHp\":30,\"tempHp\":0,\"ac\":15,\"speed\":6,\"attack\":5,\"damage\":\"1d6+2\",\"range\":1,\"weapon\":\"铜柄短杖\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":4,\"secondWind\":0},\"conditions\":[],\"roomId\":\"entry\",\"description\":\"\",\"personality\":\"洛恩侍奉守夜之灯，认为先把伤口包扎好，再讨论信仰比较实际。他优先救起倒地者，再照顾重伤队友；没有需要治疗的人时会用灯辉术作战。治疗有次数限制，不能通过叙事凭空恢复。说话温和而具体，不说空洞神谕。固定称呼：洛恩。\"},{\"id\":\"g1\",\"name\":\"灰齿哨兵\",\"role\":\"哥布林\",\"x\":13,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":0,\"maxHp\":9,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[{\"id\":\"downed\",\"remainingRounds\":-1}],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g2\",\"name\":\"灰齿守卫\",\"role\":\"哥布林\",\"x\":19,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g3\",\"name\":\"灰齿刀手\",\"role\":\"哥布林\",\"x\":21,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g4\",\"name\":\"灰齿弓手\",\"role\":\"弓手\",\"x\":23,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g5\",\"name\":\"灰齿斥候\",\"role\":\"弓手\",\"x\":23,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"guardian\",\"name\":\"祭坛守卫\",\"role\":\"构装体\",\"x\":24,\"y\":6,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":4,\"damage\":\"1d8+2\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"altar\",\"description\":\"\",\"personality\":\"\"}],\"objects\":[{\"id\":\"ileya\",\"name\":\"伊蕾娅\",\"kind\":\"npc\",\"x\":5,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守灯人。接受委托，或交付祭坛钥匙。\"},{\"id\":\"camp\",\"name\":\"营地火盆\",\"kind\":\"rest\",\"x\":2,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"非战斗时长休。恢复 HP 与职业能力，不补充药水。\"},{\"id\":\"door_entry\",\"name\":\"营地石门\",\"kind\":\"door\",\"x\":9,\"y\":15,\"roomId\":\"entry\",\"open\":true,\"locked\":false,\"looted\":false,\"description\":\"推开石门。\"},{\"id\":\"door_guard\",\"name\":\"守卫室木门\",\"kind\":\"door\",\"x\":15,\"y\":15,\"roomId\":\"hall\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"门后有兵器的声音。\"},{\"id\":\"door_store\",\"name\":\"储藏室门\",\"kind\":\"door\",\"x\":12,\"y\":10,\"roomId\":\"hall\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"旧锁仍能工作。可撬锁，也可以强行推开。\"},{\"id\":\"door_west\",\"name\":\"祭坛侧门\",\"kind\":\"door\",\"x\":16,\"y\":6,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一扇未上锁的铜门。\"},{\"id\":\"door_north\",\"name\":\"祭坛铁门\",\"kind\":\"door\",\"x\":22,\"y\":11,\"roomId\":\"guard\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"可以强行推开，不需要任务钥匙。\"},{\"id\":\"supply\",\"name\":\"守卫补给箱\",\"kind\":\"chest\",\"x\":17,\"y\":18,\"roomId\":\"guard\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶药水与十枚金币。\"},{\"id\":\"store_chest\",\"name\":\"旧药箱\",\"kind\":\"chest\",\"x\":14,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶尚未失效的药水。\"},{\"id\":\"ledger\",\"name\":\"维护账簿\",\"kind\":\"clue\",\"x\":14,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"查看维护记录。\"},{\"id\":\"inscription\",\"name\":\"调谐铭文\",\"kind\":\"clue\",\"x\":10,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"阅读留下余振的方法。\"},{\"id\":\"migu\",\"name\":\"米咕\",\"kind\":\"npc\",\"x\":10,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一名躲藏的哥布林搬运工。\"},{\"id\":\"altar\",\"name\":\"调谐祭坛\",\"kind\":\"altar\",\"x\":26,\"y\":6,\"roomId\":\"altar\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守卫倒下后可以校准或取走钥匙。\"}],\"combat\":null,\"discovered\":[\"entry\",\"hall\"],\"flags\":{\"accepted\":true,\"key\":false,\"returned\":false,\"ledger\":false,\"inscription\":false,\"rescued\":false,\"calibrated\":false},\"claims\":[\"defeat:g1\"],\"gold\":0,\"xp\":15,\"journal\":[\"雨丝顺着营地的帆布边缘落下。北坡的钟塔像一枚折断的指针，插在没有钟声的夜色里。伊蕾娅把一盏修好的铜灯推向你：『请把调谐钥匙带回来。若遇见还活着的人，也请带他们走。』沈鸢检查弓弦，洛恩把最后一卷绷带收进衣袋。此刻，决定权在你。\",\"接受伊蕾娅的委托：取回调谐钥匙，报酬六十金币。\",\"裂石走廊：狭长石廊被铜管穿过。北面的木门通向旧储藏室，东侧传来武器磕碰的声音。\"],\"summary\":\"你与沈鸢、洛恩来到灰灯镇的钟塔营地。\",\"summaryThroughVersion\":0,\"ending\":null}"
+    },
+    {
+      "id": "19eaebaa-f20f-4542-8a06-e268f9848041",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "request_id": "example-4",
+      "request_hash": "8aace376a02b48a79661dca594017231c600440e5842b1691908e0ad13ec33f0",
+      "input": "示例行动",
+      "source": "player",
+      "plan_json": "[{\"type\":\"move\",\"actorId\":\"pc\",\"path\":[{\"x\":9,\"y\":15},{\"x\":10,\"y\":15},{\"x\":11,\"y\":15},{\"x\":12,\"y\":15},{\"x\":13,\"y\":15},{\"x\":14,\"y\":15}]}]",
+      "base_version": 4,
+      "resolution_status": "resolved",
+      "narration_status": "done",
+      "facts_json": "[{\"type\":\"moved\",\"text\":\"旅人移动 6 格。\",\"actorId\":\"pc\",\"data\":{\"from\":{\"x\":8,\"y\":15},\"to\":{\"x\":14,\"y\":15},\"steps\":6}},{\"type\":\"moved\",\"text\":\"沈鸢跟随队伍。\",\"actorId\":\"ranger\",\"data\":{\"from\":{\"x\":7,\"y\":14},\"to\":{\"x\":13,\"y\":14},\"steps\":6}},{\"type\":\"moved\",\"text\":\"洛恩跟随队伍。\",\"actorId\":\"cleric\",\"data\":{\"from\":{\"x\":7,\"y\":15},\"to\":{\"x\":13,\"y\":15},\"steps\":6}}]",
+      "narrative": "旅人移动 6 格。\n沈鸢跟随队伍。\n洛恩跟随队伍。",
+      "error": null,
+      "model": "seeded-rules-demo",
+      "created_at": "2026-10-22T06:18:05.470Z",
+      "epoch": 5,
+      "narration_attempt": 0,
+      "latency_ms": 0,
+      "context_json": "{\"schemaVersion\":1,\"contentVersion\":\"1.0.0\",\"id\":\"122827c8-715a-4d03-94c0-086b481d5c61\",\"name\":\"灰灯镇：无声钟塔\",\"playerName\":\"旅人\",\"version\":5,\"createdAt\":\"2026-10-22T06:18:05.425Z\",\"worldTime\":30,\"status\":\"playing\",\"actors\":[{\"id\":\"pc\",\"name\":\"旅人\",\"role\":\"战士\",\"x\":14,\"y\":15,\"kind\":\"pc\",\"controller\":\"player\",\"faction\":\"party\",\"hp\":36,\"maxHp\":36,\"tempHp\":0,\"ac\":16,\"speed\":6,\"attack\":5,\"damage\":\"1d8+3\",\"range\":1,\"weapon\":\"短剑\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":1},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"ranger\",\"name\":\"沈鸢\",\"role\":\"游侠\",\"x\":13,\"y\":14,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":5,\"damage\":\"1d6+3\",\"range\":12,\"weapon\":\"短弓\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"沈鸢曾替商队勘路，熟悉碎石脚步声与弓弦受潮的手感。她偏爱有遮蔽的射击位置，先处理脆弱远程目标，不会为了漂亮战果阻断队友撤退。说话简洁，偶尔用干涩的玩笑缓和紧张。她可以反对你的策略，但不会替你做决定。固定称呼：沈鸢。\"},{\"id\":\"cleric\",\"name\":\"洛恩\",\"role\":\"牧师\",\"x\":13,\"y\":15,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":30,\"maxHp\":30,\"tempHp\":0,\"ac\":15,\"speed\":6,\"attack\":5,\"damage\":\"1d6+2\",\"range\":1,\"weapon\":\"铜柄短杖\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":4,\"secondWind\":0},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"洛恩侍奉守夜之灯，认为先把伤口包扎好，再讨论信仰比较实际。他优先救起倒地者，再照顾重伤队友；没有需要治疗的人时会用灯辉术作战。治疗有次数限制，不能通过叙事凭空恢复。说话温和而具体，不说空洞神谕。固定称呼：洛恩。\"},{\"id\":\"g1\",\"name\":\"灰齿哨兵\",\"role\":\"哥布林\",\"x\":13,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":0,\"maxHp\":9,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[{\"id\":\"downed\",\"remainingRounds\":-1}],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g2\",\"name\":\"灰齿守卫\",\"role\":\"哥布林\",\"x\":19,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g3\",\"name\":\"灰齿刀手\",\"role\":\"哥布林\",\"x\":21,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g4\",\"name\":\"灰齿弓手\",\"role\":\"弓手\",\"x\":23,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g5\",\"name\":\"灰齿斥候\",\"role\":\"弓手\",\"x\":23,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"guardian\",\"name\":\"祭坛守卫\",\"role\":\"构装体\",\"x\":24,\"y\":6,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":4,\"damage\":\"1d8+2\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"altar\",\"description\":\"\",\"personality\":\"\"}],\"objects\":[{\"id\":\"ileya\",\"name\":\"伊蕾娅\",\"kind\":\"npc\",\"x\":5,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守灯人。接受委托，或交付祭坛钥匙。\"},{\"id\":\"camp\",\"name\":\"营地火盆\",\"kind\":\"rest\",\"x\":2,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"非战斗时长休。恢复 HP 与职业能力，不补充药水。\"},{\"id\":\"door_entry\",\"name\":\"营地石门\",\"kind\":\"door\",\"x\":9,\"y\":15,\"roomId\":\"entry\",\"open\":true,\"locked\":false,\"looted\":false,\"description\":\"推开石门。\"},{\"id\":\"door_guard\",\"name\":\"守卫室木门\",\"kind\":\"door\",\"x\":15,\"y\":15,\"roomId\":\"hall\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"门后有兵器的声音。\"},{\"id\":\"door_store\",\"name\":\"储藏室门\",\"kind\":\"door\",\"x\":12,\"y\":10,\"roomId\":\"hall\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"旧锁仍能工作。可撬锁，也可以强行推开。\"},{\"id\":\"door_west\",\"name\":\"祭坛侧门\",\"kind\":\"door\",\"x\":16,\"y\":6,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一扇未上锁的铜门。\"},{\"id\":\"door_north\",\"name\":\"祭坛铁门\",\"kind\":\"door\",\"x\":22,\"y\":11,\"roomId\":\"guard\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"可以强行推开，不需要任务钥匙。\"},{\"id\":\"supply\",\"name\":\"守卫补给箱\",\"kind\":\"chest\",\"x\":17,\"y\":18,\"roomId\":\"guard\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶药水与十枚金币。\"},{\"id\":\"store_chest\",\"name\":\"旧药箱\",\"kind\":\"chest\",\"x\":14,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶尚未失效的药水。\"},{\"id\":\"ledger\",\"name\":\"维护账簿\",\"kind\":\"clue\",\"x\":14,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"查看维护记录。\"},{\"id\":\"inscription\",\"name\":\"调谐铭文\",\"kind\":\"clue\",\"x\":10,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"阅读留下余振的方法。\"},{\"id\":\"migu\",\"name\":\"米咕\",\"kind\":\"npc\",\"x\":10,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一名躲藏的哥布林搬运工。\"},{\"id\":\"altar\",\"name\":\"调谐祭坛\",\"kind\":\"altar\",\"x\":26,\"y\":6,\"roomId\":\"altar\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守卫倒下后可以校准或取走钥匙。\"}],\"combat\":null,\"discovered\":[\"entry\",\"hall\"],\"flags\":{\"accepted\":true,\"key\":false,\"returned\":false,\"ledger\":false,\"inscription\":false,\"rescued\":false,\"calibrated\":false},\"claims\":[\"defeat:g1\"],\"gold\":0,\"xp\":15,\"journal\":[\"雨丝顺着营地的帆布边缘落下。北坡的钟塔像一枚折断的指针，插在没有钟声的夜色里。伊蕾娅把一盏修好的铜灯推向你：『请把调谐钥匙带回来。若遇见还活着的人，也请带他们走。』沈鸢检查弓弦，洛恩把最后一卷绷带收进衣袋。此刻，决定权在你。\",\"接受伊蕾娅的委托：取回调谐钥匙，报酬六十金币。\",\"裂石走廊：狭长石廊被铜管穿过。北面的木门通向旧储藏室，东侧传来武器磕碰的声音。\"],\"summary\":\"你与沈鸢、洛恩来到灰灯镇的钟塔营地。\",\"summaryThroughVersion\":0,\"ending\":null}"
+    },
+    {
+      "id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "request_id": "example-5",
+      "request_hash": "2ee4ee1d7aa13a79d7debba9ee38b1348224654c20a11fbb4cecb1dc36e1b417",
+      "input": "示例行动",
+      "source": "player",
+      "plan_json": "[{\"type\":\"interact\",\"actorId\":\"pc\",\"targetId\":\"door_guard\",\"interactionId\":\"force\"}]",
+      "base_version": 5,
+      "resolution_status": "resolved",
+      "narration_status": "done",
+      "facts_json": "[{\"type\":\"door_opened\",\"text\":\"守卫室木门打开了。\",\"actorId\":\"pc\",\"data\":{\"objectId\":\"door_guard\"}},{\"type\":\"room_discovered\",\"text\":\"发现「守卫室」。折断的长桌被用作掩体。墙角堆着灰齿群的行囊，北面铁门通往祭坛下层。\",\"actorId\":\"pc\",\"data\":{\"roomId\":\"guard\"}},{\"type\":\"encounter_started\",\"text\":\"进入战斗。按先攻顺序行动。\",\"actorId\":\"pc\",\"data\":{\"order\":[\"pc\",\"ranger\",\"g4\",\"g5\",\"cleric\",\"g2\",\"g3\"]}},{\"type\":\"turn_started\",\"text\":\"轮到旅人。\",\"actorId\":\"pc\"}]",
+      "narrative": "守卫室木门打开了。\n发现「守卫室」。折断的长桌被用作掩体。墙角堆着灰齿群的行囊，北面铁门通往祭坛下层。\n进入战斗。按先攻顺序行动。\n轮到旅人。",
+      "error": null,
+      "model": "seeded-rules-demo",
+      "created_at": "2026-10-22T06:18:05.473Z",
+      "epoch": 6,
+      "narration_attempt": 0,
+      "latency_ms": 0,
+      "context_json": "{\"schemaVersion\":1,\"contentVersion\":\"1.0.0\",\"id\":\"122827c8-715a-4d03-94c0-086b481d5c61\",\"name\":\"灰灯镇：无声钟塔\",\"playerName\":\"旅人\",\"version\":6,\"createdAt\":\"2026-10-22T06:18:05.425Z\",\"worldTime\":36,\"status\":\"playing\",\"actors\":[{\"id\":\"pc\",\"name\":\"旅人\",\"role\":\"战士\",\"x\":14,\"y\":15,\"kind\":\"pc\",\"controller\":\"player\",\"faction\":\"party\",\"hp\":36,\"maxHp\":36,\"tempHp\":0,\"ac\":16,\"speed\":6,\"attack\":5,\"damage\":\"1d8+3\",\"range\":1,\"weapon\":\"短剑\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":1},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"ranger\",\"name\":\"沈鸢\",\"role\":\"游侠\",\"x\":13,\"y\":14,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":5,\"damage\":\"1d6+3\",\"range\":12,\"weapon\":\"短弓\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"沈鸢曾替商队勘路，熟悉碎石脚步声与弓弦受潮的手感。她偏爱有遮蔽的射击位置，先处理脆弱远程目标，不会为了漂亮战果阻断队友撤退。说话简洁，偶尔用干涩的玩笑缓和紧张。她可以反对你的策略，但不会替你做决定。固定称呼：沈鸢。\"},{\"id\":\"cleric\",\"name\":\"洛恩\",\"role\":\"牧师\",\"x\":13,\"y\":15,\"kind\":\"companion\",\"controller\":\"ai\",\"faction\":\"party\",\"hp\":30,\"maxHp\":30,\"tempHp\":0,\"ac\":15,\"speed\":6,\"attack\":5,\"damage\":\"1d6+2\",\"range\":1,\"weapon\":\"铜柄短杖\",\"dex\":2,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":2},\"resources\":{\"heal\":4,\"secondWind\":0},\"conditions\":[],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"洛恩侍奉守夜之灯，认为先把伤口包扎好，再讨论信仰比较实际。他优先救起倒地者，再照顾重伤队友；没有需要治疗的人时会用灯辉术作战。治疗有次数限制，不能通过叙事凭空恢复。说话温和而具体，不说空洞神谕。固定称呼：洛恩。\"},{\"id\":\"g1\",\"name\":\"灰齿哨兵\",\"role\":\"哥布林\",\"x\":13,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":0,\"maxHp\":9,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[{\"id\":\"downed\",\"remainingRounds\":-1}],\"roomId\":\"hall\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g2\",\"name\":\"灰齿守卫\",\"role\":\"哥布林\",\"x\":19,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g3\",\"name\":\"灰齿刀手\",\"role\":\"哥布林\",\"x\":21,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":10,\"maxHp\":10,\"tempHp\":0,\"ac\":12,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g4\",\"name\":\"灰齿弓手\",\"role\":\"弓手\",\"x\":23,\"y\":14,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"g5\",\"name\":\"灰齿斥候\",\"role\":\"弓手\",\"x\":23,\"y\":18,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":8,\"maxHp\":8,\"tempHp\":0,\"ac\":11,\"speed\":6,\"attack\":3,\"damage\":\"1d4+1\",\"range\":10,\"weapon\":\"短弓\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"guard\",\"description\":\"\",\"personality\":\"\"},{\"id\":\"guardian\",\"name\":\"祭坛守卫\",\"role\":\"构装体\",\"x\":24,\"y\":6,\"kind\":\"enemy\",\"controller\":\"engine\",\"faction\":\"hostile\",\"hp\":28,\"maxHp\":28,\"tempHp\":0,\"ac\":14,\"speed\":6,\"attack\":4,\"damage\":\"1d8+2\",\"range\":1,\"weapon\":\"短剑\",\"dex\":1,\"skills\":{\"athletics\":5,\"perception\":3,\"thieves_tools\":2},\"inventory\":{\"potion\":0},\"resources\":{\"heal\":0,\"secondWind\":0},\"conditions\":[],\"roomId\":\"altar\",\"description\":\"\",\"personality\":\"\"}],\"objects\":[{\"id\":\"ileya\",\"name\":\"伊蕾娅\",\"kind\":\"npc\",\"x\":5,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守灯人。接受委托，或交付祭坛钥匙。\"},{\"id\":\"camp\",\"name\":\"营地火盆\",\"kind\":\"rest\",\"x\":2,\"y\":14,\"roomId\":\"entry\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"非战斗时长休。恢复 HP 与职业能力，不补充药水。\"},{\"id\":\"door_entry\",\"name\":\"营地石门\",\"kind\":\"door\",\"x\":9,\"y\":15,\"roomId\":\"entry\",\"open\":true,\"locked\":false,\"looted\":false,\"description\":\"推开石门。\"},{\"id\":\"door_guard\",\"name\":\"守卫室木门\",\"kind\":\"door\",\"x\":15,\"y\":15,\"roomId\":\"hall\",\"open\":true,\"locked\":false,\"looted\":false,\"description\":\"门后有兵器的声音。\"},{\"id\":\"door_store\",\"name\":\"储藏室门\",\"kind\":\"door\",\"x\":12,\"y\":10,\"roomId\":\"hall\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"旧锁仍能工作。可撬锁，也可以强行推开。\"},{\"id\":\"door_west\",\"name\":\"祭坛侧门\",\"kind\":\"door\",\"x\":16,\"y\":6,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一扇未上锁的铜门。\"},{\"id\":\"door_north\",\"name\":\"祭坛铁门\",\"kind\":\"door\",\"x\":22,\"y\":11,\"roomId\":\"guard\",\"open\":false,\"locked\":true,\"looted\":false,\"description\":\"可以强行推开，不需要任务钥匙。\"},{\"id\":\"supply\",\"name\":\"守卫补给箱\",\"kind\":\"chest\",\"x\":17,\"y\":18,\"roomId\":\"guard\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶药水与十枚金币。\"},{\"id\":\"store_chest\",\"name\":\"旧药箱\",\"kind\":\"chest\",\"x\":14,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"两瓶尚未失效的药水。\"},{\"id\":\"ledger\",\"name\":\"维护账簿\",\"kind\":\"clue\",\"x\":14,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"查看维护记录。\"},{\"id\":\"inscription\",\"name\":\"调谐铭文\",\"kind\":\"clue\",\"x\":10,\"y\":8,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"阅读留下余振的方法。\"},{\"id\":\"migu\",\"name\":\"米咕\",\"kind\":\"npc\",\"x\":10,\"y\":4,\"roomId\":\"store\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"一名躲藏的哥布林搬运工。\"},{\"id\":\"altar\",\"name\":\"调谐祭坛\",\"kind\":\"altar\",\"x\":26,\"y\":6,\"roomId\":\"altar\",\"open\":false,\"locked\":false,\"looted\":false,\"description\":\"守卫倒下后可以校准或取走钥匙。\"}],\"combat\":{\"id\":\"ed753637-3c51-442d-9a95-6f13f3d1147e\",\"order\":[\"pc\",\"ranger\",\"g4\",\"g5\",\"cleric\",\"g2\",\"g3\"],\"active\":0,\"round\":1,\"serial\":1,\"actionUsed\":false,\"bonusUsed\":false,\"movementUsed\":0},\"discovered\":[\"entry\",\"hall\",\"guard\"],\"flags\":{\"accepted\":true,\"key\":false,\"returned\":false,\"ledger\":false,\"inscription\":false,\"rescued\":false,\"calibrated\":false},\"claims\":[\"defeat:g1\"],\"gold\":0,\"xp\":15,\"journal\":[\"雨丝顺着营地的帆布边缘落下。北坡的钟塔像一枚折断的指针，插在没有钟声的夜色里。伊蕾娅把一盏修好的铜灯推向你：『请把调谐钥匙带回来。若遇见还活着的人，也请带他们走。』沈鸢检查弓弦，洛恩把最后一卷绷带收进衣袋。此刻，决定权在你。\",\"接受伊蕾娅的委托：取回调谐钥匙，报酬六十金币。\",\"裂石走廊：狭长石廊被铜管穿过。北面的木门通向旧储藏室，东侧传来武器磕碰的声音。\",\"守卫室：折断的长桌被用作掩体。墙角堆着灰齿群的行囊，北面铁门通往祭坛下层。\"],\"summary\":\"你与沈鸢、洛恩来到灰灯镇的钟塔营地。\",\"summaryThroughVersion\":0,\"ending\":null}"
+    }
+  ],
+  "events": [
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 1,
+      "turn_id": "a7239adf-8395-4c45-81bf-cb1e133043e7",
+      "type": "quest_step_completed",
+      "payload_json": "{\"type\":\"quest_step_completed\",\"text\":\"接受委托：取回祭坛钥匙，再交给伊蕾娅。\",\"actorId\":\"pc\",\"data\":{\"stepId\":\"accept\"}}",
+      "state_version": 1
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 2,
+      "turn_id": "a7239adf-8395-4c45-81bf-cb1e133043e7",
+      "type": "npc_talked",
+      "payload_json": "{\"type\":\"npc_talked\",\"text\":\"伊蕾娅：「钥匙在祭坛上。先确保你们都能回来。」\",\"actorId\":\"pc\",\"data\":{\"npcId\":\"ileya\"}}",
+      "state_version": 1
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 3,
+      "turn_id": "736f9178-ba26-4fb6-acc3-a64904bf58b0",
+      "type": "moved",
+      "payload_json": "{\"type\":\"moved\",\"text\":\"旅人移动 4 格。\",\"actorId\":\"pc\",\"data\":{\"from\":{\"x\":4,\"y\":15},\"to\":{\"x\":8,\"y\":15},\"steps\":4}}",
+      "state_version": 2
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 4,
+      "turn_id": "736f9178-ba26-4fb6-acc3-a64904bf58b0",
+      "type": "moved",
+      "payload_json": "{\"type\":\"moved\",\"text\":\"沈鸢跟随队伍。\",\"actorId\":\"ranger\",\"data\":{\"from\":{\"x\":3,\"y\":16},\"to\":{\"x\":7,\"y\":14},\"steps\":4}}",
+      "state_version": 2
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 5,
+      "turn_id": "736f9178-ba26-4fb6-acc3-a64904bf58b0",
+      "type": "moved",
+      "payload_json": "{\"type\":\"moved\",\"text\":\"洛恩跟随队伍。\",\"actorId\":\"cleric\",\"data\":{\"from\":{\"x\":4,\"y\":16},\"to\":{\"x\":7,\"y\":15},\"steps\":3}}",
+      "state_version": 2
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 6,
+      "turn_id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "type": "door_opened",
+      "payload_json": "{\"type\":\"door_opened\",\"text\":\"营地石门打开了。\",\"actorId\":\"pc\",\"data\":{\"objectId\":\"door_entry\"}}",
+      "state_version": 3
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 7,
+      "turn_id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "type": "room_discovered",
+      "payload_json": "{\"type\":\"room_discovered\",\"text\":\"发现「裂石走廊」。狭长石廊被铜管穿过。北面的木门通向旧储藏室，东侧传来武器磕碰的声音。\",\"actorId\":\"pc\",\"data\":{\"roomId\":\"hall\"}}",
+      "state_version": 3
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 8,
+      "turn_id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "type": "encounter_started",
+      "payload_json": "{\"type\":\"encounter_started\",\"text\":\"进入战斗。按先攻顺序行动。\",\"actorId\":\"pc\",\"data\":{\"order\":[\"cleric\",\"ranger\",\"pc\",\"g1\"]}}",
+      "state_version": 3
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 9,
+      "turn_id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "type": "turn_started",
+      "payload_json": "{\"type\":\"turn_started\",\"text\":\"轮到洛恩。\",\"actorId\":\"pc\"}",
+      "state_version": 3
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 10,
+      "turn_id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "type": "attack_rolled",
+      "payload_json": "{\"type\":\"attack_rolled\",\"text\":\"洛恩攻击灰齿哨兵：22 对 AC 11。\",\"actorId\":\"cleric\",\"targetId\":\"g1\",\"data\":{\"diceId\":\"81267107-f650-4a63-abbc-466bec1922a9\",\"total\":22,\"ac\":11,\"natural\":17}}",
+      "state_version": 4
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 11,
+      "turn_id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "type": "hit",
+      "payload_json": "{\"type\":\"hit\",\"text\":\"命中。\",\"actorId\":\"cleric\",\"targetId\":\"g1\",\"data\":{}}",
+      "state_version": 4
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 12,
+      "turn_id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "type": "damage_dealt",
+      "payload_json": "{\"type\":\"damage_dealt\",\"text\":\"灰齿哨兵受到 11 点伤害，HP 9 → 0。\",\"actorId\":\"cleric\",\"targetId\":\"g1\",\"data\":{\"before\":9,\"after\":0,\"amount\":11,\"temp\":0}}",
+      "state_version": 4
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 13,
+      "turn_id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "type": "defeated",
+      "payload_json": "{\"type\":\"defeated\",\"text\":\"灰齿哨兵被击败。\",\"actorId\":\"cleric\",\"targetId\":\"g1\",\"data\":{}}",
+      "state_version": 4
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 14,
+      "turn_id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "type": "xp_granted",
+      "payload_json": "{\"type\":\"xp_granted\",\"text\":\"队伍获得 15 点经验。\",\"actorId\":\"cleric\",\"data\":{\"amount\":15,\"sourceId\":\"g1\"}}",
+      "state_version": 4
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 15,
+      "turn_id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "type": "encounter_ended",
+      "payload_json": "{\"type\":\"encounter_ended\",\"text\":\"战斗结束。HP 与消耗品保持当前数值；你重新带队探索。\",\"actorId\":\"cleric\"}",
+      "state_version": 4
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 16,
+      "turn_id": "19eaebaa-f20f-4542-8a06-e268f9848041",
+      "type": "moved",
+      "payload_json": "{\"type\":\"moved\",\"text\":\"旅人移动 6 格。\",\"actorId\":\"pc\",\"data\":{\"from\":{\"x\":8,\"y\":15},\"to\":{\"x\":14,\"y\":15},\"steps\":6}}",
+      "state_version": 5
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 17,
+      "turn_id": "19eaebaa-f20f-4542-8a06-e268f9848041",
+      "type": "moved",
+      "payload_json": "{\"type\":\"moved\",\"text\":\"沈鸢跟随队伍。\",\"actorId\":\"ranger\",\"data\":{\"from\":{\"x\":7,\"y\":14},\"to\":{\"x\":13,\"y\":14},\"steps\":6}}",
+      "state_version": 5
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 18,
+      "turn_id": "19eaebaa-f20f-4542-8a06-e268f9848041",
+      "type": "moved",
+      "payload_json": "{\"type\":\"moved\",\"text\":\"洛恩跟随队伍。\",\"actorId\":\"cleric\",\"data\":{\"from\":{\"x\":7,\"y\":15},\"to\":{\"x\":13,\"y\":15},\"steps\":6}}",
+      "state_version": 5
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 19,
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "type": "door_opened",
+      "payload_json": "{\"type\":\"door_opened\",\"text\":\"守卫室木门打开了。\",\"actorId\":\"pc\",\"data\":{\"objectId\":\"door_guard\"}}",
+      "state_version": 6
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 20,
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "type": "room_discovered",
+      "payload_json": "{\"type\":\"room_discovered\",\"text\":\"发现「守卫室」。折断的长桌被用作掩体。墙角堆着灰齿群的行囊，北面铁门通往祭坛下层。\",\"actorId\":\"pc\",\"data\":{\"roomId\":\"guard\"}}",
+      "state_version": 6
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 21,
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "type": "encounter_started",
+      "payload_json": "{\"type\":\"encounter_started\",\"text\":\"进入战斗。按先攻顺序行动。\",\"actorId\":\"pc\",\"data\":{\"order\":[\"pc\",\"ranger\",\"g4\",\"g5\",\"cleric\",\"g2\",\"g3\"]}}",
+      "state_version": 6
+    },
+    {
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "seq": 22,
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "type": "turn_started",
+      "payload_json": "{\"type\":\"turn_started\",\"text\":\"轮到旅人。\",\"actorId\":\"pc\"}",
+      "state_version": 6
+    }
+  ],
+  "dice": [
+    {
+      "id": "3fd4b40e-1941-479e-83e7-b8d5aeaa1d0f",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "payload_json": "{\"id\":\"3fd4b40e-1941-479e-83e7-b8d5aeaa1d0f\",\"expr\":\"d20+2\",\"rolls\":[9],\"modifier\":2,\"total\":11,\"purpose\":\"旅人的先攻\",\"checkId\":\"0409f9aa-d35b-4c89-ac0b-ef76b9cb93ac\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "1e2b6599-0b9f-49fd-953c-ae8d83b57e3f",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "payload_json": "{\"id\":\"1e2b6599-0b9f-49fd-953c-ae8d83b57e3f\",\"expr\":\"d20+2\",\"rolls\":[12],\"modifier\":2,\"total\":14,\"purpose\":\"沈鸢的先攻\",\"checkId\":\"1913b26f-3d21-4dd6-b6a6-da491c258ee7\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "d9d56731-9e54-4e5d-955e-167cdd47f941",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "payload_json": "{\"id\":\"d9d56731-9e54-4e5d-955e-167cdd47f941\",\"expr\":\"d20+2\",\"rolls\":[19],\"modifier\":2,\"total\":21,\"purpose\":\"洛恩的先攻\",\"checkId\":\"21375028-9e85-472e-b3b5-77f2fa1747e2\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "88989a18-28e1-48c6-8902-348a1260d5f3",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "3722e37e-b73c-4e45-a166-88db0538f7ff",
+      "payload_json": "{\"id\":\"88989a18-28e1-48c6-8902-348a1260d5f3\",\"expr\":\"d20+1\",\"rolls\":[10],\"modifier\":1,\"total\":11,\"purpose\":\"灰齿哨兵的先攻\",\"checkId\":\"c019f295-25cd-40eb-ac44-30b48fcb9084\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "81267107-f650-4a63-abbc-466bec1922a9",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "payload_json": "{\"id\":\"81267107-f650-4a63-abbc-466bec1922a9\",\"expr\":\"d20+5\",\"rolls\":[17],\"modifier\":5,\"total\":22,\"purpose\":\"洛恩使用灯辉术攻击灰齿哨兵\",\"checkId\":\"5bd80d7f-4d52-4a08-84a7-0b201cc25470\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "62f0f52a-e01d-4508-8ba7-1c9fdf087882",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "3385dea7-733e-44d2-8963-548b582eac36",
+      "payload_json": "{\"id\":\"62f0f52a-e01d-4508-8ba7-1c9fdf087882\",\"expr\":\"1d8+3\",\"rolls\":[8],\"modifier\":3,\"total\":11,\"purpose\":\"灯辉术伤害\",\"checkId\":\"92d68636-a5a1-4e24-a65a-2f36f9926d5b\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "ede9fe66-9cee-4e70-9996-5b99b4248518",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "payload_json": "{\"id\":\"ede9fe66-9cee-4e70-9996-5b99b4248518\",\"expr\":\"d20+2\",\"rolls\":[15],\"modifier\":2,\"total\":17,\"purpose\":\"旅人的先攻\",\"checkId\":\"c1661d45-8b4c-41d0-b212-7a79e754fc7e\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "221a6d8f-6716-47e3-b5ac-98b132c2258f",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "payload_json": "{\"id\":\"221a6d8f-6716-47e3-b5ac-98b132c2258f\",\"expr\":\"d20+2\",\"rolls\":[14],\"modifier\":2,\"total\":16,\"purpose\":\"沈鸢的先攻\",\"checkId\":\"06c9a529-28a5-4950-b6d6-7b97ec5a6996\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "8b692f7f-9650-41fa-ab97-9b42075f906b",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "payload_json": "{\"id\":\"8b692f7f-9650-41fa-ab97-9b42075f906b\",\"expr\":\"d20+2\",\"rolls\":[5],\"modifier\":2,\"total\":7,\"purpose\":\"洛恩的先攻\",\"checkId\":\"1af10a0a-5381-432d-aeff-341e76320450\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "517bf6c3-d18f-442e-a4e6-1b8867d35554",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "payload_json": "{\"id\":\"517bf6c3-d18f-442e-a4e6-1b8867d35554\",\"expr\":\"d20+1\",\"rolls\":[4],\"modifier\":1,\"total\":5,\"purpose\":\"灰齿守卫的先攻\",\"checkId\":\"4d695297-511d-46ed-8ba0-c1e839f04bbc\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "1c9b7083-66e3-4006-893a-6740bc3a1636",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "payload_json": "{\"id\":\"1c9b7083-66e3-4006-893a-6740bc3a1636\",\"expr\":\"d20+1\",\"rolls\":[3],\"modifier\":1,\"total\":4,\"purpose\":\"灰齿刀手的先攻\",\"checkId\":\"beeea8e1-fcfc-4e46-b9e0-5b48e57d2af5\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "387692e3-44c8-4664-924e-7d35ea24d737",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "payload_json": "{\"id\":\"387692e3-44c8-4664-924e-7d35ea24d737\",\"expr\":\"d20+1\",\"rolls\":[14],\"modifier\":1,\"total\":15,\"purpose\":\"灰齿弓手的先攻\",\"checkId\":\"7bf42ea1-1b4d-496f-958d-a2329b286a2e\",\"mode\":\"normal\"}"
+    },
+    {
+      "id": "877fd38b-1ad8-4233-8c35-9f5e4845cd79",
+      "campaign_id": "122827c8-715a-4d03-94c0-086b481d5c61",
+      "turn_id": "aa3d2436-cbba-4643-8160-e47bd3fff5c7",
+      "payload_json": "{\"id\":\"877fd38b-1ad8-4233-8c35-9f5e4845cd79\",\"expr\":\"d20+1\",\"rolls\":[9],\"modifier\":1,\"total\":10,\"purpose\":\"灰齿斥候的先攻\",\"checkId\":\"ff835fe8-52f3-4c28-9b92-505793222745\",\"mode\":\"normal\"}"
+    }
+  ],
+  "checksum": "6fb4774cb1c30df69494354e6ee8021b33f2d11542efe8decc8b4b3524dee5fa"
+}
