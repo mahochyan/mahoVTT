@@ -178,7 +178,7 @@ function createSession(id: string): SessionState {
         id,
         scenarioId: 'training',
         round: 1,
-        scene: '训练场：一台静止的训练机仆固定在 12 米外，等待队伍校准武器。',
+        scene: '训练场：一台静止的训练机仆停在场地另一端，等待队伍校准武器。',
         party,
         enemies: [{
             id: 'training-servitor',
