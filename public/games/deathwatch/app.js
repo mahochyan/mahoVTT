@@ -4,6 +4,7 @@ const $ = sel => document.querySelector(sel);
 const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 
 let catalog = null, missions = [], sessions = [], current = null, view = null;
+let draftId = null, draft = null;
 let selected = { cell: null, target: null };
 let busy = false;
 
@@ -36,6 +37,10 @@ async function boot() {
       : '规则演示模式（不调用模型）';
     renderHome();
     fillCreation();
+    const saved = sessionStorage.getItem('dw-draft');
+    if (saved) {
+      try { const r = await call(`/creation/${saved}`); draftId = saved; draft = r.draft; renderDraft(); } catch { sessionStorage.removeItem('dw-draft'); }
+    }
     show('home');
   } catch (e) {
     $('#moduleState').textContent = '模块不可用';
@@ -99,7 +104,15 @@ function fillCreation() {
     const syncChoice = () => choice.classList.toggle('hidden', chapter.value !== 'ultramarines');
     chapter.onchange = syncChoice;
     syncChoice();
-    box.append(name, chapter, specialty, choice);
+    const stats = el('div', 'attrs');
+    const preview = el('div', 'draft');
+    box.append(name, chapter, specialty, choice, preview);
+    box._fields.attrs = stats;
+    const onChange = () => { syncChoice(); syncSpec(id); };
+    chapter.onchange = onChange;
+    specialty.onchange = onChange;
+    c1.onchange = onChange;
+    c2.onchange = onChange;
     box._fields = { name, chapter, specialty, c1, c2, choice };
     slots.append(box);
   }
@@ -109,27 +122,132 @@ function fillCreation() {
   const oath = $('#oath');
   oath.replaceChildren();
   for (const o of catalog.oaths) oath.append(new Option(`${o.name}（${o.effect}）`, o.id));
+  renderRequisition();
+}
+
+function renderRequisition() {
+  const box = $('#requisition');
+  box.replaceChildren();
+  const budget = missions[0]?.requisition ?? 30;
+  const items = Object.values(catalog.weapons).filter(w => (w.req ?? 0) > 0 && !w.npc && (w.renown ?? 0) <= 0);
+  for (const w of items) {
+    const row = el('label', 'req-item');
+    const cb = el('input'); cb.type = 'checkbox'; cb.value = w.id; cb.dataset.cost = String(w.req);
+    const who = el('select');
+    for (const a of ['pc', 'ally-1', 'ally-2']) who.append(new Option(a, a));
+    row.append(cb, el('span', '', `${w.name}（征用 ${w.req}）`), who);
+    cb.onchange = updateBudget;
+    box.append(row);
+  }
+  updateBudget();
+}
+
+function updateBudget() {
+  let spent = 0;
+  for (const cb of document.querySelectorAll('#requisition input:checked')) spent += Number(cb.dataset.cost);
+  const budget = missions[0]?.requisition ?? 30;
+  $('#reqBudget').textContent = `已用 ${spent} / ${budget}${spent > budget ? '（超预算，服务端会拒绝）' : ''}`;
+}
+
+function requisitionFromForm() {
+  const out = [];
+  for (const row of document.querySelectorAll('#requisition .req-item')) {
+    const cb = row.querySelector('input');
+    if (!cb.checked) continue;
+    out.push({actorId: row.querySelector('select').value, weaponId: cb.value});
+  }
+  return out;
 }
 
 function specialtyName(id) {
   return catalog?.specialties.find(s => s.id === id)?.name || id;
 }
 
-$('#newSquad').onclick = () => { show('creation'); $('#createError').textContent = ''; };
+$('#newSquad').onclick = async () => {
+  show('creation');
+  $('#createError').textContent = '';
+  if (!draft) await startDraft();
+  renderDraft();
+};
 $('#cancelCreate').onclick = () => show('home');
 
-$('#submitSquad').onclick = async () => {
-  const err = $('#createError');
-  err.textContent = '';
-  const squad = [];
+function specsFromForm() {
+  const out = [];
   for (const box of document.querySelectorAll('.slot')) {
     const f = box._fields;
     const item = { id: box.dataset.id, name: f.name.value.trim(), chapter: f.chapter.value, specialty: f.specialty.value };
     if (f.chapter.value === 'ultramarines') item.chapterChoice = [f.c1.value, f.c2.value];
-    squad.push(item);
+    out.push(item);
   }
+  return out;
+}
+
+async function startDraft() {
+  try {
+    const r = await call('/creation/roll', { method: 'POST', body: JSON.stringify({ squad: specsFromForm() }) });
+    draftId = r.draftId; draft = r.draft;
+    sessionStorage.setItem('dw-draft', draftId);
+    renderDraft();
+  } catch (e) {
+    $('#createError').textContent = e.message;
+  }
+}
+
+async function syncSpec(id) {
+  if (!draftId) return;
+  const box = document.querySelector(`.slot[data-id="${id}"]`);
+  const f = box._fields;
+  const payload = { draftId, actorId: id, name: f.name.value.trim(), chapter: f.chapter.value, specialty: f.specialty.value };
+  if (f.chapter.value === 'ultramarines') payload.chapterChoice = [f.c1.value, f.c2.value];
+  try {
+    const r = await call('/creation/spec', { method: 'POST', body: JSON.stringify(payload) });
+    draft = r.draft;
+    renderDraft();
+    $('#createError').textContent = '';
+  } catch (e) {
+    $('#createError').textContent = e.message;
+  }
+}
+
+async function reroll(id) {
+  try {
+    const r = await call('/creation/reroll', { method: 'POST', body: JSON.stringify({ draftId, actorId: id }) });
+    draft = r.draft;
+    renderDraft();
+  } catch (e) {
+    $('#createError').textContent = e.message;
+  }
+}
+
+function renderDraft() {
+  if (!draft) return;
+  for (const box of document.querySelectorAll('.slot')) {
+    const row = draft.squad.find(s => s.id === box.dataset.id);
+    const preview = box.querySelector('.draft');
+    if (!row || !preview) continue;
+    preview.replaceChildren();
+    const attrs = box._fields.attrs;
+    for (const [k, v] of Object.entries(row.final || {})) {
+      attrs.append(el('span', 'attr', `${catalog.attrs[k]} ${v}`));
+    }
+    const b = el('button', 'small', row.rerolled ? `已重掷 ${catalog.attrs[row.rerolledAttr] || ''}` : '重掷最低项');
+    b.disabled = row.rerolled;
+    b.onclick = () => reroll(row.id);
+    preview.append(attrs, b);
+  }
+  const leader = $('#leader');
+  const keep = leader.value;
+  leader.replaceChildren();
+  for (const s of draft.squad) leader.append(new Option(`${s.name || s.id}（${s.specialtyName}）`, s.id));
+  leader.value = keep || 'pc';
+}
+
+$('#submitSquad').onclick = async () => {
+  const err = $('#createError');
+  err.textContent = '';
   try {
     $('#submitSquad').disabled = true;
+    if (!draftId) await startDraft();
     const created = await call('/sessions', {
       method: 'POST',
       body: JSON.stringify({
@@ -139,9 +257,11 @@ $('#submitSquad').onclick = async () => {
         leaderId: $('#leader').value,
         oathId: $('#oath').value,
         weaponProfile: $('#weaponProfile').value,
-        squad,
+        requisition: requisitionFromForm(),
+        draftId,
       }),
     });
+    sessionStorage.removeItem('dw-draft'); draft = null; draftId = null;
     sessions.unshift({ id: created.state.id, title: created.state.title, mission: created.state.mission.title, phase: created.state.phase, version: created.state.version });
     await openSession(created.state.id);
   } catch (e) {

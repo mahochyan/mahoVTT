@@ -3,7 +3,7 @@ import {join} from 'node:path';
 import {DeathwatchStore} from './store.mjs';
 import {DWError,need,int} from './rules.mjs';
 import {MODULE_ID,RULESET,ATTRS,CHAPTERS,SPECIALTIES,SKILLS,POWERS,OATHS,SQUAD_ABILITIES,WEAPONS,COVERAGE} from './catalog.mjs';
-import {activeActor,fallbackCommand} from './engine.mjs';
+import {activeActor,fallbackCommand,rollDraft,rerollDraftActor,draftView,updateDraftSpec} from './engine.mjs';
 import {plan,narrative,references} from './ai.mjs';
 export const descriptor={id:MODULE_ID,name:'死亡守望 · D100',subtitle:'战团 / 专长 / 任务部署 / 杀戮小队',rulesetId:RULESET,
  route:'/games/deathwatch/index.html',creationRoute:'/games/deathwatch/index.html',phase:'experimental',
@@ -18,6 +18,22 @@ export function createRuntime({dataDir,getConfig}){
  try{
   const parts=tail,storage=db();
   if(!parts.length&&method==='GET')return reply({module:descriptor,catalog:{attrs:ATTRS,chapters:CHAPTERS,specialties:SPECIALTIES,skills:SKILLS,powers:POWERS,oaths:OATHS,squadAbilities:SQUAD_ABILITIES,weapons:WEAPONS,coverage:COVERAGE},missions:storage.missions(),sessions:storage.list(),provider:{mode:getConfig().mode,model:getConfig().model}});
+  if(parts[0]==='creation'&&parts[1]==='roll'&&parts.length===2&&method==='POST'){
+   const b=await body(readBody);need(Array.isArray(b.squad)&&b.squad.length===3,'CREATION','必须提交三名角色。');
+   const draft=rollDraft(b.squad.map(x=>({id:x.id,name:x.name,chapter:x.chapter,specialty:x.specialty,chapterChoice:x.chapterChoice})),undefined);
+   const id=storage.saveDraft(draft);return reply({draftId:id,draft:draftView(draft)},201);
+  }
+  if(parts[0]==='creation'&&parts[1]==='spec'&&parts.length===2&&method==='POST'){
+   const b=await body(readBody);need(typeof b.draftId==='string','DRAFT','缺少草稿标识。');
+   const draft=storage.draft(b.draftId);updateDraftSpec(draft,{id:b.actorId,name:b.name,chapter:b.chapter,specialty:b.specialty,chapterChoice:b.chapterChoice});
+   storage.updateDraft(b.draftId,draft);return reply({draftId:b.draftId,draft:draftView(draft)});
+  }
+  if(parts[0]==='creation'&&parts[1]==='reroll'&&parts.length===2&&method==='POST'){
+   const b=await body(readBody);need(typeof b.draftId==='string','DRAFT','缺少草稿标识。');
+   const draft=storage.draft(b.draftId);const out=rerollDraftActor(draft,b.actorId,undefined);
+   storage.updateDraft(b.draftId,draft);return reply({draftId:b.draftId,reroll:out,draft:draftView(draft)});
+  }
+  if(parts[0]==='creation'&&parts.length===2&&method==='GET'){const draft=storage.draft(parts[1]);return reply({draftId:parts[1],draft:draftView(draft)});}
   if(parts[0]==='missions'&&parts.length===1&&method==='POST')return reply({mission:storage.install(await body(readBody))},201);
   if(parts[0]==='references'&&parts.length===1&&method==='POST'){const b=await body(readBody);need(typeof b.query==='string'&&b.query.length<=200,'QUERY','检索词最多 200 字。');return reply(references(dataDir,b.query));}
   if(parts[0]==='sessions'&&parts.length===1){if(method==='GET')return reply({sessions:storage.list()});if(method==='POST')return reply(storage.create(await body(readBody)),201);}

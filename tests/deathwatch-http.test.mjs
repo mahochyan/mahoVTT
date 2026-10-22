@@ -161,3 +161,76 @@ test('SIGKILL 后已提交状态恢复，重发原请求不重做', async () => 
   const after = await req(`/api/games/deathwatch-d100/sessions/${s.id}`);
   assert.equal(after.data.state.version, 1);
 });
+
+async function rollDraft(body) {
+  const r = await req('/api/games/deathwatch-d100/creation/roll', body);
+  assert.equal(r.status, 201, JSON.stringify(r.data));
+  return r.data;
+}
+
+test('建团草稿：生成属性、重掷一次、改配置、用草稿建团', async () => {
+  const specs = {
+    squad: [
+      {id: 'pc', name: '塞维鲁', chapter: 'ultramarines', specialty: 'tactical', chapterChoice: ['ws', 'bs']},
+      {id: 'ally-1', name: '凯', chapter: 'blood-angels', specialty: 'assault'},
+      {id: 'ally-2', name: '德拉科', chapter: 'dark-angels', specialty: 'devastator'},
+    ],
+  };
+  const {draftId, draft} = await rollDraft(specs);
+  assert.equal(draft.squad.length, 3);
+  for (const a of draft.squad) {
+    for (const v of Object.values(a.attributes)) assert.ok(v >= 32 && v <= 50);
+  }
+  const first = await req('/api/games/deathwatch-d100/creation/reroll', {draftId, actorId: 'pc'});
+  assert.equal(first.status, 200);
+  assert.equal(first.data.reroll.rerolled, true);
+  const second = await req('/api/games/deathwatch-d100/creation/reroll', {draftId, actorId: 'pc'});
+  assert.equal(second.status, 409);
+  const banned = await req('/api/games/deathwatch-d100/creation/spec', {
+    draftId, actorId: 'ally-2', chapter: 'space-wolves', specialty: 'apothecary',
+  });
+  assert.equal(banned.status, 400);
+  assert.match(banned.data.error.message, /不能选择/);
+  const changed = await req('/api/games/deathwatch-d100/creation/spec', {
+    draftId, actorId: 'ally-2', chapter: 'storm-wardens', specialty: 'devastator',
+  });
+  assert.equal(changed.status, 200);
+  assert.equal(changed.data.draft.squad.find(a => a.id === 'ally-2').chapter, 'storm-wardens');
+  const created = await req('/api/games/deathwatch-d100/sessions', {
+    title: '草稿建团', missionId: 'watchstation-vigil', missionVersion: '1.0.0',
+    leaderId: 'pc', oathId: 'astartes', draftId,
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.data));
+  assert.equal(created.data.state.actors.length, 3);
+  // 草稿用掉后失效
+  const gone = await req(`/api/games/deathwatch-d100/creation/${draftId}`);
+  assert.equal(gone.status, 404);
+});
+
+test('建团反例：未提交三名角色返回 400，不产生存档', async () => {
+  const before = (await req('/api/games/deathwatch-d100/sessions')).data.sessions.length;
+  const r = await req('/api/games/deathwatch-d100/creation/roll', {squad: [{id: 'pc', chapter: 'ultramarines', specialty: 'tactical', chapterChoice: ['ws', 'bs']}]});
+  assert.equal(r.status, 400);
+  const after = (await req('/api/games/deathwatch-d100/sessions')).data.sessions.length;
+  assert.equal(after, before);
+});
+
+test('征用：预算内装备进入角色背包，超预算被拒绝且不产生存档', async () => {
+  const before = (await req('/api/games/deathwatch-d100/sessions')).data.sessions.length;
+  const ok = await req('/api/games/deathwatch-d100/sessions', {
+    title: '征用测试', missionId: 'watchstation-vigil', missionVersion: '1.0.0',
+    leaderId: 'pc', oathId: 'astartes', squad: squad(),
+    requisition: [{actorId: 'ally-2', weaponId: 'heavy-bolter'}],
+  });
+  assert.equal(ok.status, 201, JSON.stringify(ok.data));
+  const a2 = ok.data.state.actors.find(a => a.id === 'ally-2');
+  assert.ok(Object.hasOwn(a2.inventory, 'heavy-bolter'));
+  const bad = await req('/api/games/deathwatch-d100/sessions', {
+    title: '超预算', missionId: 'watchstation-vigil', missionVersion: '1.0.0',
+    leaderId: 'pc', oathId: 'astartes', squad: squad(),
+    requisition: [{actorId: 'pc', weaponId: 'power-sword'}],
+  });
+  assert.equal(bad.status, 403);
+  const after = (await req('/api/games/deathwatch-d100/sessions')).data.sessions.length;
+  assert.equal(after, before + 1, '只应成功创建一次');
+});

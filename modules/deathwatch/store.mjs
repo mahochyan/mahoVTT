@@ -45,13 +45,22 @@ export class DeathwatchStore{
  CREATE TABLE IF NOT EXISTS dw_sessions(id TEXT PRIMARY KEY,version INTEGER NOT NULL,state TEXT NOT NULL,updated TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS dw_commands(session_id TEXT NOT NULL,request_id TEXT NOT NULL,request_hash TEXT NOT NULL,response TEXT NOT NULL,PRIMARY KEY(session_id,request_id),FOREIGN KEY(session_id) REFERENCES dw_sessions(id));
  CREATE TABLE IF NOT EXISTS dw_events(session_id TEXT NOT NULL,seq INTEGER NOT NULL,version INTEGER NOT NULL,payload TEXT NOT NULL,PRIMARY KEY(session_id,seq),FOREIGN KEY(session_id) REFERENCES dw_sessions(id));
- CREATE TABLE IF NOT EXISTS dw_narratives(session_id TEXT NOT NULL,version INTEGER NOT NULL,attempt INTEGER NOT NULL,text TEXT NOT NULL,status TEXT NOT NULL,source TEXT NOT NULL,PRIMARY KEY(session_id,version),FOREIGN KEY(session_id) REFERENCES dw_sessions(id));`);}
+ CREATE TABLE IF NOT EXISTS dw_narratives(session_id TEXT NOT NULL,version INTEGER NOT NULL,attempt INTEGER NOT NULL,text TEXT NOT NULL,status TEXT NOT NULL,source TEXT NOT NULL,PRIMARY KEY(session_id,version),FOREIGN KEY(session_id) REFERENCES dw_sessions(id));
+CREATE TABLE IF NOT EXISTS dw_drafts(id TEXT PRIMARY KEY,payload TEXT NOT NULL,updated TEXT NOT NULL);`);}
  close(){this.db.close();}
  tx(fn){this.db.exec('BEGIN IMMEDIATE');try{const out=fn();this.db.exec('COMMIT');return out;}catch(e){this.db.exec('ROLLBACK');throw e;}}
  missions(){return [missionSummary(BUILTIN),...this.db.prepare('SELECT payload FROM dw_missions ORDER BY id,version').all().map(r=>missionSummary(JSON.parse(r.payload)))];}
  install(raw){const m=validateMission(raw);need(m.id!==BUILTIN.id,'PACK','不能覆盖内置内容包。');const old=this.db.prepare('SELECT payload FROM dw_missions WHERE id=? AND version=?').get(m.id,m.version);if(old)need(hash(JSON.parse(old.payload))===hash(m),'PACK_CONFLICT','相同 ID/版本内容不同，请增加版本号。',409);else this.db.prepare('INSERT INTO dw_missions VALUES(?,?,?)').run(m.id,m.version,JSON.stringify(m));return missionSummary(m);}
  mission(id=BUILTIN.id,version){if(id===BUILTIN.id)return clone(BUILTIN);const row=version?this.db.prepare('SELECT payload FROM dw_missions WHERE id=? AND version=?').get(id,version):this.db.prepare('SELECT payload FROM dw_missions WHERE id=? ORDER BY rowid DESC LIMIT 1').get(id);need(row,'PACK_NOT_FOUND','请先导入对应私有副本包。',404);return JSON.parse(row.payload);}
- create(options,random){const s=newSession(options,this.mission(options.missionId,options.missionVersion),random);this.insert(s);return this.snapshot(s.id);}
+ create(options,random){let opts=options;
+  if(options?.draftId){const d=this.draft(options.draftId);opts={...options,squad:d.squad.map(a=>({...a}))};}
+  const s=newSession(opts,this.mission(options.missionId,options.missionVersion),random);
+  this.insert(s);
+  if(options?.draftId)this.db.prepare('DELETE FROM dw_drafts WHERE id=?').run(options.draftId);
+  return this.snapshot(s.id);}
+ saveDraft(draft){const id=randomUUID();this.db.prepare('INSERT INTO dw_drafts VALUES(?,?,?)').run(id,JSON.stringify(draft),new Date().toISOString());return id;}
+ draft(id){need(uuid(id),'DRAFT','草稿标识无效。');const r=this.db.prepare('SELECT payload FROM dw_drafts WHERE id=?').get(id);need(r,'DRAFT','草稿已过期，请重新生成。',404);return JSON.parse(r.payload);}
+ updateDraft(id,draft){const r=this.db.prepare('UPDATE dw_drafts SET payload=?,updated=? WHERE id=?').run(JSON.stringify(draft),new Date().toISOString(),id);need(r.changes===1,'DRAFT','草稿已过期。',404);}
  insert(s){this.tx(()=>{this.db.prepare('INSERT INTO dw_sessions VALUES(?,?,?,?)').run(s.id,s.version,JSON.stringify(s),new Date().toISOString());let seq=0;for(const ev of s.lastEvents)this.db.prepare('INSERT INTO dw_events VALUES(?,?,?,?)').run(s.id,++seq,s.version,JSON.stringify(ev));});}
  list(){return this.db.prepare('SELECT id,version,state,updated FROM dw_sessions ORDER BY updated DESC').all().map(r=>{const s=JSON.parse(r.state);return {id:r.id,title:s.title,version:r.version,phase:s.phase,mission:s.mission.title,updatedAt:r.updated,sceneId:s.sceneId};});}
  get(id){need(uuid(id),'SESSION','存档标识无效。');const r=this.db.prepare('SELECT state FROM dw_sessions WHERE id=?').get(id);need(r,'NOT_FOUND','未找到此存档。',404);return JSON.parse(r.state);}

@@ -74,6 +74,54 @@ export function rerollCharacteristic(attrs,key,random){
   out.__rerolled=true;
   return out;
 }
+/** Draft creation: characteristics are rolled by the server and persisted, so a
+ * page refresh never re-rolls and the single allowed re-roll is tracked per actor. */
+export function rollDraft(specs,random){
+  need(Array.isArray(specs)&&specs.length===3,'CREATION','必须创建 1 名主角与 2 名战斗兄弟。');
+  const ids=specs.map(x=>x.id);
+  need(new Set(ids).size===3&&['pc','ally-1','ally-2'].every(id=>ids.includes(id)),'CREATION','队伍标识必须为 pc/ally-1/ally-2。');
+  const squad=specs.map(spec=>{
+    const ch=CHAPTER(spec.chapter);need(ch,'CHAPTER','未知战团。');
+    const sp=SPEC(spec.specialty);need(sp,'SPECIALTY','未知专长。');
+    need(!(ch.ban??[]).includes(spec.specialty),'CHAPTER_BAN',`${ch.name}不能选择${sp.name}。`);
+    const choice=spec.chapterChoice;
+    if(ch.choice)need(Array.isArray(choice)&&choice.length===2&&choice[0]!==choice[1]&&choice.every(k=>ATTR_KEYS.includes(k)),'CHAPTER_CHOICE','极限战士需要选择两项不同属性各 +5。');
+    return {id:spec.id,name:String(spec.name??'').trim().slice(0,24),chapter:spec.chapter,specialty:spec.specialty,
+      chapterChoice:ch.choice?[...choice]:undefined,attributes:rollCharacteristics(random),rerolled:false,rerolledAttr:null};
+  });
+  return {schemaVersion:1,squad,createdAt:new Date().toISOString()};
+}
+/** Change Chapter/Specialty on a draft without touching the rolled characteristics. */
+export function updateDraftSpec(draft,spec){
+  const a=draft.squad.find(x=>x.id===spec.id);
+  need(a,'ACTOR','草稿中没有这名角色。',404);
+  const ch=CHAPTER(spec.chapter);need(ch,'CHAPTER','未知战团。');
+  const sp=SPEC(spec.specialty);need(sp,'SPECIALTY','未知专长。');
+  need(!(ch.ban??[]).includes(spec.specialty),'CHAPTER_BAN',`${ch.name}不能选择${sp.name}。`);
+  if(ch.choice)need(Array.isArray(spec.chapterChoice)&&spec.chapterChoice.length===2&&spec.chapterChoice[0]!==spec.chapterChoice[1]&&spec.chapterChoice.every(k=>ATTR_KEYS.includes(k)),'CHAPTER_CHOICE','极限战士需要选择两项不同属性各 +5。');
+  a.chapter=spec.chapter;a.specialty=spec.specialty;a.chapterChoice=ch.choice?[...spec.chapterChoice]:undefined;
+  if(typeof spec.name==='string')a.name=spec.name.trim().slice(0,24);
+  return a;
+}
+export function rerollDraftActor(draft,actorId,random){
+  const a=draft.squad.find(x=>x.id===actorId);
+  need(a,'ACTOR','草稿中没有这名角色。',404);
+  need(!a.rerolled,'REROLL','每名角色只能重掷一次属性。',409);
+  // Core p.26: one re-roll, applied to the lowest characteristic by default.
+  const lowest=ATTR_KEYS.reduce((m,k)=>a.attributes[k]<a.attributes[m]?k:m,ATTR_KEYS[0]);
+  a.attributes[lowest]=rollCharacteristics(random)[lowest];
+  a.rerolled=true;a.rerolledAttr=lowest;
+  return {actorId,attr:lowest,value:a.attributes[lowest],rerolled:true};
+}
+export function draftView(draft){
+  return {schemaVersion:draft.schemaVersion,createdAt:draft.createdAt,squad:draft.squad.map(a=>{
+    const ch=CHAPTER(a.chapter);
+    const final=chapterMods({...a,stats:a.attributes});
+    return {id:a.id,name:a.name,chapter:a.chapter,specialty:a.specialty,chapterChoice:a.chapterChoice??null,
+      attributes:a.attributes,final,rerolled:a.rerolled,rerolledAttr:a.rerolledAttr,
+      chapterName:ch.name,specialtyName:SPEC(a.specialty).name,woundsBonus:ch.wounds??0};
+  })};
+}
 export function fateFromRoll(n){
   need(int(n,1,10),'FATE','命运骰无效。');
   return n===10?5:n>=8?4:3;
@@ -183,6 +231,18 @@ export function newSession(options,mission,random){
     a.xpSpent=1000-budget;
     a.xpAvailable=budget;
     a.startingGear=startingGear(a);
+  }
+  // Requisition: the mission grants a team budget; each item is issued to one actor.
+  // Renown-gated gear is out of scope for Rank 1 and is refused rather than silently allowed.
+  let requisitionSpent=0;
+  for(const item of options.requisition??[]){
+    const a=actors.find(x=>x.id===item.actorId);need(a,'REQUISITION','领用角色不存在。',404);
+    const w=weaponProfile(item.weaponId,'core');need(w,'REQUISITION','没有这件装备。',404);
+    need(!w.npc,'REQUISITION','该装备不供小队领用。');
+    need((w.renown??0)<=0,'REQUISITION','该装备需要声望，Rank 1 小队无法领用。',403);
+    requisitionSpent+=w.req??0;
+    need(requisitionSpent<=(mission.requisition??0),'REQUISITION',`征用超预算：已用 ${requisitionSpent}，上限 ${mission.requisition}。`,409);
+    a.inventory[w.id]={clip:w.clip,reserve:w.clip,jammed:false};
   }
   const scene=mission.scenes.find(s=>s.id===mission.firstScene);
   need(scene,'PACK','入口场景不存在。');

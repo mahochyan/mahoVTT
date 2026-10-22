@@ -8,6 +8,7 @@ import {DeathwatchStore} from '../modules/deathwatch/store.mjs';
 import {
   newSession, observation, activeActor, resolve, validateCommand, fallbackCommand, rollCharacteristics,
   parseCommand, validateAttributes, fateFromRoll, startingWounds, movementRates,
+  rollDraft, rerollDraftActor, draftView, updateDraftSpec,
 } from '../modules/deathwatch/engine.mjs';
 import {test as d100, hitLocation, soak} from '../modules/deathwatch/rules.mjs';
 
@@ -280,4 +281,90 @@ test('观察视图不包含 GM 秘密', () => {
   assert.equal(view.actors.length, 3);
   assert.ok(view.scene.map.length > 0);
   assert.ok(movementRates(s.actors[0]).half >= 1);
+});
+
+test('建团草稿：服务端掷属性、战团修正、每角色只能重掷一次', () => {
+  const spec = [
+    {id: 'pc', name: '塞维鲁', chapter: 'ultramarines', specialty: 'tactical', chapterChoice: ['ws', 'bs']},
+    {id: 'ally-1', name: '凯', chapter: 'blood-angels', specialty: 'assault'},
+    {id: 'ally-2', name: '德拉科', chapter: 'dark-angels', specialty: 'devastator'},
+  ];
+  const draft = rollDraft(spec, seq([5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]));
+  const view = draftView(draft);
+  assert.equal(view.squad.length, 3);
+  for (const a of view.squad) {
+    for (const v of Object.values(a.attributes)) assert.ok(v >= 32 && v <= 50);
+  }
+  // 极限战士两项各 +5
+  const pc = view.squad.find(a => a.id === 'pc');
+  assert.equal(pc.final.ws, pc.attributes.ws + 5);
+  assert.equal(pc.final.bs, pc.attributes.bs + 5);
+  // 重掷只改最低项，且只能一次
+  const before = {...pc.attributes};
+  const out = rerollDraftActor(draft, 'pc', seq([10]));
+  assert.equal(out.rerolled, true);
+  assert.equal(draft.squad[0].attributes[out.attr], out.value);
+  const changed = Object.keys(before).filter(k => draft.squad[0].attributes[k] !== before[k]);
+  assert.deepEqual(changed, [out.attr]);
+  assert.throws(() => rerollDraftActor(draft, 'pc', seq([10])), /只能重掷一次/);
+});
+
+test('草稿改战团/专长不重掷属性，禁配组合被拒绝', () => {
+  const spec = [
+    {id: 'pc', name: 'A', chapter: 'ultramarines', specialty: 'tactical', chapterChoice: ['ws', 'bs']},
+    {id: 'ally-1', name: 'B', chapter: 'blood-angels', specialty: 'assault'},
+    {id: 'ally-2', name: 'C', chapter: 'dark-angels', specialty: 'devastator'},
+  ];
+  const draft = rollDraft(spec, seq([4, 8, 6, 10, 2]));
+  const before = {...draft.squad[2].attributes};
+  updateDraftSpec(draft, {id: 'ally-2', chapter: 'storm-wardens', specialty: 'devastator'});
+  assert.deepEqual(draft.squad[2].attributes, before, '属性不应被重掷');
+  assert.equal(draft.squad[2].chapter, 'storm-wardens');
+  assert.throws(
+    () => updateDraftSpec(draft, {id: 'ally-2', chapter: 'space-wolves', specialty: 'apothecary'}),
+    /不能选择/,
+  );
+});
+
+test('草稿建团：使用草稿属性，不重新掷骰', () => {
+  const spec = [
+    {id: 'pc', name: 'A', chapter: 'ultramarines', specialty: 'tactical', chapterChoice: ['ws', 'bs']},
+    {id: 'ally-1', name: 'B', chapter: 'blood-angels', specialty: 'assault'},
+    {id: 'ally-2', name: 'C', chapter: 'dark-angels', specialty: 'devastator'},
+  ];
+  const draft = rollDraft(spec, seq([7, 3, 9, 5]));
+  const attrs = structuredClone(draft.squad[0].attributes);
+  const s = newSession({
+    title: '草稿建团', missionId: BUILTIN.id, missionVersion: BUILTIN.version,
+    leaderId: 'pc', oathId: 'astartes',
+    squad: draft.squad.map(a => ({...a, attributes: {...a.attributes}})),
+  }, BUILTIN, seq([3]));
+  const pc = s.actors.find(a => a.id === 'pc');
+  // 战团修正后应等于草稿的最终值
+  const view = draftView(draft).squad.find(a => a.id === 'pc');
+  assert.deepEqual(pc.stats, view.final);
+  assert.deepEqual(draft.squad[0].attributes, attrs, '建团不应改写草稿属性');
+});
+
+test('征用：预算内发装备，超预算与声望装备被拒绝', () => {
+  const spec = [
+    {id: 'pc', name: 'A', chapter: 'ultramarines', specialty: 'tactical', chapterChoice: ['ws', 'bs']},
+    {id: 'ally-1', name: 'B', chapter: 'blood-angels', specialty: 'assault'},
+    {id: 'ally-2', name: 'C', chapter: 'dark-angels', specialty: 'devastator'},
+  ];
+  const rng = () => seq([4]);
+  const s = newSession({
+    leaderId: 'pc', oathId: 'astartes', squad: spec,
+    requisition: [{actorId: 'ally-2', weaponId: 'heavy-bolter'}],
+  }, BUILTIN, rng());
+  const a2 = s.actors.find(a => a.id === 'ally-2');
+  assert.ok(Object.hasOwn(a2.inventory, 'heavy-bolter'));
+  assert.throws(() => newSession({
+    leaderId: 'pc', oathId: 'astartes', squad: spec,
+    requisition: [{actorId: 'pc', weaponId: 'power-sword'}],
+  }, BUILTIN, rng()), /需要声望/);
+  assert.throws(() => newSession({
+    leaderId: 'pc', oathId: 'astartes', squad: spec,
+    requisition: [{actorId: 'pc', weaponId: 'heavy-bolter'}, {actorId: 'ally-1', weaponId: 'heavy-bolter'}],
+  }, BUILTIN, rng()), /征用超预算/);
 });
