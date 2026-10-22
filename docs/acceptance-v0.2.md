@@ -39,3 +39,11 @@
 3. 浏览器测试依赖本机 Edge；无 Playwright 跨浏览器覆盖。
 4. 真实模型（DGX/Qwen 文本）未做 20 次兼容性验收；本轮测试使用 mock provider。
 5. 无障碍只做了基础焦点样式与可访问名称，未做完整 axe/对比度审计。
+
+## 合并后补充（feat/multigame-hall-wrath-experimental）
+
+- 一级入口 `/games`：灰灯 d20（legacy）与「黑井中继站」D6 实验模块并列。
+- D6 模块使用独立 API `/api/games/wrath-d6-experiment/*`、独立 SQLite 与 Web 界面 `/games/wrath-d6-experiment`；原 d20 战役与存档不迁移。
+- 合并后回归：`npm test` **68 / 68 通过**（新增 6 项 D6/目录隔离测试）；`npm run test:browser` 15 / 15 通过。
+- 手工冒烟：创建 D6 会话 → 结束回合 → 导出存档 → 页面 200；`/api/games` 与两个模块页面均可访问。
+- 截图：`docs/screenshots/v2/games-1440.webp`、`wrath-1440.webp`。

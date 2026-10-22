@@ -268,7 +268,8 @@ const server = createServer(async (req, res) => {
         const url = new URL(req.url || '/', `http://${req.headers.host}`), path = url.pathname, method = req.method || 'GET';
         // Level-one lobby delegates all /api/games/* requests to isolated runtimes.
         const modular = await gameRequest(path, method, () => body(req));
-        if (modular) return json(res, modular.data, modular.status);
+        if (modular)
+            return json(res, modular.data, modular.status);
         if (path === '/api/health' && method === 'GET')
             return json(res, { ok: true, version: '0.2.0', contentVersion: BOOK.version });
         if (path === '/api/platform' && method === 'GET')
@@ -444,8 +445,8 @@ const server = createServer(async (req, res) => {
         const platformPage = path === '/' || path === '/games' || /^\/(campaigns|characters|worlds|library|settings)(\/|$)/.test(path);
         let file = path === '/games/wrath-d6-experiment' ? join(ROOT, 'public/games/wrath.html')
             : path.startsWith('/c/') ? join(ROOT, 'public/index.html')
-            : platformPage ? join(ROOT, 'public/platform.html')
-                : pathResolve(ROOT, 'public', '.' + decodeURIComponent(path));
+                : platformPage ? join(ROOT, 'public/platform.html')
+                    : pathResolve(ROOT, 'public', '.' + decodeURIComponent(path));
         const root = pathResolve(ROOT, 'public') + sep;
         if (!file.startsWith(root) || !existsSync(file))
             throw new GameError('NOT_FOUND', '文件不存在。', 404);
