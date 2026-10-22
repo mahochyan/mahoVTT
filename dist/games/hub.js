@@ -1,16 +1,14 @@
-import { wrathRuntime } from "./wrath/runtime.js";
-/** First-tier lobby registry. A game owns its rules, state, routes and UI.
- * The existing d20 application is a legacy adapter: it is NOT rewritten. */
-export const legacy = {
-    id: 'graylight-d20', name: '灰灯纪事', subtitle: '无声钟塔 · d20', rulesetId: 'graylight-d20-v1',
-    route: '/campaigns', creationRoute: '/campaigns/new?world=whispering-tower', phase: 'playable',
-    description: '守灯人委托、五房间探索与两名 AI 同伴。原有存档和接口保持不变。',
-    features: ['d20 行动与战斗', 'AI 主持人', '原存档完全独立'],
-};
-const games = [legacy, wrathRuntime.descriptor];
-const active = new Map([[wrathRuntime.descriptor.id, wrathRuntime]]);
-export function listGames() { return games.map(g => ({ ...g, features: [...g.features] })); }
-export function findGame(id) { return games.find(g => g.id === id); }
+/** First-tier lobby registry. Games register a descriptor + isolated runtime.
+ * The old demo scenarios were removed; the registry is intentionally empty
+ * until a ready-to-play scenario pack is installed. */
+export const games = [];
+const active = new Map();
+export function listGames() {
+    return games.map(g => ({ ...g, features: [...g.features] }));
+}
+export function findGame(id) {
+    return games.find(g => g.id === id);
+}
 /** All second-tier modules use a stable, isolated API namespace. */
 export async function gameRequest(path, method, readBody) {
     if (path === '/api/games' && method === 'GET')

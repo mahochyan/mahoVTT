@@ -2,12 +2,12 @@
 
 ## 原则
 
-这是一个可以承载多个世界（灰灯、战锤、科幻、赛博朋克……）的本地跑团平台。**平台层保持中性，色彩与氛围由世界提供**：
+这是一个可以承载多种题材（奇幻、战锤、科幻、赛博朋克……）的本地跑团平台。**平台外壳保持中性，色彩与氛围由剧本/世界提供**：
 
 - 平台外壳：石墨黑、象牙白文字、冷钢色强调；不使用羊皮纸/酒馆等题材材质作为全局皮肤。
 - 世界主题：每个世界声明 `accent`、`tint`、`cover`、`backdrop`，只影响该世界的卡片、详情与运行页局部。
 - 图片负责氛围与插画，**UI 文字一律由 DOM/CSS 渲染**，不生成进图。
-- 地图的墙、门、网格仍由数据/SVG 渲染；生成图只做底图与材质，不承担几何准确性。
+- 地图的墙、门、网格由数据/SVG 渲染；生成图只做底图与材质，不承担几何准确性。
 
 ## 设计 token（`public/platform.css`）
 
@@ -27,35 +27,34 @@
 
 ```json
 {
-  "id": "whispering-tower",
-  "genre": "暗色奇幻",
-  "cover": "/art/worlds/whispering-tower.webp",
+  "id": "example-scenario",
+  "genre": "任意题材",
+  "cover": "/art/worlds/example-scenario.webp",
   "theme": {
     "accent": "#c8a86b",
     "tint": "rgba(200, 168, 107, 0.14)",
-    "backdrop": "/art/worlds/whispering-tower-backdrop.webp"
+    "backdrop": "/art/worlds/example-scenario-backdrop.webp"
   }
 }
 ```
 
-未来世界（如战锤）只需提供自己的覆盖图与强调色，平台导航、列表、表单不随题材改变。避免把「灰灯」写进平台层文案与组件。
+未来世界只需提供自己的覆盖图与强调色，平台导航、列表、表单不随题材改变。避免把单一剧本的名字写进平台层文案与组件。
 
-## 图片规范
+## 剧本素材规范
 
 - 封面 16:9，1280×720 webp（≤ 200KB）；运行页底图 1920 宽 webp。
-- 人物/怪物棋子优先透明 RGBA（Qwen-Image-2.1 原生支持）；若背景残留半透明雾，先做 matte 或改用圆形头像卡。
+- 人物/怪物棋子优先透明 RGBA；若背景残留雾，做 matte 或改用圆形头像卡。
 - 图标继续用内联 SVG（1.15em），不依赖位图。
-- 首屏 hero 预加载；其余 `loading="lazy"` / CSS 背景按需。
+- 首屏 hero 预加载；其余按需加载。
 - 不把 UI 文案、按钮、数字烘焙进图片。
 
 ## 本地生成流水线
 
-- 模型：本地 `Qwen-Image-2.1`（`QWEN_IMAGE_MODEL` 指向模型目录），4-bit 量化，`tools/art/concepts.py`。
-- 实测（12GB GPU）：加载约 45–120s；512×512/6 步约 17s；768×416/22 步约 60–120s；显存峰值 9.46GB。
-- 尺寸需为 32 的倍数；批量生成用固定 seed 与统一风格块。
-- 生成产物在 `tools/art/out/`（git 忽略），选定素材复制到 `public/art/`。
-- 方向小样：`tools/art/out/concepts/`（A 暗色铜器 / B 暖色酒馆 / C 灰烬极简）。
+- 模型：本地 `Qwen-Image-2.1`（用 `QWEN_IMAGE_MODEL` 指向模型目录），4-bit 量化。
+- 脚本：`tools/art/concepts.py`、`tools/art/tokens.py`。
+- 尺寸需为 32 的倍数；批量生成用固定 seed 与统一风格块；生成产物在 `tools/art/out/`（git 忽略）。
+- 正式素材复制到 `public/art/` 后再引用。
 
-## 当前世界
+## 当前状态
 
-《无声钟塔》使用暗色铜器主题：`#c8a86b` + 深蓝底 + 烛光插画。平台外壳保持冷钢中性，避免未来加入战锤等世界时被单一题材绑定。
+旧剧本的封面、底图与角色头像已随剧本一起移除；当前平台使用空状态与中性外壳。新剧本包应自带主题与素材。

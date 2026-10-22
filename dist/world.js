@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
-export const BOOK = JSON.parse(readFileSync(new URL('../content/worldbook.json', import.meta.url), 'utf8'));
+export const BOOK = JSON.parse(readFileSync(new URL('../legacy/whispering-tower/worldbook.json', import.meta.url), 'utf8'));
 export const WIDTH = 31, HEIGHT = 22;
 export const ROOMS = [
     { id: 'entry', name: '入口营地', subtitle: '仍然温暖的灯', rect: [1, 12, 8, 8], description: '帆布、铜灯与雨衣。伊蕾娅在火盆旁等待消息。营地连接镇子的补给线，脱离战斗后可以休整。', dmNotes: '安全区。委托需显式接受。不能提前发放钥匙和奖励。' },

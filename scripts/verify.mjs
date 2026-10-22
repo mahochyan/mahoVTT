@@ -11,11 +11,9 @@ const required = [
     'public/style.css',
     'public/platform.css',
     'public/play.css',
-    'content/worldbook.json',
+    'legacy/whispering-tower/worldbook.json',
     '.env.example',
     'start.cmd',
-    'public/art/worlds/whispering-tower.webp',
-    'public/art/tokens/pc_fighter.webp',
 ];
 for (const file of required) {
     if (!existsSync(file)) {
@@ -27,7 +25,7 @@ for (const file of required) {
         process.exit(1);
     }
 }
-JSON.parse(readFileSync('content/worldbook.json', 'utf8'));
+JSON.parse(readFileSync('legacy/whispering-tower/worldbook.json', 'utf8'));
 for (const js of ['public/app.js', 'public/js/platform.js', 'public/js/core.js']) {
     const syntax = spawnSync(process.execPath, ['--check', js], { stdio: 'inherit' });
     if (syntax.status !== 0)

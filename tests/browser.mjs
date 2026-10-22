@@ -128,46 +128,37 @@ async function main() {
     await cdp.viewport(1440, 900);
     await cdp.navigate(base + '/');
     check('dashboard renders', await cdp.waitFor('!!document.querySelector(".hero")'));
-    check('dashboard has quick actions', await cdp.waitFor('document.body.innerText.includes("新建战役")'));
+    check('dashboard shows empty-scenario state', await cdp.waitFor('document.body.innerText.includes("还没有可玩的剧本")'));
 
-    // Wizard: world -> character -> party -> title -> play
+    await cdp.navigate(base + '/games');
+    check('game hall shows empty state', await cdp.waitFor('document.body.innerText.includes("游戏厅还空着")'));
+
     await cdp.navigate(base + '/campaigns/new');
-    check('wizard opens', await cdp.waitFor('!!document.querySelector("[data-action=wizard-world]")'));
-    await cdp.evaluate('document.querySelector("[data-action=wizard-world]").click()');
-    await cdp.waitFor('!!document.querySelector("#wz-name")');
-    await cdp.evaluate(`(() => { const i = document.querySelector('#wz-name'); i.value = '浏览器旅人'; i.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('[data-action=wizard-next]').click(); })()`);
-    const partyStep = await cdp.waitFor('document.body.innerText.includes("确认队伍")');
-    check('wizard reaches party step', partyStep);
-    await cdp.evaluate('document.querySelector("[data-action=wizard-next]").click()');
-    await cdp.waitFor('!!document.querySelector("#wz-title")');
-    await cdp.evaluate(`(() => { const t = document.querySelector('#wz-title'); t.value = '浏览器冒烟战役'; document.querySelector('[data-action=wizard-create]').click(); })()`);
-    const onPlay = await cdp.waitFor('location.pathname.startsWith("/c/") && !!document.querySelector(".map-stage")', 20000);
-    check('wizard creates campaign and enters play page', onPlay, await cdp.evaluate('location.pathname'));
-    const campaignId = (await cdp.evaluate('location.pathname')).split('/').pop();
-    check('play page loads token images', await cdp.waitFor('[...document.querySelectorAll(".portrait img")].length > 0 && [...document.querySelectorAll(".portrait img")].every(i => i.complete && i.naturalWidth > 0)'));
-    check('play page action panel', await cdp.waitFor('!!document.querySelector(".action-panel")'));
+    check('wizard explains no scenario', await cdp.waitFor('document.body.innerText.includes("还没有可直接游玩的剧本")'));
 
-    await cdp.navigate(base + '/campaigns');
-    check('campaign list shows campaign', await cdp.waitFor('document.querySelectorAll(".campaign-card").length > 0'));
-    await cdp.evaluate('document.querySelector("[data-action=archive]").click()');
-    await sleep(900);
-    check('archive removes from active list', await cdp.evaluate('document.querySelectorAll(".campaign-card").length === 1 && document.body.innerText.includes("已归档")'));
-    await cdp.evaluate('document.querySelector("[data-action=restore]").click()');
-    await sleep(900);
-    check('restore brings campaign back', await cdp.evaluate('document.querySelectorAll(".campaign-card").length === 1 && document.body.innerText.includes("进行中 · 1")'));
+    await cdp.navigate(base + '/characters/new');
+    check('character form renders', await cdp.waitFor('!!document.querySelector("#character-form")'));
+    await cdp.evaluate(`(() => { const f = document.querySelector('#character-form'); f.elements.namedItem('name').value = '浏览器旅人'; f.elements.namedItem('className').value = '游侠'; f.requestSubmit(); })()`);
+    const onSheet = await cdp.waitFor('location.pathname.startsWith("/characters/") && !location.pathname.endsWith("/new")', 20000);
+    check('character creation navigates to sheet', onSheet, await cdp.evaluate('location.pathname'));
+    check('character sheet renders', await cdp.waitFor('document.body.innerText.includes("生命值")'));
+
+    await cdp.navigate(base + '/characters');
+    check('roster shows created character', await cdp.waitFor('document.body.innerText.includes("浏览器旅人")'));
+
+    await cdp.navigate(base + '/worlds');
+    check('worlds page shows empty state', await cdp.waitFor('document.body.innerText.includes("还没有世界")'));
+
+    await cdp.navigate(base + '/library');
+    check('library shows empty state', await cdp.waitFor('document.body.innerText.includes("暂无条目")'));
 
     await cdp.navigate(base + '/settings');
     check('settings form renders', await cdp.waitFor('!!document.querySelector("#settings-form")'));
-    await cdp.navigate(base + '/worlds/whispering-tower');
-    check('world detail renders public book', await cdp.waitFor('document.body.innerText.includes("公开世界书")'));
 
     await cdp.viewport(390, 844);
     await cdp.navigate(base + '/');
     await cdp.waitFor('!!document.querySelector(".hero")');
     check('dashboard mobile has no horizontal overflow', await cdp.evaluate('document.documentElement.scrollWidth <= innerWidth'));
-    await cdp.navigate(base + '/c/' + campaignId);
-    await cdp.waitFor('!!document.querySelector(".map-stage")');
-    check('play page mobile has no horizontal overflow', await cdp.evaluate('document.documentElement.scrollWidth <= innerWidth'));
 
     check('no console errors', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | '));
     cdp.close();

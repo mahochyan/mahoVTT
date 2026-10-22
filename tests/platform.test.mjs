@@ -99,11 +99,10 @@ test('旧 campaigns 表可迁移出平台列与 characters 表', () => {
     rmSync(dir, { recursive: true, force: true });
 });
 
-test('平台接口：世界、角色、创建战役、归档、删除', async () => {
+test('平台接口：剧本目录为空、角色可创建、旧战役入口拒绝', async () => {
     const platform = await get('/api/platform');
     assert.equal(platform.status, 200);
-    assert.equal(platform.data.worlds.length, 1);
-    assert.equal(platform.data.worlds[0].id, 'whispering-tower');
+    assert.equal(platform.data.worlds.length, 0);
 
     const created = await send('/api/characters', {
         name: '阿尔', ancestry: '精灵', className: '游侠',
@@ -114,43 +113,26 @@ test('平台接口：世界、角色、创建战役、归档、删除', async ()
     assert.equal(created.data.name, '阿尔');
 
     const campaign = await send('/api/campaigns', { packId: 'whispering-tower', title: '平台测试', characterId: created.data.id });
-    assert.equal(campaign.status, 201);
-    const actor = campaign.data.state.actors.find((a) => a.id === 'pc');
-    assert.equal(actor.name, '阿尔');
-    assert.equal(actor.role, '游侠');
-    assert.equal(actor.range, 12);
-    assert.deepEqual(actor.abilityIds, ['aimed_shot']);
-    assert.equal(campaign.data.campaign.characterId, created.data.id);
-
-    const archived = await send(`/api/campaigns/${campaign.data.state.id}`, { lifecycle: 'archived' }, 'PATCH');
-    assert.equal(archived.status, 200);
-    assert.equal(archived.data.campaign.lifecycle, 'archived');
-    assert.deepEqual((await get('/api/campaigns?lifecycle=active')).data, []);
-    assert.equal((await get('/api/campaigns?lifecycle=archived')).data.length, 1);
-
-    const noConfirm = await fetch(base + `/api/campaigns/${campaign.data.state.id}`, { method: 'DELETE' });
-    assert.equal(noConfirm.status, 400);
-    const removed = await fetch(base + `/api/campaigns/${campaign.data.state.id}?confirm=1`, { method: 'DELETE' });
-    assert.equal(removed.status, 200);
+    assert.equal(campaign.status, 404);
     assert.deepEqual((await get('/api/campaigns')).data, []);
+
+    const games = await get('/api/games');
+    assert.equal(games.status, 200);
+    assert.deepEqual(games.data.games, []);
 });
 
-test('世界详情只返回公开世界书，内容库结构完整', async () => {
-    const world = await get('/api/worlds/whispering-tower');
-    assert.equal(world.status, 200);
-    assert.equal(world.data.book.entries.length > 0, true);
-    assert.ok(!JSON.stringify(world.data).includes('dmEntries'));
+test('世界与内容库为空，旧世界详情返回 404', async () => {
+    assert.deepEqual((await get('/api/worlds')).data, []);
+    assert.equal((await get('/api/worlds/whispering-tower')).status, 404);
     const lib = await get('/api/library');
-    assert.ok(lib.data.monsters.length >= 6);
-    assert.ok(lib.data.npcs.length >= 2);
-    assert.ok(lib.data.maps.length === 5);
-    assert.ok(lib.data.items.some((i) => i.id === 'potion'));
+    assert.deepEqual(lib.data, { monsters: [], npcs: [], items: [], maps: [] });
 });
 
-test('非法角色与未知世界返回明确错误', async () => {
+test('非法角色与未知游戏模块返回明确错误', async () => {
     const bad = await send('/api/characters', { name: '', className: '战士' });
     assert.equal(bad.status, 400);
     assert.equal(bad.data.error.code, 'BAD_CHARACTER');
     const unknown = await send('/api/campaigns', { packId: 'nope', playerName: '旅人', name: 'x' });
     assert.equal(unknown.status, 404);
+    assert.equal((await get('/api/games/nope')).status, 404);
 });

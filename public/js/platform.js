@@ -108,25 +108,29 @@ function heroContinue(c) {
     </section>`;
 }
 function heroEmpty() {
+    const noWorlds = state.data.worlds.length === 0;
     return `<section class="hero" style="--world-accent:#8fa4ba;--world-tint:rgba(143,164,186,.12)">
       <div class="hero-content hero-empty">
-        <div class="eyebrow">档案库</div>
-        <h2>还没有正在进行的战役。</h2>
-        <p>选择一个世界，创建角色，进入第一段冒险。每个战役独立存档，随时可以回到这里继续。</p>
-        <div class="hero-actions"><a class="btn primary" href="/campaigns/new" data-link>${icon('plus')} 新建战役</a><a class="btn ghost" href="/worlds" data-link>浏览世界</a></div>
+        <div class="eyebrow">${noWorlds ? '准备中' : '档案库'}</div>
+        <h2>${noWorlds ? '还没有可玩的剧本。' : '还没有正在进行的战役。'}</h2>
+        <p>${noWorlds ? '旧剧本已移除。新的“点开即玩”剧本正在制作中；你仍可以先创建角色，等剧本上线。' : '选择一个世界，创建角色，进入第一段冒险。每个战役独立存档，随时可以回到这里继续。'}</p>
+        <div class="hero-actions">${noWorlds ? `<a class="btn primary" href="/games" data-link>${icon('die')} 查看游戏厅</a><a class="btn ghost" href="/characters/new" data-link>${icon('users')} 创建角色</a>` : `<a class="btn primary" href="/campaigns/new" data-link>${icon('plus')} 新建战役</a><a class="btn ghost" href="/worlds" data-link>浏览世界</a>`}</div>
       </div>
     </section>`;
 }
 async function pageDashboard() {
-    setChrome('dashboard', '<b>工作台</b>', `<a class="btn small ghost" href="/settings" data-link>${icon('gear')} 设置</a><a class="btn small primary" href="/campaigns/new" data-link>${icon('plus')} 新建战役</a>`);
     const d = state.data;
+    const noWorlds = d.worlds.length === 0;
+    setChrome('dashboard', '<b>工作台</b>', `<a class="btn small ghost" href="/settings" data-link>${icon('gear')} 设置</a>` + (noWorlds
+        ? `<a class="btn small primary" href="/games" data-link>${icon('die')} 进入游戏厅</a>`
+        : `<a class="btn small primary" href="/campaigns/new" data-link>${icon('plus')} 新建战役</a>`));
     const active = d.campaigns.filter((c) => c.lifecycle === 'active');
     const counts = { active: active.length, victory: d.campaigns.filter((c) => c.status === 'victory').length };
     const recent = active[0];
     const cards = active.slice(0, 6).map(campaignCard).join('');
     view(`
       ${pageHead('Workspace', '工作台', '战役、角色与世界的本地档案库。所有状态保存在本机 SQLite，模型只提案，引擎负责结算。')}
-      <div class="panel" style="margin-bottom:18px"><div class="panel-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px"><div><strong>🎲 多游戏入口</strong><p class="muted" style="margin:4px 0 0">切换独立跑团规则、地图、角色和存档。已有 d20 与 D6 实验模块。</p></div><a class="btn primary" href="/games" data-link>进入游戏厅 →</a></div></div>
+      <div class="panel" style="margin-bottom:18px"><div class="panel-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px"><div><strong>🎲 多游戏入口</strong><p class="muted" style="margin:4px 0 0">切换独立跑团规则、地图、角色和存档。${noWorlds ? '旧剧本已移除，新剧本制作中。' : '选择一个模块开始。'}</p></div><a class="btn primary" href="/games" data-link>进入游戏厅 →</a></div></div>
       ${recent ? heroContinue(recent) : heroEmpty()}
       <div class="stat-row">
         <div class="stat"><strong>${counts.active}</strong><small>进行中战役</small></div>
@@ -137,13 +141,15 @@ async function pageDashboard() {
       <div class="dash-grid">
         <section>
           <div class="section-title"><h2>最近战役</h2><a href="/campaigns" data-link>全部战役 →</a></div>
-          ${cards ? `<div class="campaign-grid">${cards}</div>` : '<div class="panel"><div class="empty"><h3>还没有战役</h3><p>新建一段冒险，或者导入旧版存档。</p><a class="btn primary" href="/campaigns/new" data-link>新建战役</a></div></div>'}
+          ${cards ? `<div class="campaign-grid">${cards}</div>` : `<div class="panel"><div class="empty"><h3>还没有战役</h3><p>${noWorlds ? '旧剧本已移除，新的可直接游玩的剧本正在制作中。' : '新建一段冒险，或者导入旧版存档。'}</p>${noWorlds ? '<a class="btn primary" href="/games" data-link>查看游戏厅</a>' : '<a class="btn primary" href="/campaigns/new" data-link>新建战役</a>'}</div></div>`}
         </section>
         <aside class="stack">
           <section class="panel">
             <div class="panel-head"><h2>快速操作</h2></div>
             <div class="panel-body quick-list">
-              <a class="quick-link" href="/campaigns/new" data-link>${icon('flag')}<span>新建战役<small>选择世界、角色与队伍</small></span></a>
+              ${noWorlds
+                ? `<a class="quick-link" href="/games" data-link>${icon('die')}<span>浏览游戏厅<small>新剧本制作中</small></span></a>`
+                : `<a class="quick-link" href="/campaigns/new" data-link>${icon('flag')}<span>新建战役<small>选择世界、角色与队伍</small></span></a>`}
               <a class="quick-link" href="/characters/new" data-link>${icon('users')}<span>新建角色<small>战士、游侠或牧师</small></span></a>
               <button class="quick-link" data-action="import">${icon('upload')}<span>导入存档<small>把旧版 JSON 战役放进档案库</small></span></button>
               <a class="quick-link" href="/settings" data-link>${icon('gear')}<span>AI 设置<small>${e(providerLabel(d.provider))}</small></span></a>
@@ -172,7 +178,10 @@ async function pageDashboard() {
 
 /* ── Campaigns ─────────────────────────────────────────────── */
 function pageCampaigns() {
-    setChrome('campaigns', '<b>战役</b>', `<a class="btn small primary" href="/campaigns/new" data-link>${icon('plus')} 新建战役</a>`);
+    const noWorlds = state.data.worlds.length === 0;
+    setChrome('campaigns', '<b>战役</b>', noWorlds
+        ? `<a class="btn small primary" href="/games" data-link>${icon('die')} 查看游戏厅</a>`
+        : `<a class="btn small primary" href="/campaigns/new" data-link>${icon('plus')} 新建战役</a>`);
     const active = state.data.campaigns.filter((c) => c.lifecycle === 'active');
     const archived = state.data.campaigns.filter((c) => c.lifecycle === 'archived');
     const cards = (list) => `<div class="campaign-grid">${list.map((c) => `<article class="campaign-card" style="--world-accent:${world(c.packId).theme.accent};--world-tint:${world(c.packId).theme.tint}">
@@ -183,7 +192,7 @@ function pageCampaigns() {
     </article>`).join('')}</div>`;
     view(`${pageHead('Campaigns', '战役', '进行中的冒险与已归档的记录。归档后仍可恢复，不会被删除。')}
       <div class="section-title"><h2>进行中 · ${active.length}</h2></div>
-      ${active.length ? cards(active) : '<div class="panel"><div class="empty"><h3>没有进行中的战役</h3><p>创建一段新冒险，或从归档中恢复。</p><a class="btn primary" href="/campaigns/new" data-link>新建战役</a></div></div>'}
+      ${active.length ? cards(active) : `<div class="panel"><div class="empty"><h3>没有进行中的战役</h3><p>${noWorlds ? '旧剧本已移除，新的可直接游玩的剧本正在制作中。' : '创建一段新冒险，或从归档中恢复。'}</p>${noWorlds ? '<a class="btn primary" href="/games" data-link>查看游戏厅</a>' : '<a class="btn primary" href="/campaigns/new" data-link>新建战役</a>'}</div></div>`}
       <div class="section-title" style="margin-top:30px"><h2>已归档 · ${archived.length}</h2></div>
       ${archived.length ? cards(archived) : '<div class="panel"><div class="empty"><h3>归档是空的</h3><p>暂时搁置的战役会出现在这里。</p></div></div>'}`);
 }
@@ -263,6 +272,12 @@ function startWizard(packId) {
     state.wizard = { step: 1, packId: packId || state.data.worlds[0]?.id || 'whispering-tower', mode: 'new', characterId: null, rosterId: null, draft: defaultDraft(), title: '' };
 }
 function pageWizard(packId) {
+    if (!state.data.worlds.length) {
+        setChrome('campaigns', `<a href="/campaigns" data-link>战役</a> ${icon('chevron')} <b>新建战役</b>`, '');
+        view(`${pageHead('New Campaign', '新建战役', '暂无可用剧本')}
+          <div class="panel"><div class="empty"><h3>还没有可直接游玩的剧本</h3><p>旧剧本已移除。新的“点开即玩”剧本上线后，这里会出现世界与预设队伍。</p><a class="btn primary" href="/games" data-link>查看游戏厅</a><a class="btn ghost" href="/characters/new" data-link>先创建角色</a></div></div>`);
+        return;
+    }
     if (!state.wizard || (packId && state.wizard.packId !== packId)) startWizard(packId);
     const w = state.wizard;
     setChrome('campaigns', `<a href="/campaigns" data-link>战役</a> ${icon('chevron')} <b>新建战役</b>`, '');
@@ -437,8 +452,9 @@ function worldCard(w) {
 }
 function pageWorlds() {
     setChrome('worlds', '<b>世界</b>', '');
-    view(`${pageHead('Worlds', '世界', '世界提供地图、NPC、任务、默认同伴与视觉主题。v0.2 只有一个内置世界，更多世界会在内容包阶段加入。')}
-      <div class="world-grid">${state.data.worlds.map(worldCard).join('')}</div>`);
+    const list = state.data.worlds;
+    view(`${pageHead('Worlds', '世界', '世界提供地图、NPC、任务、默认同伴与视觉主题。旧剧本已移除，新剧本包上线后会出现在这里。')}
+      ${list.length ? `<div class="world-grid">${list.map(worldCard).join('')}</div>` : '<div class="panel"><div class="empty"><h3>还没有世界</h3><p>旧剧本已移除；新的可直接游玩的剧本正在制作中。</p><a class="btn primary" href="/games" data-link>查看游戏厅</a></div></div>'}`);
 }
 async function pageWorldDetail(id) {
     let detail;
@@ -465,7 +481,7 @@ async function pageLibrary() {
         items: () => lib.items.map((i) => `<article class="lib-item"><h3>${e(i.name)}</h3><p>${e(i.kind)} · ${e(i.effect)}</p><div class="stats"><span>${e(i.source)}</span></div></article>`).join(''),
         maps: () => lib.maps.map((m) => `<article class="lib-item"><h3>${e(m.name)}</h3><p>${e(m.subtitle)}</p><p class="faint" style="margin-top:6px">${e(m.description)}</p></article>`).join(''),
     };
-    view(`${pageHead('Library', '内容库', '当前世界的怪物、NPC、道具与地图，只读。')}
+    view(`${pageHead('Library', '内容库', '旧剧本内容已移除；新剧本包上线后这里会显示怪物、NPC、道具与地图。')}
       <div class="tabs">${tabs.map(([id, label]) => `<button class="${state.libTab === id ? 'active' : ''}" data-action="lib-tab" data-tab="${id}">${label}</button>`).join('')}</div>
       <div class="lib-grid">${body[state.libTab]() || '<p class="faint">暂无条目。</p>'}</div>`, (el) => {
         el.querySelectorAll('[data-action="lib-tab"]').forEach((b) => b.addEventListener('click', () => { state.libTab = b.dataset.tab; pageLibrary(); }));
@@ -536,7 +552,7 @@ async function pageGames() {
         '</article>';
     }).join('');
     view(pageHead('Game Library', '游戏厅', '第一级只管理游戏；每个二级模块自己管理规则、角色、战斗与存档。') +
-      '<div class="card-grid">' + cards + '</div>');
+      (cards ? '<div class="card-grid">' + cards + '</div>' : '<div class="panel"><div class="empty"><h3>游戏厅还空着</h3><p>旧剧本已移除。新的“点开即玩”剧本包正在制作中；届时这里会直接出现可进入的剧本。</p><a class="btn ghost" href="/characters/new" data-link>先创建角色</a></div></div>'));
 }
 
 /* ── Shared actions ────────────────────────────────────────── */

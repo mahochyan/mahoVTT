@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import type { GameState, Actor, Room, Interactable, Point, View } from './types.ts';
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
-export const BOOK = JSON.parse(readFileSync(new URL('../content/worldbook.json', import.meta.url), 'utf8')) as {
+export const BOOK = JSON.parse(readFileSync(new URL('../legacy/whispering-tower/worldbook.json', import.meta.url), 'utf8')) as {
     version: string;
     title: string;
     premise: string;

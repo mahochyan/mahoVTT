@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { Store, type TurnRow } from './db/store.ts';
 import { ConfigStore, DATA_DIR } from './ai/config.ts';
 import { Provider, deterministicNarrative } from './ai/provider.ts';
-import { newGame, ROOT, BOOK, publicBook } from './world.ts';
+import { newGame, ROOT, BOOK } from './world.ts';
 import { GameError, type Command, type GameState, type DomainEvent } from './types.ts';
 import { parseCommand, resolvePlan, tacticalPlan, activeId, view } from './engine/engine.ts';
 import { roll } from './engine/dice.ts';
@@ -280,7 +280,7 @@ const server = createServer(async (req, res) => {
             }
         }
         if (path === '/api/bootstrap' && method === 'GET')
-            return json(res, { campaigns: store.list(), characters: store.listCharacters(), worlds: WORLDS, provider: configs.public(), book: publicBook(), version: '0.2.0' });
+            return json(res, { campaigns: store.list(), characters: store.listCharacters(), worlds: WORLDS, provider: configs.public(), book: null, version: '0.2.0' });
         if (path === '/api/settings' && method === 'GET')
             return json(res, configs.public());
         if (path === '/api/settings' && method === 'POST')
@@ -295,10 +295,13 @@ const server = createServer(async (req, res) => {
         }
         if (path === '/api/campaigns' && method === 'POST') {
             const b = await body(req);
-            const packId = typeof b.packId === 'string' && b.packId ? b.packId : 'whispering-tower';
-            const world = getWorld(packId);
-            if (!world)
+            const requestedPack = typeof b.packId === 'string' && b.packId ? b.packId : null;
+            if (requestedPack && !getWorld(requestedPack))
                 throw new GameError('NOT_FOUND', '未知世界。', 404);
+            // No packId keeps the legacy API usable for engine regression tests.
+            // The UI never creates campaigns while the game hall is empty.
+            const packId = requestedPack ?? 'whispering-tower';
+            const world = getWorld(packId);
             let characterId: string | null = null;
             let playerName = typeof b.playerName === 'string' ? b.playerName.trim() : '';
             let preset: ReturnType<typeof actorPreset> | undefined;
@@ -316,7 +319,7 @@ const server = createServer(async (req, res) => {
             }
             if (!playerName || playerName.length > 20)
                 throw new GameError('BAD_NAME', '角色名须为 1 至 20 字。');
-            const title = (typeof b.title === 'string' ? b.title : typeof b.name === 'string' ? b.name : '').trim() || world.title;
+            const title = (typeof b.title === 'string' ? b.title : typeof b.name === 'string' ? b.name : '').trim() || world?.title || '未命名战役';
             if (title.length > 60)
                 throw new GameError('BAD_NAME', '战役名最多 60 字。');
             const created = store.create(newGame(title, playerName, preset), { packId, characterId });
@@ -406,8 +409,7 @@ const server = createServer(async (req, res) => {
         if (method !== 'GET' && method !== 'HEAD')
             throw new GameError('METHOD', '不支持这个请求方法。', 405);
         const platformPage = path === '/' || path === '/games' || /^\/(campaigns|characters|worlds|library|settings)(\/|$)/.test(path);
-        let file = path === '/games/wrath-d6-experiment' ? join(ROOT, 'public/games/wrath.html')
-            : path.startsWith('/c/') ? join(ROOT, 'public/index.html')
+        let file = path.startsWith('/c/') ? join(ROOT, 'public/index.html')
             : platformPage ? join(ROOT, 'public/platform.html')
                 : pathResolve(ROOT, 'public', '.' + decodeURIComponent(path));
         const root = pathResolve(ROOT, 'public') + sep;
