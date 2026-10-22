@@ -2,6 +2,7 @@ import { $, e, icon, api, toast, modal, closeModal, confirmDialog, fmtDate, relT
 
 const NAV = [
     { id: 'dashboard', href: '/', label: '工作台', icon: 'grid' },
+    { id: 'games', href: '/games', label: '游戏厅', icon: 'die' },
     { id: 'campaigns', href: '/campaigns', label: '战役', icon: 'flag' },
     { id: 'characters', href: '/characters', label: '角色', icon: 'users' },
     { id: 'worlds', href: '/worlds', label: '世界', icon: 'globe' },
@@ -45,7 +46,7 @@ function setChrome(active, crumb, actions = '') {
     const status = $('#ai-status');
     status.classList.toggle('on', p?.mode === 'openai');
     status.querySelector('span').textContent = providerLabel(p);
-    document.title = crumb ? `${crumb.replace(/<[^>]+>/g, '')} · 灰灯纪事` : '灰灯纪事 · 本地跑团档案库';
+    document.title = crumb ? `${crumb.replace(/<[^>]+>/g, '')} · mahoVTT` : 'mahoVTT · AI 跑团游戏厅';
 }
 function view(html, wire) {
     const el = $('#view');
@@ -125,6 +126,7 @@ async function pageDashboard() {
     const cards = active.slice(0, 6).map(campaignCard).join('');
     view(`
       ${pageHead('Workspace', '工作台', '战役、角色与世界的本地档案库。所有状态保存在本机 SQLite，模型只提案，引擎负责结算。')}
+      <div class="panel" style="margin-bottom:18px"><div class="panel-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px"><div><strong>🎲 多游戏入口</strong><p class="muted" style="margin:4px 0 0">切换独立跑团规则、地图、角色和存档。已有 d20 与 D6 实验模块。</p></div><a class="btn primary" href="/games" data-link>进入游戏厅 →</a></div></div>
       ${recent ? heroContinue(recent) : heroEmpty()}
       <div class="stat-row">
         <div class="stat"><strong>${counts.active}</strong><small>进行中战役</small></div>
@@ -515,6 +517,28 @@ async function pageSettings() {
     });
 }
 
+/* ── Level-one game hall ───────────────────────────────────── */
+async function pageGames() {
+    setChrome('games', '<b>游戏厅</b>', '');
+    let listing;
+    try { listing = await api('/api/games'); }
+    catch (err) { view('<div class="panel"><div class="empty"><h3>游戏厅加载失败</h3><p>' + e(err.message) + '</p></div></div>'); return; }
+    const cards = listing.games.map(g => {
+        const isLegacy = g.id === 'graylight-d20';
+        const href = g.creationRoute;
+        return '<article class="lib-item" style="padding:24px;display:flex;flex-direction:column;gap:12px">' +
+          '<div><span class="tag">' + e(g.phase === 'experimental' ? '实验模块' : '可玩版本') + '</span> <span class="faint">' + e(g.rulesetId) + '</span></div>' +
+          '<div><h2 style="margin:0 0 5px">' + e(g.name) + '</h2><p class="muted" style="margin:0">' + e(g.subtitle) + '</p></div>' +
+          '<p>' + e(g.description) + '</p>' +
+          '<p class="faint">' + g.features.map(v => e(v)).join(' · ') + '</p>' +
+          (g.disclaimer ? '<p class="faint" style="font-size:12px">' + e(g.disclaimer) + '</p>' : '') +
+          '<div style="margin-top:auto"><a class="btn primary" href="' + e(href) + '"' + (isLegacy ? ' data-link' : '') + '>进入游戏 →</a></div>' +
+        '</article>';
+    }).join('');
+    view(pageHead('Game Library', '游戏厅', '第一级只管理游戏；每个二级模块自己管理规则、角色、战斗与存档。') +
+      '<div class="card-grid">' + cards + '</div>');
+}
+
 /* ── Shared actions ────────────────────────────────────────── */
 function notFound(message) {
     setChrome('', '<b>未找到</b>', '');
@@ -608,6 +632,7 @@ async function render() {
     const path = location.pathname.replace(/\/+$/, '') || '/';
     let m;
     if (path === '/') return pageDashboard();
+    if (path === '/games') return pageGames();
     if (path === '/campaigns') return pageCampaigns();
     if (path === '/campaigns/new') { const params = new URLSearchParams(location.search); return pageWizard(params.get('world') || undefined); }
     if ((m = /^\/campaigns\/([a-f0-9-]{36})$/.exec(path))) return pageCampaignDetail(m[1]);

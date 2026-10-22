@@ -12,6 +12,7 @@ import { roll } from './engine/dice.ts';
 import { WORLDS, getWorld, worldBook } from './platform/worlds.ts';
 import { validateCharacter, actorPreset } from './platform/characters.ts';
 import { library } from './platform/library.ts';
+import { gameRequest } from './games/hub.ts';
 // This single-user edition must never run two servers against the same save directory.
 mkdirSync(DATA_DIR, { recursive: true });
 const lockPath = join(DATA_DIR, 'server.lock');
@@ -229,6 +230,9 @@ const server = createServer(async (req, res) => {
     try {
         ensureOrigin(req);
         const url = new URL(req.url || '/', `http://${req.headers.host}`), path = url.pathname, method = req.method || 'GET';
+        // Level-one lobby delegates all /api/games/* requests to isolated runtimes.
+        const modular = await gameRequest(path, method, () => body(req));
+        if (modular) return json(res, modular.data, modular.status);
         if (path === '/api/health' && method === 'GET')
             return json(res, { ok: true, version: '0.2.0', contentVersion: BOOK.version });
         if (path === '/api/platform' && method === 'GET')
@@ -401,8 +405,9 @@ const server = createServer(async (req, res) => {
             throw new GameError('NOT_FOUND', '接口不存在。', 404);
         if (method !== 'GET' && method !== 'HEAD')
             throw new GameError('METHOD', '不支持这个请求方法。', 405);
-        const platformPage = path === '/' || /^\/(campaigns|characters|worlds|library|settings)(\/|$)/.test(path);
-        let file = path.startsWith('/c/') ? join(ROOT, 'public/index.html')
+        const platformPage = path === '/' || path === '/games' || /^\/(campaigns|characters|worlds|library|settings)(\/|$)/.test(path);
+        let file = path === '/games/wrath-d6-experiment' ? join(ROOT, 'public/games/wrath.html')
+            : path.startsWith('/c/') ? join(ROOT, 'public/index.html')
             : platformPage ? join(ROOT, 'public/platform.html')
                 : pathResolve(ROOT, 'public', '.' + decodeURIComponent(path));
         const root = pathResolve(ROOT, 'public') + sep;

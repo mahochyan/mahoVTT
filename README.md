@@ -180,3 +180,16 @@ dist/            已编译可运行程序
 ```
 
 世界书中不影响规则的文字可在 `content/worldbook.json` 修改，重启生效。地图、敌人数值与交互规则在 `src/world.ts` / `src/engine/engine.ts`，修改后重新编译；改变内容结构时应增加内容版本，避免旧存档静默套用新规则。
+
+
+## 多游戏厅架构（功能分支）
+
+一级入口：`/games`。通过 `GET /api/games` 发现二级游戏模块。
+
+- `graylight-d20`：保留原有《无声钟塔》的路由、角色和 SQLite 存档，继续从 `/campaigns/new` 开团。
+- `wrath-d6-experiment`：独立规则、角色、原创《黑井中继站》场景、SQLite 数据库和 Web 战斗界面；进入 `/games/wrath-d6-experiment`。
+- 各新模块 API 使用 `/api/games/{gameId}/...` 命名空间，权威状态在模块内部落库。已有战役不迁移，不混合 d20 / D6 的 HP、AC 或经验。
+
+完整边界、验证方式、版权声明见 [docs/multigame-hall.md](docs/multigame-hall.md)。
+
+**注意：** W&G 模块仅实验性使用公开基础骰法，额外伤害、职业、地图及冒险是原创简化规则，**不是** 完整官方 Wrath & Glory 规则或获授权的官方模组。没有复制 Cubicle 7 / Games Workshop 的付费正文和图片。
