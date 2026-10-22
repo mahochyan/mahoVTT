@@ -1,0 +1,55 @@
+{
+  "partyId": "gate-a-demo-party",
+  "scenarioId": "graveyard-shift",
+  "note": "Original demo builds for schema tests and the public repo. Not the official Graveyard Shift pregens; official builds live in the private data/wg pack.",
+  "pregens": [
+    {
+      "id": "demo-acolyte",
+      "name": "侍从·黎",
+      "archetype": "审判庭侍从",
+      "tier": 1,
+      "xpCost": 42,
+      "attributes": { "strength": 2, "toughness": 3, "agility": 2, "initiative": 2, "willpower": 3, "intellect": 3, "fellowship": 1 },
+      "skills": { "investigation": 3, "insight": 3, "ballisticSkill": 2, "stealth": 1, "scholar": 1 },
+      "talents": ["Ever Vigilant", "Lip Reader"],
+      "abilities": ["Read the Room"],
+      "gear": ["Laspistol", "Flak Coat", "Data-slate"],
+      "keywords": ["IMPERIUM", "INQUISITION"],
+      "sourceBook": "wg-c7-core",
+      "printedPage": 94,
+      "verification": "draft"
+    },
+    {
+      "id": "demo-guardsman",
+      "name": "卫兵·嵬",
+      "archetype": "帝国卫兵",
+      "tier": 1,
+      "xpCost": 48,
+      "attributes": { "strength": 3, "toughness": 3, "agility": 3, "initiative": 3, "willpower": 2, "intellect": 1, "fellowship": 2 },
+      "skills": { "athletics": 2, "awareness": 2, "ballisticSkill": 3, "weaponSkill": 2, "survival": 1 },
+      "talents": ["Combat Master"],
+      "abilities": ["Hold the Line"],
+      "gear": ["Lasgun", "Flak Armour", "Combat Knife", "3 Reloads"],
+      "keywords": ["IMPERIUM", "ASTRA MILITARUM"],
+      "sourceBook": "wg-c7-core",
+      "printedPage": 93,
+      "verification": "draft"
+    },
+    {
+      "id": "demo-tech-adept",
+      "name": "技术侍从·枢",
+      "archetype": "技术侍从",
+      "tier": 1,
+      "xpCost": 22,
+      "attributes": { "strength": 2, "toughness": 3, "agility": 2, "initiative": 3, "willpower": 3, "intellect": 4, "fellowship": 2 },
+      "skills": { "tech": 3, "scholar": 2, "investigation": 2, "awareness": 1, "ballisticSkill": 1 },
+      "talents": ["Tech-Initiate"],
+      "abilities": ["Admin Access"],
+      "gear": ["Laspistol", "Servo-Skull", "Multikey", "Flak Coat"],
+      "keywords": ["IMPERIUM", "ADEPTUS MECHANICUS"],
+      "sourceBook": "wg-c7-forsaken-guide",
+      "printedPage": 109,
+      "verification": "draft"
+    }
+  ]
+}

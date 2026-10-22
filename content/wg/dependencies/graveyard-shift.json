@@ -1,0 +1,63 @@
+{
+  "scenarioId": "graveyard-shift",
+  "sourceBook": "wg-c7-graveyard-shift",
+  "status": "declared",
+  "dependencies": [
+    {
+      "id": "corruption.carvings",
+      "kind": "rule",
+      "description": "Viewing the shifting carvings on the tomb walls",
+      "testId": "wg.corruption.dn1",
+      "status": "declared"
+    },
+    {
+      "id": "corruption.rift",
+      "kind": "rule",
+      "description": "Remaining near the Warp Rift when it opens",
+      "testId": "wg.corruption.dn3",
+      "status": "declared"
+    },
+    {
+      "id": "threat.pink-horror",
+      "kind": "threat",
+      "description": "Pink Horrors: Fear, On Fire, Determination, death split",
+      "testId": "wg.threat.pink-horror",
+      "status": "declared"
+    },
+    {
+      "id": "threat.guardian-amalgamation",
+      "kind": "threat",
+      "description": "Stationary Mob, three components per Tier 1 Agent, Shock track disabled, Ruin action",
+      "testId": "wg.threat.guardian-amalgamation",
+      "status": "declared"
+    },
+    {
+      "id": "item.stalker-flare",
+      "kind": "item",
+      "description": "Single signalling device that summons Mendax; not an enemy plus a flare",
+      "testId": "wg.item.stalker-flare",
+      "status": "declared"
+    },
+    {
+      "id": "exploration.survival",
+      "kind": "test",
+      "description": "Three DN 4 Survival tests; reduced to DN 2 with Librarium directions",
+      "testId": "wg.exploration.survival",
+      "status": "declared"
+    },
+    {
+      "id": "investigation.fixed-dn",
+      "kind": "test",
+      "description": "Scenario-fixed DNs including DN 10 Scholar; not limited to the reference table",
+      "testId": "wg.investigation.fixed-dn",
+      "status": "declared"
+    },
+    {
+      "id": "ending.branches",
+      "kind": "scenario",
+      "description": "Mendax lives/dies; Revelator returned, kept, or destroyed",
+      "testId": "wg.ending.branches",
+      "status": "declared"
+    }
+  ]
+}
