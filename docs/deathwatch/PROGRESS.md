@@ -1,6 +1,6 @@
 # 进度记录（只写实测结果）
 
-**最后更新：** 2026-10-23 00:55 (+08:00)
+**最后更新：** 2026-10-23 00:35 (+08:00)
 **分支：** `feat/deathwatch-d100-private-campaign`
 **工作副本：** `E:\VTT\worktrees\deathwatch`（独立 worktree，主 checkout 被另一会话占用）
 **提交：** `1801511` → `26ef304` → `772532e` → `12797a3` → `d31601e` → `bb81cea` → `fd8639e`
@@ -11,7 +11,7 @@
 |---|---|
 | `npm run build` | 通过 |
 | `node --test tests/*.test.mjs` | **112 通过 / 0 失败 / 0 跳过** |
-| `node tests/deathwatch-browser.mjs` | **17/17 通过**，控制台 0 error |
+| `node tests/deathwatch-browser.mjs` | **17/17 通过**，控制台 0 error（视觉返工后重跑） |
 | 真实模型端点 | plan 8.1 s / narrate 5.9 s / 队友行动 7.9 s（详见 S5 证据） |
 | 官方冒险试跑 | 11 场景、6 目标全完成、`victory`（详见 S4 证据） |
 
@@ -49,6 +49,13 @@
 ### S7 真实界面验收（`fd8639e`）
 - Edge headless 走完首页→建团→开局→移动→战斗→攻击，17 项断言，三档宽度截图。
 - 修掉了只在浏览器里暴露的建团面板崩溃。
+
+### S8 视觉与交互对齐（本次返工）
+- Deathwatch 界面改用《怒火与荣耀》的同一套设计 token、卡片/按钮/侧栏结构与断点。
+- 新增与 W&G 相同的"一句话输入 + 提案确认"交互，接 `/plan`。
+- 中央区仍是地图（本模块核心），只对齐外壳与交互语法。
+- 私有封面图落在 `public/games/deathwatch/art/`，已加入 `.gitignore`。
+- 证据：`E:\VTT\docs\evidence\S8-visual-parity\`。
 
 ## 还没做（重要）
 

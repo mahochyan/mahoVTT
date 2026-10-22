@@ -111,44 +111,44 @@ async function main() {
   await cdp.shot('01-home-1440.png');
 
   await cdp.evaluate('document.querySelector("#newSquad").click()');
-  check('建团面板出现', await cdp.waitFor('!document.querySelector("#creation").classList.contains("hidden")'));
+  check('建团面板出现', await cdp.waitFor(`!document.querySelector('#creation').hidden`));
   const attrsOk = await cdp.waitFor('document.querySelectorAll(".slot .attr").length >= 27', 20000);
   check('服务端掷出九项属性', attrsOk, '');
   if (!attrsOk) console.log('DEBUG createError =', await cdp.evaluate('document.querySelector("#createError").textContent'));
   await cdp.shot('02-creation-1440.png');
 
   await cdp.evaluate('document.querySelector("#submitSquad").click()');
-  check('进入游戏界面', await cdp.waitFor('!!document.querySelector("#play") && !document.querySelector("#play").classList.contains("hidden")', 20000));
-  check('三名队员的角色卡', await cdp.waitFor('document.querySelectorAll("#actorCards .actor").length === 3'));
-  check('地图渲染出格子', await cdp.waitFor('document.querySelectorAll("#mapWrap .cell").length > 300'));
+  check('进入游戏界面', await cdp.waitFor(`!!document.querySelector('#play') && !document.querySelector('#play').hidden`, 20000));
+  check('三名队员的角色卡', await cdp.waitFor(`document.querySelectorAll('#pane-party .card').length === 3`));
+  check('地图渲染出格子', await cdp.waitFor(`document.querySelectorAll('#map .cell').length > 300`));
 
   // 移动到相邻格并确认
-  await cdp.evaluate(`(() => { const cells=[...document.querySelectorAll('#mapWrap .cell')]; const c=cells.find(x=>x.dataset.x==='3'&&x.dataset.y==='7'); c.click(); return true; })()`);
-  check('选中格子后出现移动按钮', await cdp.waitFor(`[...document.querySelectorAll('#actions button')].some(b=>b.textContent.includes('移动到'))`));
-  await cdp.evaluate(clickText('#actions button', '移动到'));
-  check('移动后回合记录更新', await cdp.waitFor(`document.querySelector('#events').textContent.includes('移动')`, 12000));
+  await cdp.evaluate(`(() => { const cells=[...document.querySelectorAll('#map .cell')]; const c=cells.find(x=>x.dataset.x==='3'&&x.dataset.y==='7'); c.click(); return true; })()`);
+  check('选中格子后出现移动按钮', await cdp.waitFor(`[...document.querySelectorAll('#action-bar button')].some(b=>b.textContent.includes('移动到'))`));
+  await cdp.evaluate(clickText('#action-bar button', '移动到'));
+  check('移动后回合记录更新', await cdp.waitFor(`document.querySelector('#pane-log').textContent.includes('移动')`, 12000));
   await cdp.shot('03-play-1440.png');
 
   // 进入有敌人的场景
-  await cdp.evaluate(clickText('#actions button', '前往驻军防线'));
-  check('进入战斗并出现敌人棋子', await cdp.waitFor(`document.querySelectorAll('#mapWrap .token.enemy').length > 0`, 15000));
-  check('场景标题显示战斗轮次', await cdp.waitFor(`document.querySelector('#sceneHeader').textContent.includes('轮')`));
+  await cdp.evaluate(clickText('#action-bar button', '前往驻军防线'));
+  check('进入战斗并出现敌人棋子', await cdp.waitFor(`document.querySelectorAll('#map .token.enemy').length > 0`, 15000));
+  check('场景标题显示战斗轮次', await cdp.waitFor(`document.querySelector('#scene-part').textContent.includes('轮')`));
 
   // 选敌人并攻击
-  await cdp.evaluate(`(() => { const t=document.querySelector('#mapWrap .token.enemy'); t.closest('.cell').click(); return true; })()`);
-  check('选中敌人后攻击按钮可用', await cdp.waitFor(`[...document.querySelectorAll('#actions button')].some(b=>b.textContent.includes('攻击') && !b.disabled)`));
-  await cdp.evaluate(clickText('#actions button', '攻击（单发）'));
+  await cdp.evaluate(`(() => { const t=document.querySelector('#map .token.enemy'); t.closest('.cell').click(); return true; })()`);
+  check('选中敌人后攻击按钮可用', await cdp.waitFor(`[...document.querySelectorAll('#action-bar button')].some(b=>b.textContent.includes('攻击') && !b.disabled)`));
+  await cdp.evaluate(clickText('#action-bar button', '攻击（单发）'));
   check('攻击产生检定卡或未行动提示', await waitFor(async () => {
-    const text = await cdp.evaluate(`document.querySelector('#events').textContent`);
+    const text = await cdp.evaluate(`document.querySelector('#pane-log').textContent`);
     return text.includes('命中') || text.includes('未命中') || text.includes('轮到') || text.includes('规则策略');
   }, 15000));
-  check('骰子卡显示 d100', await cdp.waitFor(`document.querySelector('#diceCard').textContent.includes('d100')`, 15000));
+  check('骰子卡显示 d100', await cdp.waitFor(`!!document.querySelector('.dice-card')`, 15000));
   await cdp.shot('04-combat-1440.png');
 
   // 三档宽度
   await cdp.viewport(1024, 768);
   await sleep(400);
-  check('1024 宽度下地图仍可见', await cdp.waitFor(`document.querySelectorAll('#mapWrap .cell').length > 300`));
+  check('1024 宽度下地图仍可见', await cdp.waitFor(`document.querySelectorAll('#map .cell').length > 300`));
   await cdp.shot('05-play-1024.png');
   await cdp.viewport(390, 844);
   await sleep(400);

@@ -1,181 +1,127 @@
-/** Deathwatch module UI. Server owns every number; this file only renders and sends intents. */
+/** 死亡守望 UI。设计语言与《怒火与荣耀》模块一致：同一套 token、卡片、按钮与侧栏结构。
+ *  服务端拥有所有数值；前端只负责渲染与提交意图。 */
 const API = '/api/games/deathwatch-d100';
-const $ = sel => document.querySelector(sel);
-const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+const LS_SESSION = 'dw-session';
+const LS_DRAFT = 'dw-draft';
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
-let catalog = null, missions = [], sessions = [], current = null, view = null;
-let draftId = null, draft = null;
-let selected = { cell: null, target: null };
-let busy = false;
+let catalog = null, missions = [], sessions = [];
+let current = null, view = null, draft = null, draftId = null;
+let busy = false, selected = {cell: null, target: null}, proposal = null;
 
-async function call(path, options = {}) {
-  const res = await fetch(API + path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body?.error?.message || `HTTP ${res.status}`);
+async function request(path, options = {}) {
+  const response = await fetch(API + path, {headers: {'Content-Type': 'application/json'}, ...options});
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body?.error?.message || `请求失败（${response.status}）`);
   return body;
 }
+const newRequestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const phaseName = (p) => ({briefing: '简报', exploration: '探索', combat: '战斗', debrief: '结算', victory: '胜利', defeat: '失败'})[p] || p;
 
-function requestId(prefix) {
-  return `${prefix}:${Date.now().toString(36)}:${Math.random().toString(36).slice(2, 10)}`;
+function show(which) {
+  $('start').hidden = which !== 'start';
+  $('creation').hidden = which !== 'creation';
+  $('play').hidden = which !== 'play';
 }
 
-/* ---------------- home ---------------- */
+/* ---------------- 启动 ---------------- */
 async function boot() {
   try {
-    const root = await call('');
+    const root = await request('');
     catalog = root.catalog;
     missions = root.missions;
     sessions = root.sessions;
-    $('#moduleDesc').textContent = root.module.description;
-    $('#ruleProfile').textContent = root.module.rulesetId;
-    $('#moduleState').textContent = root.module.phase === 'playable' ? '可玩' : '开发中 · 实验';
-    $('#provider').textContent = root.provider.mode === 'openai'
-      ? `模型：${root.provider.model || '未填模型 ID'}`
-      : '规则演示模式（不调用模型）';
-    renderHome();
-    fillCreation();
-    const saved = sessionStorage.getItem('dw-draft');
+    $('moduleDesc').textContent = root.module.description;
+    $('moduleState').textContent = root.module.phase === 'playable' ? '可玩' : '开发中 · 实验';
+    $('rulesNote').textContent = root.module.disclaimer || '';
+    renderStart();
+    const saved = localStorage.getItem(LS_SESSION);
     if (saved) {
-      try { const r = await call(`/creation/${saved}`); draftId = saved; draft = r.draft; renderDraft(); } catch { sessionStorage.removeItem('dw-draft'); }
+      try { await openSession(saved); } catch { localStorage.removeItem(LS_SESSION); }
     }
-    show('home');
-  } catch (e) {
-    $('#moduleState').textContent = '模块不可用';
-    $('#moduleDesc').textContent = e.message;
+  } catch (error) {
+    $('moduleState').textContent = '模块不可用';
+    $('moduleDesc').textContent = error.message;
+    $('start-msg').textContent = error.message;
   }
 }
 
-function show(name) {
-  for (const id of ['home', 'creation', 'play']) $('#' + id).classList.toggle('hidden', id !== name);
+function renderStart() {
+  $('missions').innerHTML = missions.map((m, i) => `
+    <article class="card">
+      <h3>${esc(m.title)}</h3>
+      <div class="sub">${m.sourceKind === 'original' ? '原创测试任务' : '私有改编'} · ${m.scenes} 场景</div>
+      <p class="lead small">${esc(m.description || '')}</p>
+      <div class="actions"><button class="btn ${i === 0 ? 'primary' : 'ghost'} small" data-mission="${esc(m.id)}">新建小队</button></div>
+    </article>`).join('') || '<p class="empty">还没有可用副本。</p>';
+  $('sessions').innerHTML = sessions.map((s) => `
+    <article class="card">
+      <h3>${esc(s.title || '未命名战役')}</h3>
+      <div class="sub">${esc(s.mission)} · ${phaseName(s.phase)}</div>
+      <div class="actions"><button class="btn small" data-session="${esc(s.id)}">继续</button></div>
+    </article>`).join('') || '<p class="empty">还没有存档；先新建一支小队。</p>';
+  document.querySelectorAll('[data-session]').forEach((b) => b.addEventListener('click', () => openSession(b.dataset.session)));
+  document.querySelectorAll('[data-mission]').forEach((b) => b.addEventListener('click', () => openCreation()));
 }
 
-function renderHome() {
-  const list = $('#sessionList');
-  list.replaceChildren();
-  if (!sessions.length) list.append(el('li', 'muted', '还没有存档。先新建一支小队。'));
-  for (const s of sessions) {
-    const li = el('li');
-    const open = el('button', 'link', s.title || '未命名战役');
-    open.onclick = () => openSession(s.id);
-    li.append(open, el('span', 'muted', ` · ${s.mission} · ${phaseName(s.phase)}`));
-    list.append(li);
+/* ---------------- 建团 ---------------- */
+const ROLES = [['pc', '主角'], ['ally-1', '战斗兄弟 1'], ['ally-2', '战斗兄弟 2']];
+const ATTR_LABELS = {ws: '武器技巧', bs: '射击技巧', s: '力量', t: '坚韧', ag: '敏捷', int: '智力', per: '感知', wp: '意志', fel: '交涉'};
+
+function openCreation() {
+  show('creation');
+  $('createError').textContent = '';
+  fillSlots();
+  const saved = localStorage.getItem(LS_DRAFT);
+  if (saved) {
+    draftId = saved;
+    request(`/creation/${saved}`).then((r) => { draft = r.draft; renderDraft(); })
+      .catch(() => { localStorage.removeItem(LS_DRAFT); draftId = null; startDraft(); });
+  } else {
+    startDraft();
   }
-  const ml = $('#missionList');
-  ml.replaceChildren();
-  for (const m of missions) {
-    const li = el('li');
-    li.append(el('strong', '', m.title), el('span', 'tag', m.sourceKind === 'original' ? '原创测试任务' : '私有适配'));
-    if (m.sourceKind === 'original') li.append(el('span', 'muted', ' — 用于规则验证，不冒充官方冒险'));
-    ml.append(li);
-  }
 }
 
-function phaseName(p) {
-  return ({ briefing: '简报', exploration: '探索', combat: '战斗', debrief: '结算', victory: '胜利', defeat: '失败' })[p] || p;
-}
-
-/* ---------------- creation ---------------- */
-function fillCreation() {
-  const slots = $('#slots');
-  slots.replaceChildren();
-  const roles = [['pc', '主角', 'player'], ['ally-1', '战斗兄弟 1', 'ai'], ['ally-2', '战斗兄弟 2', 'ai']];
-  for (const [id, label] of roles) {
-    const box = el('fieldset', 'slot');
-    box.dataset.id = id;
-    box.append(el('legend', '', label + (id === 'pc' ? '（你控制）' : '（AI 决策，可接管）')));
-    const name = el('input'); name.placeholder = id === 'pc' ? '角色名' : '队友名'; name.maxLength = 24;
-    name.value = id === 'pc' ? '塞维鲁' : id === 'ally-1' ? '凯' : '德拉科';
-    const chapter = el('select');
-    for (const c of catalog.chapters) chapter.append(new Option(c.name + (c.ban ? `（禁 ${c.ban.map(b => specialtyName(b)).join('/')}）` : ''), c.id));
-    if (id === 'ally-1') chapter.value = 'blood-angels';
-    if (id === 'ally-2') chapter.value = 'dark-angels';
-    const specialty = el('select');
-    for (const s of catalog.specialties) specialty.append(new Option(s.name, s.id));
-    if (id === 'ally-1') specialty.value = 'assault';
-    if (id === 'ally-2') specialty.value = 'devastator';
-    const choice = el('div', 'chapter-choice hidden');
-    const c1 = el('select'), c2 = el('select');
-    for (const [k, v] of Object.entries(catalog.attrs)) { c1.append(new Option(v, k)); c2.append(new Option(v, k)); }
-    c1.value = 'ws'; c2.value = 'bs';
-    choice.append(el('span', 'muted', '极限战士加值：'), c1, c2);
-    const syncChoice = () => choice.classList.toggle('hidden', chapter.value !== 'ultramarines');
-    chapter.onchange = syncChoice;
+function fillSlots() {
+  $('slots').innerHTML = ROLES.map(([id, label]) => `
+    <fieldset class="slot" data-id="${id}">
+      <legend>${label}${id === 'pc' ? ' · 你控制' : ' · AI 决策，可接管'}</legend>
+      <input data-role="name" maxlength="24" value="${id === 'pc' ? '塞维鲁' : id === 'ally-1' ? '凯' : '德拉科'}">
+      <select data-role="chapter">${catalog.chapters.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
+      <select data-role="specialty">${catalog.specialties.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
+      <div class="chapter-choice" hidden>
+        <span class="empty">极限战士加值：</span>
+        <select data-role="c1">${Object.entries(ATTR_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+        <select data-role="c2">${Object.entries(ATTR_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+      </div>
+      <div class="attrs"></div>
+    </fieldset>`).join('');
+  const slot = (id) => document.querySelector(`.slot[data-id="${id}"]`);
+  slot('ally-1').querySelector('[data-role=chapter]').value = 'blood-angels';
+  slot('ally-1').querySelector('[data-role=specialty]').value = 'assault';
+  slot('ally-2').querySelector('[data-role=chapter]').value = 'dark-angels';
+  slot('ally-2').querySelector('[data-role=specialty]').value = 'devastator';
+  slot('pc').querySelector('[data-role=c2]').value = 'bs';
+  for (const id of ['pc', 'ally-1', 'ally-2']) {
+    const box = slot(id);
+    for (const el of box.querySelectorAll('select, input')) el.addEventListener('change', () => syncSpec(id));
+    const chapter = box.querySelector('[data-role=chapter]');
+    const syncChoice = () => { box.querySelector('.chapter-choice').hidden = chapter.value !== 'ultramarines'; };
+    chapter.addEventListener('change', syncChoice);
     syncChoice();
-    const stats = el('div', 'attrs');
-    const preview = el('div', 'draft');
-    box.append(name, chapter, specialty, choice, preview);
-    const onChange = () => { syncChoice(); syncSpec(id); };
-    chapter.onchange = onChange;
-    specialty.onchange = onChange;
-    c1.onchange = onChange;
-    c2.onchange = onChange;
-    box._fields = { name, chapter, specialty, c1, c2, choice, attrs: stats };
-    slots.append(box);
   }
-  const leader = $('#leader');
-  leader.replaceChildren();
-  for (const [id, label] of roles) leader.append(new Option(label, id));
-  const oath = $('#oath');
-  oath.replaceChildren();
-  for (const o of catalog.oaths) oath.append(new Option(`${o.name}（${o.effect}）`, o.id));
+  $('leader').innerHTML = ROLES.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+  $('oath').innerHTML = catalog.oaths.map((o) => `<option value="${o.id}">${esc(o.name)}（${esc(o.effect)}）</option>`).join('');
   renderRequisition();
 }
-
-function renderRequisition() {
-  const box = $('#requisition');
-  box.replaceChildren();
-  const budget = missions[0]?.requisition ?? 30;
-  const items = Object.values(catalog.weapons).filter(w => (w.req ?? 0) > 0 && !w.npc && (w.renown ?? 0) <= 0);
-  for (const w of items) {
-    const row = el('label', 'req-item');
-    const cb = el('input'); cb.type = 'checkbox'; cb.value = w.id; cb.dataset.cost = String(w.req);
-    const who = el('select');
-    for (const a of ['pc', 'ally-1', 'ally-2']) who.append(new Option(a, a));
-    row.append(cb, el('span', '', `${w.name}（征用 ${w.req}）`), who);
-    cb.onchange = updateBudget;
-    box.append(row);
-  }
-  updateBudget();
-}
-
-function updateBudget() {
-  let spent = 0;
-  for (const cb of document.querySelectorAll('#requisition input:checked')) spent += Number(cb.dataset.cost);
-  const budget = missions[0]?.requisition ?? 30;
-  $('#reqBudget').textContent = `已用 ${spent} / ${budget}${spent > budget ? '（超预算，服务端会拒绝）' : ''}`;
-}
-
-function requisitionFromForm() {
-  const out = [];
-  for (const row of document.querySelectorAll('#requisition .req-item')) {
-    const cb = row.querySelector('input');
-    if (!cb.checked) continue;
-    out.push({actorId: row.querySelector('select').value, weaponId: cb.value});
-  }
-  return out;
-}
-
-function specialtyName(id) {
-  return catalog?.specialties.find(s => s.id === id)?.name || id;
-}
-
-$('#newSquad').onclick = async () => {
-  show('creation');
-  $('#createError').textContent = '';
-  if (!draft) await startDraft();
-  renderDraft();
-};
-$('#cancelCreate').onclick = () => show('home');
 
 function specsFromForm() {
   const out = [];
   for (const box of document.querySelectorAll('.slot')) {
-    const f = box._fields;
-    const item = { id: box.dataset.id, name: f.name.value.trim(), chapter: f.chapter.value, specialty: f.specialty.value };
-    if (f.chapter.value === 'ultramarines') item.chapterChoice = [f.c1.value, f.c2.value];
+    const get = (role) => box.querySelector(`[data-role=${role}]`).value;
+    const item = {id: box.dataset.id, name: get('name').trim(), chapter: get('chapter'), specialty: get('specialty')};
+    if (get('chapter') === 'ultramarines') item.chapterChoice = [get('c1'), get('c2')];
     out.push(item);
   }
   return out;
@@ -183,349 +129,377 @@ function specsFromForm() {
 
 async function startDraft() {
   try {
-    const r = await call('/creation/roll', { method: 'POST', body: JSON.stringify({ squad: specsFromForm() }) });
+    const r = await request('/creation/roll', {method: 'POST', body: JSON.stringify({squad: specsFromForm()})});
     draftId = r.draftId; draft = r.draft;
-    sessionStorage.setItem('dw-draft', draftId);
+    localStorage.setItem(LS_DRAFT, draftId);
     renderDraft();
-  } catch (e) {
-    $('#createError').textContent = e.message;
-  }
+  } catch (error) { $('createError').textContent = error.message; }
 }
 
-async function syncSpec(id) {
+async function syncSpec() {
   if (!draftId) return;
-  const box = document.querySelector(`.slot[data-id="${id}"]`);
-  const f = box._fields;
-  const payload = { draftId, actorId: id, name: f.name.value.trim(), chapter: f.chapter.value, specialty: f.specialty.value };
-  if (f.chapter.value === 'ultramarines') payload.chapterChoice = [f.c1.value, f.c2.value];
+  const box = document.activeElement?.closest?.('.slot');
+  const id = box?.dataset?.id || 'pc';
+  const get = (role) => document.querySelector(`.slot[data-id="${id}"] [data-role=${role}]`).value;
+  const payload = {draftId, actorId: id, name: get('name'), chapter: get('chapter'), specialty: get('specialty')};
+  if (get('chapter') === 'ultramarines') payload.chapterChoice = [get('c1'), get('c2')];
   try {
-    const r = await call('/creation/spec', { method: 'POST', body: JSON.stringify(payload) });
-    draft = r.draft;
-    renderDraft();
-    $('#createError').textContent = '';
-  } catch (e) {
-    $('#createError').textContent = e.message;
-  }
+    const r = await request('/creation/spec', {method: 'POST', body: JSON.stringify(payload)});
+    draft = r.draft; renderDraft(); $('createError').textContent = '';
+  } catch (error) { $('createError').textContent = error.message; }
 }
 
 async function reroll(id) {
   try {
-    const r = await call('/creation/reroll', { method: 'POST', body: JSON.stringify({ draftId, actorId: id }) });
-    draft = r.draft;
-    renderDraft();
-  } catch (e) {
-    $('#createError').textContent = e.message;
-  }
+    const r = await request('/creation/reroll', {method: 'POST', body: JSON.stringify({draftId, actorId: id})});
+    draft = r.draft; renderDraft();
+  } catch (error) { $('createError').textContent = error.message; }
 }
 
 function renderDraft() {
   if (!draft) return;
   for (const box of document.querySelectorAll('.slot')) {
-    const row = draft.squad.find(s => s.id === box.dataset.id);
-    const preview = box.querySelector('.draft');
-    if (!row || !preview) continue;
-    preview.replaceChildren();
-    const attrs = box._fields.attrs;
-    for (const [k, v] of Object.entries(row.final || {})) {
-      attrs.append(el('span', 'attr', `${catalog.attrs[k]} ${v}`));
-    }
-    const b = el('button', 'small', row.rerolled ? `已重掷 ${catalog.attrs[row.rerolledAttr] || ''}` : '重掷最低项');
-    b.disabled = row.rerolled;
-    b.onclick = () => reroll(row.id);
-    preview.append(attrs, b);
+    const row = draft.squad.find((s) => s.id === box.dataset.id);
+    const host = box.querySelector('.attrs');
+    if (!row) { host.innerHTML = ''; continue; }
+    const attrs = Object.entries(row.final).map(([k, v]) => `<span class="attr">${ATTR_LABELS[k] || k} ${v}</span>`).join('');
+    const button = `<button class="btn small" type="button" data-reroll="${esc(row.id)}"${row.rerolled ? ' disabled' : ''}>${row.rerolled ? '已重掷' : '重掷最低项'}</button>`;
+    host.innerHTML = attrs + button;
   }
-  const leader = $('#leader');
-  const keep = leader.value;
-  leader.replaceChildren();
-  for (const s of draft.squad) leader.append(new Option(`${s.name || s.id}（${s.specialtyName}）`, s.id));
-  leader.value = keep || 'pc';
+  document.querySelectorAll('[data-reroll]').forEach((b) => b.addEventListener('click', () => reroll(b.dataset.reroll)));
+  $('leader').innerHTML = draft.squad.map((s) => `<option value="${s.id}">${esc(s.name || s.id)}（${esc(s.specialtyName)}）</option>`).join('');
 }
 
-$('#submitSquad').onclick = async () => {
-  const err = $('#createError');
+function renderRequisition() {
+  const items = Object.values(catalog.weapons).filter((w) => (w.req ?? 0) > 0 && !w.npc && (w.renown ?? 0) <= 0);
+  $('requisition').innerHTML = items.map((w) => `
+    <label class="req-item">
+      <input type="checkbox" value="${esc(w.id)}" data-cost="${w.req}">
+      <span>${esc(w.name)}（征用 ${w.req}）</span>
+      <select>${ROLES.map(([id]) => `<option value="${id}">${id}</option>`).join('')}</select>
+    </label>`).join('');
+  document.querySelectorAll('#requisition input').forEach((cb) => cb.addEventListener('change', () => updateBudget()));
+  updateBudget();
+}
+
+function updateBudget() {
+  const budget = missions[0]?.requisition ?? 30;
+  let spent = 0;
+  for (const cb of document.querySelectorAll('#requisition input:checked')) spent += Number(cb.dataset.cost);
+  $('reqBudget').textContent = `已用 ${spent} / ${budget}${spent > budget ? '（超预算，服务端会拒绝）' : ''}`;
+  $('reqBudget').style.color = spent > budget ? 'var(--bad)' : 'var(--faint)';
+}
+
+function requisitionFromForm() {
+  return [...document.querySelectorAll('#requisition .req-item')].filter((row) => row.querySelector('input').checked)
+    .map((row) => ({actorId: row.querySelector('select').value, weaponId: row.querySelector('input').value}));
+}
+
+async function submitSquad() {
+  const err = $('createError');
   err.textContent = '';
+  if (!draftId) await startDraft();
+  if (!draftId) return;
+  $('submitSquad').disabled = true;
   try {
-    $('#submitSquad').disabled = true;
-    if (!draftId) await startDraft();
-    const created = await call('/sessions', {
+    const created = await request('/sessions', {
       method: 'POST',
       body: JSON.stringify({
-        title: $('#title').value.trim() || '守望任务',
+        title: $('title').value.trim() || '守望任务',
         missionId: missions[0].id,
         missionVersion: missions[0].version,
-        leaderId: $('#leader').value,
-        oathId: $('#oath').value,
-        weaponProfile: $('#weaponProfile').value,
+        leaderId: $('leader').value,
+        oathId: $('oath').value,
+        weaponProfile: $('weaponProfile').value,
         requisition: requisitionFromForm(),
         draftId,
       }),
     });
-    sessionStorage.removeItem('dw-draft'); draft = null; draftId = null;
-    sessions.unshift({ id: created.state.id, title: created.state.title, mission: created.state.mission.title, phase: created.state.phase, version: created.state.version });
+    localStorage.removeItem(LS_DRAFT);
+    draft = null; draftId = null;
     await openSession(created.state.id);
-  } catch (e) {
-    err.textContent = e.message;
+  } catch (error) {
+    err.textContent = error.message;
   } finally {
-    $('#submitSquad').disabled = false;
+    $('submitSquad').disabled = false;
   }
-};
+}
 
-/* ---------------- play ---------------- */
+/* ---------------- 游戏界面 ---------------- */
 async function openSession(id) {
+  const snap = await request(`/sessions/${id}`);
   current = id;
-  const snap = await call(`/sessions/${id}`);
-  view = snap.state;
+  localStorage.setItem(LS_SESSION, id);
+  renderPlay(snap.state);
+}
+
+function renderPlay(state) {
+  view = state;
+  view.id = view.id || current;
   show('play');
-  render();
-}
-
-function activeActor() {
-  return view?.actors.find(a => a.id === view.activeActorId) || null;
-}
-
-function render() {
-  renderHeader();
-  renderActors();
-  renderObjectives();
+  const active = view.actors.find((a) => a.id === view.activeActorId);
+  $('scene-part').textContent = view.combat ? `第 ${view.combat.round} 轮 · 战斗` : phaseName(view.phase);
+  $('scene-title').textContent = view.scene.name;
+  $('scene-desc').textContent = view.scene.description || '';
+  $('round').textContent = view.combat ? view.combat.round : '—';
+  $('ap').textContent = active ? `${active.ap}` : '—';
+  $('cohesion').textContent = view.cohesion ?? '—';
+  $('version').textContent = view.version;
   renderMap();
-  renderActions();
+  renderSheet();
   renderPending();
-  renderEvents();
-  renderWorldbook();
-}
-
-function renderHeader() {
-  const s = view.scene;
-  const combat = view.combat ? `第 ${view.combat.round} 轮` : '非战斗';
-  $('#sceneHeader').replaceChildren(
-    el('strong', '', s.name),
-    el('span', 'muted', ` · ${combat} · 世界时间 ${view.worldTime} 分 · 状态版本 ${view.version}`),
-  );
-}
-
-function renderActors() {
-  const box = $('#actorCards');
-  box.replaceChildren();
-  for (const a of view.actors.filter(x => x.side === 'party')) {
-    const card = el('article', 'actor' + (a.id === view.activeActorId ? ' active' : '') + (a.status !== 'active' ? ' down' : ''));
-    const head = el('header');
-    head.append(el('strong', '', a.name), el('span', 'muted', ` ${specialtyName(a.specialty)} · ${catalog.chapters.find(c => c.id === a.chapter)?.name || a.chapter}`));
-    card.append(head);
-    const wounds = el('div', 'bar');
-    const fill = el('i');
-    fill.style.width = `${Math.max(0, 100 - (a.damage / Math.max(1, a.maxWounds)) * 100)}%`;
-    wounds.append(fill);
-    card.append(wounds);
-    card.append(el('div', 'stats', `W ${a.damage}/${a.maxWounds}${a.critical ? `（重伤 ${a.critical}）` : ''} · 命运 ${a.fate}/${a.maxFate} · 动作 ${a.ap} · 反应 ${a.reactions}`));
-    const w = catalog.weapons[a.readied];
-    card.append(el('div', 'muted', `${w?.name || a.readied} · 弹匣 ${a.inventory[a.readied]?.clip ?? '-'}/${a.inventory[a.readied]?.reserve ?? '-'}`));
-    card.append(el('div', 'muted', `模式 ${a.mode === 'squad' ? '小队' : '单兵'} · ${a.controller === 'player' ? '你控制' : 'AI'} · ${a.status}`));
-    box.append(card);
-  }
-}
-
-function renderObjectives() {
-  const box = $('#objectives');
-  box.replaceChildren(el('h3', '', '任务目标'), el('div', 'muted', view.mission.title));
-  for (const o of view.objectives) {
-    const row = el('div', 'objective' + (o.done ? ' done' : ''));
-    row.append(el('span', '', o.done ? '✔ ' : '○ '), el('span', '', o.label), el('span', 'muted', `（${o.type === 'primary' ? '主要' : '次要'}）`));
-    box.append(row);
-  }
+  renderActions();
+  renderProposal();
 }
 
 function renderMap() {
-  const wrap = $('#mapWrap');
-  wrap.replaceChildren();
   const map = view.scene.map;
-  const grid = el('div', 'grid');
-  grid.style.gridTemplateColumns = `repeat(${map[0].length}, var(--cell))`;
   const tokens = new Map();
   for (const a of view.actors) if (a.status === 'active') tokens.set(`${a.x},${a.y}`, a);
+  const html = [];
   for (let y = 0; y < map.length; y++) {
     for (let x = 0; x < map[0].length; x++) {
-      const cell = el('button', 'cell' + (map[y][x] === '#' ? ' wall' : ''));
-      cell.dataset.x = x; cell.dataset.y = y;
-      cell.setAttribute('aria-label', `格 ${x},${y}`);
+      const wall = map[y][x] === '#';
       const a = tokens.get(`${x},${y}`);
-      if (a) {
-        const tok = el('span', 'token ' + (a.side === 'party' ? 'party' : 'enemy'), a.name.slice(0, 1));
-        tok.title = a.name;
-        if (a.id === view.activeActorId) tok.classList.add('acting');
-        if (selected.target === a.id) tok.classList.add('selected');
-        cell.append(tok);
-      }
-      if (selected.cell && selected.cell.x === x && selected.cell.y === y) cell.classList.add('selected');
-      if (map[y][x] === '.') cell.onclick = () => onCell(a, x, y);
-      grid.append(cell);
+      const sel = selected.cell && selected.cell.x === x && selected.cell.y === y ? ' selected' : '';
+      const tok = a ? `<span class="token ${a.side === 'party' ? 'party' : 'enemy'}${a.id === view.activeActorId ? ' acting' : ''}${selected.target === a.id ? ' selected' : ''}" title="${esc(a.name)}">${esc(a.name.slice(0, 1))}</span>` : '';
+      html.push(`<button type="button" class="cell ${wall ? 'wall' : 'floor'}${sel}" data-x="${x}" data-y="${y}" aria-label="格 ${x},${y}">${tok}</button>`);
     }
   }
-  wrap.append(grid);
+  $('map').innerHTML = html.join('');
+  $('map').style.gridTemplateColumns = `repeat(${map[0].length}, 28px)`;
 }
 
-function onCell(actor, x, y) {
-  if (actor) { selected.target = actor.side === 'enemy' ? actor.id : null; selected.cell = null; }
-  else { selected.cell = { x, y }; selected.target = null; }
-  renderMap();
-  renderActions();
+function actorCard(a) {
+  const w = catalog.weapons[a.readied] || {name: a.readied};
+  const inv = a.inventory?.[a.readied] || {};
+  const status = a.status === 'active' ? (a.id === view.activeActorId ? '行动中' : '就绪') : a.status === 'unconscious' ? '失能' : a.status === 'dead' ? '阵亡' : a.status;
+  return `<article class="card">
+    <h3>${esc(a.name)}</h3>
+    <div class="sub">${esc((catalog.specialties.find((s) => s.id === a.specialty) || {}).name || a.specialty)} · ${esc((catalog.chapters.find((c) => c.id === a.chapter) || {}).name || a.chapter)}</div>
+    <div class="stats">
+      <div class="stat"><small>创伤</small><b>${a.damage}/${a.maxWounds}</b></div>
+      <div class="stat"><small>命运</small><b>${a.fate}/${a.maxFate}</b></div>
+      <div class="stat"><small>动作</small><b>${a.ap}</b></div>
+      <div class="stat"><small>反应</small><b>${a.reactions}</b></div>
+      <div class="stat"><small>模式</small><b>${a.mode === 'squad' ? '小队' : '单兵'}</b></div>
+      <div class="stat"><small>状态</small><b>${status}</b></div>
+    </div>
+    <div class="sub" style="margin:8px 0 0">${esc(w.name)} · 弹匣 ${inv.clip ?? '—'}/${inv.reserve ?? '—'}</div>
+  </article>`;
 }
 
+function renderSheet() {
+  const party = view.actors.filter((a) => a.side === 'party');
+  $('pane-party').innerHTML = `<div class="cards">${party.map(actorCard).join('')}</div>`;
+  $('pane-objectives').innerHTML = `<h2>任务目标</h2>${(view.objectives || []).map((o) => `
+    <div class="objective${o.done ? ' done' : ''}"><span>${o.done ? '✔' : '○'}</span><span>${esc(o.label)}</span>
+    <span class="empty">（${o.type === 'primary' ? '主要' : o.type === 'secondary' ? '次要' : '机会'}）</span></div>`).join('')}`;
+  $('pane-lore').innerHTML = `<h2>公开世界书</h2>${(view.mission.publicLore || []).map((l, i) => `
+    <details class="lore"${i === 0 ? ' open' : ''}><summary>${esc(l.title || '条目')}</summary><p>${esc(l.text)}</p></details>`).join('')}`;
+  const dice = (view.lastEvents || []).filter((e) => e.test).pop();
+  const diceHtml = dice ? `<div class="dice-card"><h2 style="margin-top:0">检定 · 目标 ${dice.test.target}</h2>
+    <div class="empty">基础 ${dice.test.base} ${dice.test.parts.map((p) => `${esc(p.label)} ${p.value > 0 ? '+' : ''}${p.value}`).join(' ')}</div>
+    <div class="die-big ${dice.test.success ? 'ok' : 'bad'}">${dice.test.roll}</div>
+    <div class="${dice.test.success ? 'objective done' : 'objective'}">${dice.test.success ? `成功（程度 ${dice.test.degrees}）` : '失败'}</div></div>` : '';
+  $('pane-log').innerHTML = diceHtml + `<h2>行动记录</h2><ol id="log">${(view.journal || []).slice(-18).map((t) => `<li>${esc(t)}</li>`).join('')}</ol>`;
+}
+
+/* ---------------- 决策、提案与结算 ---------------- */
 function renderPending() {
-  const box = $('#pending');
-  box.replaceChildren();
+  const box = $('pending');
   const p = view.pending;
-  if (!p) { box.classList.add('hidden'); return; }
-  box.classList.remove('hidden');
-  const owner = view.actors.find(a => a.id === p.ownerActorId);
-  box.append(el('strong', '', `${owner?.name || '角色'} 需要决定：`));
-  for (const c of p.choices) {
-    const b = el('button', '', c.label);
-    b.onclick = () => send({ type: 'react', actorId: p.ownerActorId, choice: c.id }, 'react');
-    box.append(b);
-  }
+  if (!p) { box.hidden = true; box.innerHTML = ''; return; }
+  const owner = view.actors.find((a) => a.id === p.ownerActorId);
+  box.hidden = false;
+  box.innerHTML = `<h3>等待 ${esc(owner?.name || '角色')} 决定</h3>
+    <p class="lead small">${p.kind === 'reaction' ? '命中已经掷出，伤害将在防御决定后结算。' : '需要先完成这个决策，才能继续。'}</p>
+    <div class="actions">${p.choices.map((c) => `<button class="btn ${c.id === 'none' ? 'ghost' : 'primary'} small" data-react="${esc(c.id)}">${esc(c.label)}</button>`).join('')}</div>`;
+  box.querySelectorAll('[data-react]').forEach((b) => b.addEventListener('click', () => {
+    send({type: 'react', actorId: p.ownerActorId, choice: b.dataset.react}, 'react');
+  }));
 }
 
-function renderActions() {
-  const box = $('#actions');
-  box.replaceChildren();
-  const a = activeActor();
-  if (!a) { box.append(el('span', 'muted', '没有可行动的角色。')); return; }
-  if (view.pending) { box.append(el('span', 'muted', '先处理待定决策。')); return; }
-  if (a.controller !== 'player') {
-    box.append(el('span', 'muted', `${a.name} 由规则策略行动。`));
-    const b = el('button', 'primary', '推进自动回合');
-    b.onclick = advance;
-    box.append(b);
-    return;
-  }
-  const weapons = Object.keys(a.inventory || {});
-  const wid = a.readied;
-  const w = catalog.weapons[wid];
-  const isMelee = w?.kind === 'melee';
-  const target = view.actors.find(t => t.id === selected.target && t.status === 'active');
-
-  const btn = (label, fn, disabled = false, title = '') => { const b = el('button', '', label); b.onclick = fn; b.disabled = disabled || busy; b.title = title; return b; };
-
-  box.append(btn('瞄准（半）', () => send({ type: 'aim', actorId: a.id, full: false }, 'aim')));
-  box.append(btn('瞄准（全）', () => send({ type: 'aim', actorId: a.id, full: true }, 'aim')));
-  box.append(btn('攻击（单发）', () => attack(a, target, 'single'), !target));
-  box.append(btn('攻击（半自动）', () => attack(a, target, 'semi'), !target || isMelee));
-  box.append(btn('攻击（全自动）', () => attack(a, target, 'full'), !target || isMelee));
-  if (isMelee) box.append(btn('攻击（全力）', () => attack(a, target, 'all_out'), !target));
-  const other = weapons.find(x => x !== wid);
-  if (other) box.append(btn(`换装 ${catalog.weapons[other]?.name || other}`, () => send({ type: 'ready', actorId: a.id, weaponId: other }, 'ready')));
-  box.append(btn('装填', () => send({ type: 'reload', actorId: a.id }, 'reload')));
-  if (a.inventory[wid]?.jammed) box.append(btn('排除卡壳', () => send({ type: 'clear_jam', actorId: a.id }, 'jam')));
-  box.append(btn(a.stance === 'prone' ? '起身' : '卧倒', () => send({ type: a.stance === 'prone' ? 'stand' : 'stance', actorId: a.id, stance: 'prone' }, 'stance')));
-  box.append(btn('结束回合', () => send({ type: 'end_turn', actorId: a.id }, 'end'), false, '剩余动作会被放弃'));
-
-  if (selected.cell) {
-    const dist = Math.max(Math.abs(selected.cell.x - a.x), Math.abs(selected.cell.y - a.y));
-    const b = el('button', 'primary', `移动到 (${selected.cell.x},${selected.cell.y}) · ${dist} 格`);
-    b.disabled = busy;
-    b.onclick = () => send({ type: 'move', actorId: a.id, x: selected.cell.x, y: selected.cell.y, pace: a.ap >= 2 && dist > 4 ? 'full' : 'half' }, 'move');
-    box.append(b);
-  }
-  for (const obj of view.scene.objects || []) {
-    if (Math.max(Math.abs(obj.x - a.x), Math.abs(obj.y - a.y)) > 1) continue;
-    for (const ch of obj.choices) {
-      if (view.flags[`done:${obj.id}:${ch.id}`]) continue;
-      box.append(btn(`${obj.name}：${ch.label}`, () => send({ type: 'interact', actorId: a.id, objectId: obj.id, choiceId: ch.id }, 'interact')));
-    }
-  }
-  for (const exit of view.scene.exits || []) {
-    const missing = (exit.requires || []).filter(f => !view.flags[f]);
-    box.append(btn(`${exit.label}${missing.length ? '（未解锁）' : ''}`, () => send({ type: 'travel', actorId: a.id, sceneId: exit.to }, 'travel'), missing.length > 0));
-  }
+function describeCommand(c) {
+  if (!c) return '（无动作）';
+  const map = {move: '移动', attack: '攻击', aim: '瞄准', ready: '换装', reload: '装填', clear_jam: '排除卡壳', stance: '调整姿态', stand: '起身', end_turn: '结束回合', interact: '交互', travel: '前往', medicae: '急救', squad_mode: '进入小队模式', solo_mode: '进入单兵模式', power: '灵能', skill: '技能检定', support: '呼叫支援', fate: '使用命运', debrief: '结算任务', react: '防御'};
+  let text = map[c.type] || c.type;
+  if (c.type === 'move') text += ` → (${c.x},${c.y})`;
+  if (c.type === 'aim') text += c.full ? '（全动作）' : '（半动作）';
+  if (c.type === 'attack') text += ` ${c.mode || 'single'} → ${c.targetId}`;
+  if (c.type === 'react') text += `（${c.choice}）`;
+  if (c.type === 'travel') text += ` → ${c.sceneId}`;
+  return text;
 }
 
-function attack(a, target, mode) {
-  if (!target) return;
-  send({ type: 'attack', actorId: a.id, targetId: target.id, mode }, 'attack');
+function renderProposal() {
+  const box = $('proposal');
+  if (!proposal) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<div class="who">规则引擎提案 · ${esc(proposal.source || '')}</div>
+    <div><b>${esc(describeCommand(proposal.command))}</b></div>
+    ${proposal.line ? `<p class="lead small">“${esc(proposal.line)}”</p>` : ''}
+    <div class="actions">
+      <button class="btn primary small" data-confirm="1">确认执行</button>
+      <button class="btn ghost small" data-cancel="1">放弃</button>
+    </div>`;
+  box.querySelector('[data-confirm]').onclick = () => { const c = proposal.command; proposal = null; send(c, 'plan'); };
+  box.querySelector('[data-cancel]').onclick = () => { proposal = null; renderProposal(); };
+}
+
+async function askProposal() {
+  const input = $('input').value.trim();
+  if (!input || !view) return;
+  $('ask').disabled = true;
+  proposal = null; renderProposal();
+  try {
+    const r = await request(`/sessions/${current}/plan`, {
+      method: 'POST',
+      body: JSON.stringify({input, actorId: 'pc', expectedVersion: view.version}),
+    });
+    proposal = r.proposal;
+    renderProposal();
+    $('input').value = '';
+  } catch (error) {
+    $('start-msg').textContent = error.message;
+    const box = $('proposal');
+    box.hidden = false;
+    box.innerHTML = `<div class="who">提案失败</div><div class="error">${esc(error.message)}</div>`;
+  } finally {
+    $('ask').disabled = false;
+  }
 }
 
 async function send(command, prefix) {
   if (busy) return;
   busy = true;
+  $('action-bar').querySelectorAll('button').forEach((b) => { b.disabled = true; });
   try {
-    const res = await call(`/sessions/${current}/commands`, {
+    const r = await request(`/sessions/${current}/commands`, {
       method: 'POST',
-      body: JSON.stringify({ requestId: requestId(prefix), expectedVersion: view.version, command }),
+      body: JSON.stringify({requestId: `${prefix}:${newRequestId()}`, expectedVersion: view.version, command}),
     });
-    view = res.state;
-    selected.target = null; selected.cell = null;
-    render();
+    selected = {cell: null, target: null};
+    renderPlay(r.state);
     await afterCommand();
-  } catch (e) {
-    flash(e.message);
+  } catch (error) {
+    $('start-msg').textContent = error.message;
   } finally {
     busy = false;
-    renderActions();
+    if (view) renderActions();
   }
 }
 
-/** Enemy/companion turns are driven by the server; the client just asks to advance. */
 async function afterCommand() {
   let guard = 0;
-  while (view && view.combat && !view.pending && guard++ < 40) {
-    const a = activeActor();
-    if (!a || a.controller === 'player') break;
+  while (view?.combat && !view.pending && guard++ < 40) {
+    const active = view.actors.find((a) => a.id === view.activeActorId);
+    if (!active || active.controller === 'player') break;
     try {
-      const res = await call(`/sessions/${current}/advance`, {
-        method: 'POST',
-        body: JSON.stringify({ expectedVersion: view.version }),
-      });
-      view = res.state;
-      render();
-    } catch (e) {
-      if (!/需要玩家操作|状态已更新|正在处理/.test(e.message)) flash(e.message);
+      const r = await request(`/sessions/${current}/advance`, {method: 'POST', body: JSON.stringify({expectedVersion: view.version})});
+      renderPlay(r.state);
+    } catch (error) {
+      if (!/需要玩家操作|状态已更新|正在处理/.test(error.message)) $('start-msg').textContent = error.message;
       break;
     }
   }
 }
 
 async function advance() {
-  busy = true;
   try {
-    const res = await call(`/sessions/${current}/advance`, { method: 'POST', body: JSON.stringify({ expectedVersion: view.version }) });
-    view = res.state; render();
-  } catch (e) { flash(e.message); }
-  finally { busy = false; renderActions(); }
+    const r = await request(`/sessions/${current}/advance`, {method: 'POST', body: JSON.stringify({expectedVersion: view.version})});
+    renderPlay(r.state);
+  } catch (error) { $('start-msg').textContent = error.message; }
 }
 
-function renderEvents() {
-  const box = $('#events');
-  box.replaceChildren(el('h3', '', '结算与叙事'));
-  const list = el('div', 'event-list');
-  for (const ev of (view.lastEvents || []).slice(-12)) list.append(el('p', 'event ' + ev.type, ev.text));
-  box.append(list);
-  const dice = (view.lastEvents || []).filter(e => e.test).pop();
-  const card = $('#diceCard');
-  card.replaceChildren();
-  if (dice) {
-    const t = dice.test;
-    card.append(el('h4', '', `检定 · 目标 ${t.target}`));
-    card.append(el('div', 'muted', `基础 ${t.base} ${t.parts.map(p => `${p.label} ${p.value > 0 ? '+' : ''}${p.value}`).join(' ')}`));
-    card.append(el('div', 'dice', `d100 = ${t.roll}`));
-    card.append(el('div', t.success ? 'ok' : 'bad', t.success ? `成功（程度 ${t.degrees}）` : '失败'));
-  } else card.append(el('p', 'muted', '尚未进行检定。'));
-}
-
-function renderWorldbook() {
-  const box = $('#worldbook');
-  box.replaceChildren(el('h3', '', '公开世界书'));
-  for (const lore of view.mission.publicLore || []) {
-    const d = el('details');
-    d.append(el('summary', '', lore.title || '条目'), el('p', '', lore.text));
-    box.append(d);
+/* ---------------- 动作栏 ---------------- */
+function renderActions() {
+  const bar = $('action-bar');
+  if (!view) { bar.innerHTML = ''; return; }
+  const active = view.actors.find((a) => a.id === view.activeActorId);
+  if (view.pending) { bar.innerHTML = '<span class="empty">先处理上方的待定决策。</span>'; return; }
+  if (!active) { bar.innerHTML = '<span class="empty">没有可行动的角色。</span>'; return; }
+  if (active.controller !== 'player') {
+    bar.innerHTML = `<span class="empty">${esc(active.name)} 由规则策略行动</span><button class="btn primary small" data-act="advance">推进自动回合</button>`;
+    return;
   }
+  const weapons = Object.keys(active.inventory || {});
+  const w = catalog.weapons[active.readied] || {};
+  const melee = w.kind === 'melee';
+  const target = view.actors.find((a) => a.id === selected.target && a.status === 'active');
+  const btn = (label, attrs, disabled = false) => `<button class="btn small" ${attrs}${disabled ? ' disabled' : ''}>${esc(label)}</button>`;
+  const out = [];
+  out.push(btn('瞄准（半）', 'data-act="aim" data-full="0"'));
+  out.push(btn('瞄准（全）', 'data-act="aim" data-full="1"'));
+  out.push(btn('攻击（单发）', 'data-act="attack" data-mode="single"', !target));
+  out.push(btn('攻击（半自动）', 'data-act="attack" data-mode="semi"', !target || melee));
+  out.push(btn('攻击（全自动）', 'data-act="attack" data-mode="full"', !target || melee));
+  if (melee) out.push(btn('攻击（全力）', 'data-act="attack" data-mode="all_out"', !target));
+  const other = weapons.find((x) => x !== active.readied);
+  if (other) out.push(btn(`换装 ${catalog.weapons[other]?.name || other}`, `data-act="ready" data-weapon="${esc(other)}"`));
+  out.push(btn('装填', 'data-act="reload"'));
+  if (active.inventory?.[active.readied]?.jammed) out.push(btn('排除卡壳', 'data-act="jam"'));
+  out.push(btn(active.stance === 'prone' ? '起身' : '卧倒', 'data-act="stance"'));
+  out.push(btn('结束回合', 'data-act="end"'));
+  if (selected.cell) out.push(btn(`移动到 (${selected.cell.x},${selected.cell.y})`, `data-act="move" data-x="${selected.cell.x}" data-y="${selected.cell.y}"`));
+  for (const obj of view.scene.objects || []) {
+    if (Math.max(Math.abs(obj.x - active.x), Math.abs(obj.y - active.y)) > 1) continue;
+    for (const ch of obj.choices) {
+      if (ch.done) continue;
+      out.push(btn(`${obj.name}：${ch.label}`, `data-act="interact" data-obj="${esc(obj.id)}" data-choice="${esc(ch.id)}"`));
+    }
+  }
+  for (const exit of view.scene.exits || []) {
+    const missing = (exit.requires || []).filter((f) => !view.flags[f]);
+    out.push(btn(missing.length ? `${exit.label}（未解锁）` : exit.label, `data-act="travel" data-scene="${esc(exit.to)}"`, missing.length > 0));
+  }
+  bar.innerHTML = out.join('');
 }
 
-function flash(message) {
-  const box = $('#events');
-  const p = el('p', 'error', message);
-  box.prepend(p);
-  setTimeout(() => p.remove(), 6000);
+$('map').addEventListener('click', (event) => {
+  const cell = event.target.closest('.cell');
+  if (!cell || cell.classList.contains('wall') || !view) return;
+  const x = Number(cell.dataset.x), y = Number(cell.dataset.y);
+  const actor = view.actors.find((a) => a.status === 'active' && a.x === x && a.y === y);
+  if (actor && actor.side === 'enemy') { selected = {cell: null, target: actor.id}; }
+  else if (!actor) { selected = {cell: {x, y}, target: null}; }
+  else { selected = {cell: null, target: null}; }
+  renderMap(); renderActions();
+});
+
+$('action-bar').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-act]');
+  if (!button || !view) return;
+  const act = button.dataset.act;
+  const active = view.actors.find((a) => a.id === view.activeActorId);
+  if (act === 'advance') return advance();
+  if (!active) return;
+  if (act === 'aim') return send({type: 'aim', actorId: active.id, full: button.dataset.full === '1'}, 'aim');
+  if (act === 'attack') {
+    const target = view.actors.find((a) => a.id === selected.target);
+    if (!target) return;
+    return send({type: 'attack', actorId: active.id, targetId: target.id, mode: button.dataset.mode}, 'attack');
+  }
+  if (act === 'ready') return send({type: 'ready', actorId: active.id, weaponId: button.dataset.weapon}, 'ready');
+  if (act === 'reload') return send({type: 'reload', actorId: active.id}, 'reload');
+  if (act === 'jam') return send({type: 'clear_jam', actorId: active.id}, 'jam');
+  if (act === 'stance') return send({type: active.stance === 'prone' ? 'stand' : 'stance', actorId: active.id, stance: 'prone'}, 'stance');
+  if (act === 'end') return send({type: 'end_turn', actorId: active.id}, 'end');
+  if (act === 'move') return send({type: 'move', actorId: active.id, x: Number(button.dataset.x), y: Number(button.dataset.y), pace: active.ap >= 2 ? 'full' : 'half'}, 'move');
+  if (act === 'interact') return send({type: 'interact', actorId: active.id, objectId: button.dataset.obj, choiceId: button.dataset.choice}, 'interact');
+  if (act === 'travel') return send({type: 'travel', actorId: active.id, sceneId: button.dataset.scene}, 'travel');
+});
+
+function activateSheet(tab) {
+  for (const pane of ['party', 'objectives', 'lore', 'log']) $(`pane-${pane}`).hidden = pane !== tab;
+  document.querySelectorAll('[data-sheet-tab]').forEach((b) => b.classList.toggle('active', b.dataset.sheetTab === tab));
 }
+document.querySelectorAll('[data-sheet-tab]').forEach((b) => b.addEventListener('click', () => activateSheet(b.dataset.sheetTab)));
+
+$('newSquad').addEventListener('click', openCreation);
+$('submitSquad').addEventListener('click', submitSquad);
+$('cancelCreate').addEventListener('click', () => { show('start'); renderStart(); });
+$('ask').addEventListener('click', askProposal);
+$('input').addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); askProposal(); } });
 
 boot();
