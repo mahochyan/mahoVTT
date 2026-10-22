@@ -99,7 +99,7 @@ test('旧 campaigns 表可迁移出平台列与 characters 表', () => {
     rmSync(dir, { recursive: true, force: true });
 });
 
-test('平台接口：剧本目录为空、角色可创建、旧战役入口拒绝', async () => {
+test('平台接口：大厅只登记已交付模块、角色可创建、旧战役入口拒绝', async () => {
     const platform = await get('/api/platform');
     assert.equal(platform.status, 200);
     assert.equal(platform.data.worlds.length, 0);
@@ -118,7 +118,9 @@ test('平台接口：剧本目录为空、角色可创建、旧战役入口拒�
 
     const games = await get('/api/games');
     assert.equal(games.status, 200);
-    assert.deepEqual(games.data.games, []);
+    // 清空演示后大厅不是空的：Deathwatch 模块已注册，且仍是 experimental，不是可玩版本。
+    assert.deepEqual(games.data.games.map(g => g.id), ['deathwatch-d100']);
+    assert.equal(games.data.games[0].phase, 'experimental');
 });
 
 test('世界与内容库为空，旧世界详情返回 404', async () => {

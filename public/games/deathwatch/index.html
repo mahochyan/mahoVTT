@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>死亡守望 · D100 — mahoVTT</title>
+<link rel="stylesheet" href="/games/deathwatch/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="back" href="/games">← 游戏厅</a>
+  <div class="brand">
+    <strong>死亡守望 · D100</strong>
+    <span id="ruleProfile" class="tag">规则配置读取中</span>
+  </div>
+  <div id="moduleState" class="state">加载中…</div>
+</header>
+
+<main id="home" class="screen">
+  <section class="panel">
+    <h1>杀戮小队</h1>
+    <p id="moduleDesc" class="muted"></p>
+    <div class="row">
+      <button id="newSquad" class="primary">新建小队</button>
+      <span id="provider" class="muted"></span>
+    </div>
+    <h2>进行中的存档</h2>
+    <ul id="sessionList" class="list"></ul>
+    <h2>可用副本</h2>
+    <ul id="missionList" class="list"></ul>
+  </section>
+</main>
+
+<main id="creation" class="screen hidden">
+  <section class="panel">
+    <h1>创建杀戮小队</h1>
+    <p class="muted">六战团、六专长；战团限制由服务端校验。属性按 2d10+30 由服务端生成，刷新不会重掷。</p>
+    <label>战役名称 <input id="title" maxlength="40" value="守望任务"></label>
+    <div id="slots" class="slots"></div>
+    <div class="row">
+      <label>领队 <select id="leader"></select></label>
+      <label>誓言 <select id="oath"></select></label>
+      <label>武器配置 <select id="weaponProfile"><option value="core">核心原版</option><option value="revised">可选修订（勘误附录）</option></select></label>
+    </div>
+    <div class="row">
+      <button id="submitSquad" class="primary">开始任务</button>
+      <button id="cancelCreate">取消</button>
+      <span id="createError" class="error"></span>
+    </div>
+  </section>
+</main>
+
+<main id="play" class="screen hidden">
+  <div class="layout">
+    <aside class="col left">
+      <div id="actorCards"></div>
+      <div id="objectives"></div>
+    </aside>
+    <section class="col center">
+      <div id="sceneHeader" class="scene-header"></div>
+      <div id="mapWrap" class="map-wrap"></div>
+      <div id="actions" class="actions"></div>
+      <div id="pending" class="pending hidden"></div>
+    </section>
+    <aside class="col right">
+      <div id="diceCard" class="dice-card"></div>
+      <div id="events" class="events"></div>
+      <div id="worldbook" class="worldbook"></div>
+    </aside>
+  </div>
+</main>
+
+<script type="module" src="/games/deathwatch/app.js"></script>
+</body>
+</html>

@@ -26,7 +26,8 @@ export function test(base,modifiers=[],random=rng,options={}){
 export function reroll(result,random=rng){return test(result.base,result.parts,random,{attack:result.attack,focus:result.focus});}
 export const LOCATIONS=['head','rightArm','leftArm','body','rightLeg','leftLeg'];
 export const LOCATION_NAMES={head:'头部',rightArm:'右臂',leftArm:'左臂',body:'躯干',rightLeg:'右腿',leftLeg:'左腿'};
-export function hitLocation(roll){need(int(roll,1,100),'ROLL','命中骰无效。');const s=String(roll===100?0:roll).padStart(2,'0');const n=Number(s[1]+s[0])||100;return n<=10?'head':n<=20?'rightArm':n<=30?'leftArm':n<=70?'body':n<=85?'rightLeg':'leftLeg';}
+export function hitLocation(roll){need(int(roll,1,100),'ROLL','命中骰无效。');// 个位与十位反转；100 反转后为 001，按 1 处理（头部）。
+ if(roll===100)return 'head';const s=String(roll).padStart(2,'0');const n=Number(s[1]+s[0]);return n<=10?'head':n<=20?'rightArm':n<=30?'leftArm':n<=70?'body':n<=85?'rightLeg':'leftLeg';}
 // Table 8-2: the final column applies to EVERY hit after the fifth.
 // Where the table says Arm without a side, this adapter uses the original side,
 // or the right side when none exists; this declared convention is shown in RULES.md.
