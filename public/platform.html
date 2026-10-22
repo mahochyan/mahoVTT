@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="灰灯纪事：本机单人的 AI 跑团档案库。多战役、角色、世界与内容库。">
+  <title>灰灯纪事 · 本地跑团档案库</title>
+  <link rel="stylesheet" href="/platform.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" data-link>
+        <svg class="brand-mark" viewBox="0 0 40 46" fill="none" aria-hidden="true">
+          <path d="m20 2 17 10v22L20 44 3 34V12Z" stroke="currentColor" stroke-width="1.3"/>
+          <path d="m20 9 7 14-7 14-7-14Z" fill="currentColor"/>
+          <path d="M8 23h24" stroke="#0e1116"/>
+        </svg>
+        <span><strong>GRAYLIGHT</strong><small>本地跑团档案库</small></span>
+      </a>
+      <nav class="nav" id="nav" aria-label="主导航"></nav>
+      <div class="sidebar-foot">
+        <div class="ai-status" id="ai-status"><i></i><span>读取中…</span></div>
+        <small>v0.2.0 · 仅监听本机</small>
+      </div>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <div class="crumb" id="crumb"></div>
+        <div class="top-actions" id="top-actions"></div>
+      </header>
+      <main class="view" id="view">
+        <div class="loading"><i class="spinner"></i>正在读取本地档案…</div>
+      </main>
+    </div>
+  </div>
+  <div id="modal-root"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/js/platform.js"></script>
+</body>
+</html>

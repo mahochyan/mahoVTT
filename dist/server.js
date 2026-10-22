@@ -437,12 +437,15 @@ const server = createServer(async (req, res) => {
             throw new GameError('NOT_FOUND', '接口不存在。', 404);
         if (method !== 'GET' && method !== 'HEAD')
             throw new GameError('METHOD', '不支持这个请求方法。', 405);
-        let file = path === '/' || path.startsWith('/c/') ? join(ROOT, 'public/index.html') : pathResolve(ROOT, 'public', '.' + decodeURIComponent(path));
+        const platformPage = path === '/' || /^\/(campaigns|characters|worlds|library|settings)(\/|$)/.test(path);
+        let file = path.startsWith('/c/') ? join(ROOT, 'public/index.html')
+            : platformPage ? join(ROOT, 'public/platform.html')
+                : pathResolve(ROOT, 'public', '.' + decodeURIComponent(path));
         const root = pathResolve(ROOT, 'public') + sep;
         if (!file.startsWith(root) || !existsSync(file))
             throw new GameError('NOT_FOUND', '文件不存在。', 404);
         const ext = extname(file);
-        const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
+        const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
         if (!types[ext])
             throw new GameError('NOT_FOUND', '不允许访问该文件。', 404);
         res.writeHead(200, { 'Content-Type': types[ext], 'Cache-Control': 'no-cache' });

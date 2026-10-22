@@ -10,8 +10,13 @@ export const WORLDS = [
         system: '灰灯 d20',
         rooms: ROOMS.length,
         status: 'ready',
-        cover: null,
+        cover: '/art/worlds/whispering-tower.webp',
         features: ['五房间战术地图', '两名 AI 同伴', '三幕主线 + 三项可选目标', '本地自动存档'],
+        companions: [
+            { name: '沈鸢', role: '游侠', note: '远程压制，会自己寻找射击角度。' },
+            { name: '洛恩', role: '牧师', note: '疗愈与灯辉术，优先照顾倒地队友。' },
+        ],
+        theme: { accent: '#c8a86b', tint: 'rgba(200, 168, 107, 0.14)', backdrop: '/art/worlds/whispering-tower-backdrop.webp' },
     },
 ];
 export function getWorld(id) {
