@@ -35,7 +35,7 @@ function worldTag(id) {
 function providerLabel(p) { return p?.mode === 'openai' ? '自定义 AI 已连接' : '规则演示模式'; }
 
 function navHtml(active) {
-    $('#nav').innerHTML = NAV.map((n) => `<a href="${n.href}" data-link class="${n.id === active ? 'active' : ''}">${icon(n.icon)}<span>${n.label}</span></a>`).join('');
+    $('#nav').innerHTML = NAV.map((n) => `<a href="${n.href}" data-link class="${n.id === active ? 'active' : ''}" aria-label="${n.label}" ${n.id === active ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span></a>`).join('');
 }
 function setChrome(active, crumb, actions = '') {
     navHtml(active);
