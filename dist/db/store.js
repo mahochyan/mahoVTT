@@ -4,6 +4,7 @@ import { dirname } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { GameError } from "../types.js";
 import { newGame, BOOK, TILES, WIDTH, HEIGHT, roomAt } from "../world.js";
+import { ABILITY_IDS } from "../engine/abilities.js";
 function stable(value) {
     if (Array.isArray(value))
         return '[' + value.map(stable).join(',') + ']';
@@ -29,8 +30,34 @@ export class Store {
  CREATE TABLE IF NOT EXISTS claims(campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,source_id TEXT NOT NULL,PRIMARY KEY(campaign_id,source_id));
  CREATE TABLE IF NOT EXISTS actors(campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,id TEXT NOT NULL,name TEXT NOT NULL,hp INTEGER NOT NULL CHECK(hp>=0),max_hp INTEGER NOT NULL CHECK(max_hp>0),x INTEGER NOT NULL,y INTEGER NOT NULL,data_json TEXT NOT NULL,PRIMARY KEY(campaign_id,id),CHECK(hp<=max_hp));
  CREATE TABLE IF NOT EXISTS objects(campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,id TEXT NOT NULL,data_json TEXT NOT NULL,PRIMARY KEY(campaign_id,id));
+ CREATE TABLE IF NOT EXISTS characters(id TEXT PRIMARY KEY,name TEXT NOT NULL,data_json TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
  CREATE INDEX IF NOT EXISTS turns_campaign_created ON turns(campaign_id,created_at);
  `);
+        this.migrate();
+    }
+    /** v2: platform columns + character roster. Additive and idempotent. */
+    migrate() {
+        const cols = new Set(this.db.prepare('PRAGMA table_info(campaigns)').all().map((r) => String(r.name)));
+        const add = (name, ddl) => {
+            if (!cols.has(name))
+                this.db.exec(`ALTER TABLE campaigns ADD COLUMN ${ddl}`);
+        };
+        add('pack_id', 'pack_id TEXT');
+        add('lifecycle', "lifecycle TEXT NOT NULL DEFAULT 'active'");
+        add('title', 'title TEXT');
+        add('last_played_at', 'last_played_at TEXT');
+        add('character_id', 'character_id TEXT');
+        const rows = this.db.prepare('SELECT id,name,state_json,updated_at,pack_id,title,last_played_at FROM campaigns').all();
+        for (const r of rows) {
+            let state = {};
+            try {
+                state = JSON.parse(String(r.state_json));
+            }
+            catch { }
+            this.db.prepare("UPDATE campaigns SET pack_id=?,title=?,lifecycle=COALESCE(lifecycle,'active'),last_played_at=? WHERE id=?")
+                .run(r.pack_id ?? 'whispering-tower', r.title ?? state.name ?? r.name, r.last_played_at ?? r.updated_at, r.id);
+        }
+        this.db.prepare("INSERT OR IGNORE INTO migrations VALUES(2,datetime('now'))").run();
     }
     transaction(fn) {
         this.db.exec('BEGIN IMMEDIATE');
@@ -53,13 +80,78 @@ export class Store {
         for (const c of s.claims)
             this.db.prepare('INSERT OR IGNORE INTO claims VALUES(?,?)').run(s.id, c);
     }
-    create(s) { this.transaction(() => { this.db.prepare('INSERT INTO campaigns(id,name,state_json,version,created_at,updated_at) VALUES(?,?,?,?,?,?)').run(s.id, s.name, JSON.stringify(s), s.version, s.createdAt, new Date().toISOString()); this.mirrors(s); }); return s; }
-    list() { return this.db.prepare('SELECT id,name,version,created_at,updated_at,state_json FROM campaigns ORDER BY updated_at DESC').all().map((r) => { const s = JSON.parse(String(r.state_json)); return { id: r.id, name: r.name, version: r.version, createdAt: r.created_at, updatedAt: r.updated_at, status: s.status, playerName: s.playerName, rooms: s.discovered.length, gold: s.gold }; }); }
+    create(s, meta = {}) { const now = new Date().toISOString(); this.transaction(() => { this.db.prepare('INSERT INTO campaigns(id,name,state_json,version,created_at,updated_at,pack_id,lifecycle,title,last_played_at,character_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(s.id, s.name, JSON.stringify(s), s.version, s.createdAt, now, meta.packId ?? 'whispering-tower', 'active', s.name, now, meta.characterId ?? null); this.mirrors(s); }); return s; }
+    list(lifecycle) {
+        const sql = 'SELECT id,name,title,pack_id,lifecycle,version,created_at,updated_at,last_played_at,character_id,state_json FROM campaigns'
+            + (lifecycle ? ' WHERE lifecycle=?' : '') + ' ORDER BY COALESCE(last_played_at,updated_at) DESC';
+        const rows = (lifecycle ? this.db.prepare(sql).all(lifecycle) : this.db.prepare(sql).all());
+        return rows.map((r) => {
+            let s = {};
+            try {
+                s = JSON.parse(String(r.state_json));
+            }
+            catch { }
+            return {
+                id: r.id,
+                name: r.title ?? r.name,
+                title: r.title ?? r.name,
+                packId: r.pack_id ?? 'whispering-tower',
+                lifecycle: r.lifecycle ?? 'active',
+                version: r.version,
+                createdAt: r.created_at,
+                updatedAt: r.updated_at,
+                lastPlayedAt: r.last_played_at ?? r.updated_at,
+                characterId: r.character_id ?? null,
+                status: s.status ?? 'playing',
+                playerName: s.playerName ?? '',
+                rooms: Array.isArray(s.discovered) ? s.discovered.length : 0,
+                gold: s.gold ?? 0,
+                party: Array.isArray(s.actors) ? s.actors.filter((a) => a.faction === 'party').map((a) => a.name) : [],
+            };
+        });
+    }
+    setLifecycle(id, lifecycle) {
+        const r = this.db.prepare('UPDATE campaigns SET lifecycle=?,updated_at=? WHERE id=?').run(lifecycle, new Date().toISOString(), id);
+        if (!r.changes)
+            throw new GameError('NOT_FOUND', '找不到这份战役存档。', 404);
+        return this.list().find((c) => c.id === id);
+    }
+    rename(id, title) { return this.transaction(() => { const s = this.get(id); s.name = title.slice(0, 100); s.version++; this.db.prepare('UPDATE campaigns SET name=?,title=?,state_json=?,version=?,updated_at=? WHERE id=?').run(s.name, s.name, JSON.stringify(s), s.version, new Date().toISOString(), id); return this.list().find((c) => c.id === id); }); }
+    remove(id) {
+        const r = this.db.prepare('DELETE FROM campaigns WHERE id=?').run(id);
+        if (!r.changes)
+            throw new GameError('NOT_FOUND', '找不到这份战役存档。', 404);
+    }
+    listCharacters() {
+        return this.db.prepare('SELECT id,name,data_json,created_at,updated_at FROM characters ORDER BY updated_at DESC').all().map((r) => ({ id: r.id, name: r.name, data: JSON.parse(String(r.data_json)), createdAt: r.created_at, updatedAt: r.updated_at }));
+    }
+    getCharacter(id) {
+        const r = this.db.prepare('SELECT id,name,data_json,created_at,updated_at FROM characters WHERE id=?').get(id);
+        if (!r)
+            throw new GameError('NOT_FOUND', '找不到这个角色。', 404);
+        return { id: r.id, name: r.name, data: JSON.parse(String(r.data_json)), createdAt: r.created_at, updatedAt: r.updated_at };
+    }
+    createCharacter(name, data) { const id = randomUUID(), now = new Date().toISOString(); this.db.prepare('INSERT INTO characters(id,name,data_json,created_at,updated_at) VALUES(?,?,?,?,?)').run(id, name, JSON.stringify(data), now, now); return this.getCharacter(id); }
+    updateCharacter(id, name, data) {
+        const r = this.db.prepare('UPDATE characters SET name=?,data_json=?,updated_at=? WHERE id=?').run(name, JSON.stringify(data), new Date().toISOString(), id);
+        if (!r.changes)
+            throw new GameError('NOT_FOUND', '找不到这个角色。', 404);
+        return this.getCharacter(id);
+    }
+    deleteCharacter(id) {
+        const r = this.db.prepare('DELETE FROM characters WHERE id=?').run(id);
+        if (!r.changes)
+            throw new GameError('NOT_FOUND', '找不到这个角色。', 404);
+    }
     get(id) {
         const r = this.db.prepare('SELECT state_json FROM campaigns WHERE id=?').get(id);
         if (!r)
             throw new GameError('NOT_FOUND', '找不到这份战役存档。', 404);
-        return JSON.parse(String(r.state_json));
+        const s = JSON.parse(String(r.state_json));
+        for (const a of s.actors ?? [])
+            if (!Array.isArray(a.abilityIds))
+                a.abilityIds = a.id === 'pc' ? ['second_wind'] : a.id === 'cleric' ? ['heal', 'radiance'] : [];
+        return s;
     }
     turn(id) {
         const r = this.db.prepare('SELECT * FROM turns WHERE id=?').get(id);
@@ -103,7 +195,8 @@ export class Store {
                 throw new GameError('LEASE_LOST', '状态或处理资格已改变，旧计划未写入。', 409);
             if (r.state.version !== turn.base_version + 1)
                 throw new GameError('BAD_VERSION', '结算版本不连续。', 500);
-            this.db.prepare('UPDATE campaigns SET state_json=?,version=?,updated_at=?,lease_owner=NULL,lease_until=0 WHERE id=? AND version=? AND lease_owner=? AND lease_epoch=?').run(JSON.stringify(r.state), r.state.version, new Date().toISOString(), turn.campaign_id, turn.base_version, owner, turn.epoch);
+            const nowIso = new Date().toISOString();
+            this.db.prepare('UPDATE campaigns SET state_json=?,version=?,updated_at=?,last_played_at=?,lease_owner=NULL,lease_until=0 WHERE id=? AND version=? AND lease_owner=? AND lease_epoch=?').run(JSON.stringify(r.state), r.state.version, nowIso, nowIso, turn.campaign_id, turn.base_version, owner, turn.epoch);
             this.mirrors(r.state);
             let seq = Number(this.db.prepare('SELECT COALESCE(MAX(seq),0) AS n FROM events WHERE campaign_id=?').get(turn.campaign_id).n);
             for (const e of r.events)
@@ -256,8 +349,12 @@ export function validateState(raw) {
         a.roomId = roomAt(a);
         if (!x.inventory || !x.resources || Object.keys(x.inventory).some(k => !['potion', 'key'].includes(k)) || Object.values(x.inventory).some(n => !integer(n, 0, 100)) || Object.keys(x.resources).some(k => !['heal', 'secondWind'].includes(k)) || Object.values(x.resources).some(n => !integer(n, 0, 4)))
             throw new GameError('BAD_SAVE', '背包或能力资源不合法。');
+        const abilityIds = Array.isArray(x.abilityIds) ? x.abilityIds : a.abilityIds;
+        if (abilityIds.some((id) => typeof id !== 'string' || !ABILITY_IDS.includes(id)))
+            throw new GameError('BAD_SAVE', '角色能力列表不合法。');
         a.inventory = x.inventory;
         a.resources = x.resources;
+        a.abilityIds = [...abilityIds];
         a.conditions = a.hp === 0 ? [{ id: 'downed', remainingRounds: -1 }] : [];
     }
     const occupied = new Set();

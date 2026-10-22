@@ -1,6 +1,6 @@
 {
   "name": "graylight-sagas",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "灰灯纪事：本地 AI 地下城，完整可玩冒险与服务端权威规则。",

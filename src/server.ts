@@ -9,6 +9,9 @@ import { newGame, ROOT, BOOK, publicBook } from './world.ts';
 import { GameError, type Command, type GameState, type DomainEvent } from './types.ts';
 import { parseCommand, resolvePlan, tacticalPlan, activeId, view } from './engine/engine.ts';
 import { roll } from './engine/dice.ts';
+import { WORLDS, getWorld, worldBook } from './platform/worlds.ts';
+import { validateCharacter, actorPreset } from './platform/characters.ts';
+import { library } from './platform/library.ts';
 // This single-user edition must never run two servers against the same save directory.
 mkdirSync(DATA_DIR, { recursive: true });
 const lockPath = join(DATA_DIR, 'server.lock');
@@ -227,9 +230,53 @@ const server = createServer(async (req, res) => {
         ensureOrigin(req);
         const url = new URL(req.url || '/', `http://${req.headers.host}`), path = url.pathname, method = req.method || 'GET';
         if (path === '/api/health' && method === 'GET')
-            return json(res, { ok: true, version: '0.1.0', contentVersion: BOOK.version });
+            return json(res, { ok: true, version: '0.2.0', contentVersion: BOOK.version });
+        if (path === '/api/platform' && method === 'GET')
+            return json(res, { worlds: WORLDS, campaigns: store.list(), characters: store.listCharacters(), provider: configs.public(), version: '0.2.0' });
+        if (path === '/api/dashboard' && method === 'GET') {
+            const all = store.list(), active = all.filter((c) => c.lifecycle === 'active');
+            return json(res, {
+                worlds: WORLDS,
+                campaigns: active.slice(0, 8),
+                archived: all.length - active.length,
+                characters: store.listCharacters().slice(0, 8),
+                counts: { active: active.length, victory: all.filter((c) => c.status === 'victory').length, total: all.length },
+                provider: configs.public(),
+                version: '0.2.0',
+            });
+        }
+        if (path === '/api/worlds' && method === 'GET')
+            return json(res, WORLDS);
+        if (path === '/api/library' && method === 'GET')
+            return json(res, library());
+        const wm = /^\/api\/worlds\/([a-z0-9-]{1,64})$/.exec(path);
+        if (wm && method === 'GET') {
+            const w = getWorld(wm[1]);
+            if (!w)
+                throw new GameError('NOT_FOUND', '未知世界。', 404);
+            return json(res, { world: w, book: worldBook(w.id) });
+        }
+        if (path === '/api/characters' && method === 'GET')
+            return json(res, store.listCharacters());
+        if (path === '/api/characters' && method === 'POST') {
+            const data = validateCharacter(await body(req));
+            return json(res, store.createCharacter(data.name, data), 201);
+        }
+        const cm = /^\/api\/characters\/([a-f0-9-]{36})$/.exec(path);
+        if (cm) {
+            if (method === 'GET')
+                return json(res, store.getCharacter(cm[1]));
+            if (method === 'PATCH') {
+                const data = validateCharacter(await body(req));
+                return json(res, store.updateCharacter(cm[1], data.name, data));
+            }
+            if (method === 'DELETE') {
+                store.deleteCharacter(cm[1]);
+                return json(res, { ok: true });
+            }
+        }
         if (path === '/api/bootstrap' && method === 'GET')
-            return json(res, { campaigns: store.list(), provider: configs.public(), book: publicBook(), version: '0.1.0' });
+            return json(res, { campaigns: store.list(), characters: store.listCharacters(), worlds: WORLDS, provider: configs.public(), book: publicBook(), version: '0.2.0' });
         if (path === '/api/settings' && method === 'GET')
             return json(res, configs.public());
         if (path === '/api/settings' && method === 'POST')
@@ -238,13 +285,38 @@ const server = createServer(async (req, res) => {
             await body(req);
             return json(res, await new Provider(configs.config).ping());
         }
-        if (path === '/api/campaigns' && method === 'GET')
-            return json(res, store.list());
+        if (path === '/api/campaigns' && method === 'GET') {
+            const lifecycle = url.searchParams.get('lifecycle');
+            return json(res, store.list(lifecycle === 'active' || lifecycle === 'archived' ? lifecycle : undefined));
+        }
         if (path === '/api/campaigns' && method === 'POST') {
             const b = await body(req);
-            if (typeof b.playerName !== 'string' || !b.playerName.trim() || b.playerName.trim().length > 20 || typeof b.name !== 'string' || b.name.length > 60)
-                throw new GameError('BAD_NAME', '角色名须为 1 至 20 字，战役名最多 60 字。');
-            return json(res, { state: view(store.create(newGame(b.name.trim() || '无声钟塔', b.playerName.trim()))) }, 201);
+            const packId = typeof b.packId === 'string' && b.packId ? b.packId : 'whispering-tower';
+            const world = getWorld(packId);
+            if (!world)
+                throw new GameError('NOT_FOUND', '未知世界。', 404);
+            let characterId: string | null = null;
+            let playerName = typeof b.playerName === 'string' ? b.playerName.trim() : '';
+            let preset: ReturnType<typeof actorPreset> | undefined;
+            if (typeof b.characterId === 'string' && b.characterId) {
+                const record = store.getCharacter(b.characterId);
+                const data = validateCharacter(record.data);
+                characterId = record.id;
+                playerName = data.name;
+                preset = actorPreset(data);
+            }
+            else if (b.character && typeof b.character === 'object') {
+                const data = validateCharacter(b.character);
+                playerName = data.name;
+                preset = actorPreset(data);
+            }
+            if (!playerName || playerName.length > 20)
+                throw new GameError('BAD_NAME', '角色名须为 1 至 20 字。');
+            const title = (typeof b.title === 'string' ? b.title : typeof b.name === 'string' ? b.name : '').trim() || world.title;
+            if (title.length > 60)
+                throw new GameError('BAD_NAME', '战役名最多 60 字。');
+            const created = store.create(newGame(title, playerName, preset), { packId, characterId });
+            return json(res, { state: view(created), campaign: store.list().find((c) => c.id === created.id) }, 201);
         }
         if (path === '/api/campaigns/import' && method === 'POST') {
             const s = store.import(await body(req, 10 * 1024 * 1024));
@@ -256,6 +328,24 @@ const server = createServer(async (req, res) => {
             const id = m[1], tail = m[2] ?? '';
             if (tail === '' && method === 'GET')
                 return json(res, snapshot(id));
+            if (tail === '' && method === 'PATCH') {
+                const b = await body(req);
+                if (b.lifecycle !== undefined && !['active', 'archived'].includes(b.lifecycle))
+                    throw new GameError('BAD_LIFECYCLE', '状态只能是进行中或已归档。');
+                if (b.title !== undefined && (typeof b.title !== 'string' || !b.title.trim() || b.title.trim().length > 100))
+                    throw new GameError('BAD_NAME', '战役名须为 1 至 100 字。');
+                if (b.lifecycle)
+                    store.setLifecycle(id, b.lifecycle);
+                if (b.title)
+                    store.rename(id, b.title.trim());
+                return json(res, { campaign: store.list().find((c) => c.id === id) });
+            }
+            if (tail === '' && method === 'DELETE') {
+                if (url.searchParams.get('confirm') !== '1')
+                    throw new GameError('CONFIRM_REQUIRED', '删除战役需要 confirm=1。', 400);
+                store.remove(id);
+                return json(res, { ok: true });
+            }
             if (tail === 'turn' && method === 'POST') {
                 await action(req, res, id);
                 return;
@@ -330,7 +420,7 @@ const server = createServer(async (req, res) => {
     }
 });
 server.on('error', e => { console.error('无法启动：' + e.message + '。请确认 3000 端口未被占用。'); store.close(); process.exit(1); });
-server.listen(PORT, '127.0.0.1', () => { store.recover(true); console.log(`\n灰灯纪事 v0.1.0\n打开 http://127.0.0.1:${PORT}\n存档目录：${DATA_DIR}\nAI 模式：${configs.config.mode}\n按 Ctrl+C 停止；已提交状态自动保存在 SQLite。\n`); for (const c of store.list())
+server.listen(PORT, '127.0.0.1', () => { store.recover(true); console.log(`\n灰灯纪事 v0.2.0\n打开 http://127.0.0.1:${PORT}\n存档目录：${DATA_DIR}\nAI 模式：${configs.config.mode}\n按 Ctrl+C 停止；已提交状态自动保存在 SQLite。\n`); for (const c of store.list())
     scheduleAuto(String(c.id)); });
 const autoTimer = setInterval(() => { for (const c of store.list())
     if (c.status === 'playing')

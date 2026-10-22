@@ -4,3 +4,5 @@ data/*
 !data/.gitkeep
 tests/artifacts/
 *.log
+
+tools/art/out/

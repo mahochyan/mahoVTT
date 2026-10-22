@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { GameError, type GameState, type Command, type Actor, type DomainEvent, type Dice, type Resolution, type View, type Point } from '../types.ts';
 import { BOOK, ROOMS, TILES, WIDTH, HEIGHT, OBSTACLES, roomAt } from '../world.ts';
 import { roll, criticalExpr, secureRng, type RNG } from './dice.ts';
+import { ABILITIES, actorAbilities, maxUses } from './abilities.ts';
 import { distance, terrainOpen, canStep, pathfind, los, partyVisible } from './grid.ts';
 const TYPES = ['move', 'attack', 'use_ability', 'use_item', 'interact', 'talk', 'end_turn'];
 export function parseCommand(raw: unknown): Command {
@@ -200,32 +201,29 @@ export function resolve(original: GameState, raw: Command, source: 'player' | 'a
         heal(t, rolling('2d4+2', '治疗药水').total);
     }
     else if (c.type === 'use_ability') {
-        if (c.abilityId === 'second_wind') {
-            need(a.kind === 'pc' && a.resources.secondWind > 0, 'NO_ABILITY', '回气尚未恢复，或当前角色没有这项能力。');
-            need(a.hp < a.maxHp, 'FULL_HP', '你已满血。');
-            spend('bonus');
-            a.resources.secondWind--;
-            emit('resource_consumed', '消耗回气次数 ×1。');
-            heal(a, rolling('1d10+3', '战士回气').total);
+        const def = ABILITIES[c.abilityId ?? ''];
+        need(def, 'NO_ABILITY', '未知的职业能力。');
+        need((a.abilityIds ?? []).includes(def.id), 'NO_ABILITY', '当前角色没有这项能力。');
+        if (def.resource)
+            need((a.resources[def.resource] ?? 0) > 0, 'NO_ABILITY', `${def.name}次数已经用完。`);
+        if (def.kind === 'heal') {
+            const target = def.target === 'self' ? a : s.actors.find(x => x.id === c.targetId);
+            need(target && target.faction === a.faction, 'BAD_TARGET', '请选择一个队伍角色。');
+            if (def.target === 'ally')
+                need(distance(a, target!) <= (def.range ?? 1) && los(s, a, target!), 'BAD_TARGET', `${def.name}目标必须可见且在 ${def.range} 格内。`);
+            if (def.requiresHpBelowMax)
+                need(target!.hp < target!.maxHp, 'FULL_HP', '目标已经满血。');
+            spend(def.cost);
+            if (def.resource)
+                a.resources[def.resource] = (a.resources[def.resource] ?? 0) - 1;
+            emit('resource_consumed', `${a.name}使用${def.name}${def.resource ? ' ×1' : ''}。`, {}, target!.id);
+            heal(target!, rolling(def.dice, def.name).total);
         }
-        else if (c.abilityId === 'heal') {
-            need(a.id === 'cleric' && a.resources.heal > 0, 'NO_ABILITY', '疗愈术次数不足。');
-            const t = s.actors.find(x => x.id === c.targetId);
-            need(t && t.faction === 'party' && distance(a, t) <= 6 && los(s, a, t), 'BAD_TARGET', '疗愈目标必须在六格内且可见。');
-            need(t.hp < t.maxHp, 'FULL_HP', '目标已满血。');
-            spend('action');
-            a.resources.heal--;
-            emit('resource_consumed', '洛恩消耗疗愈术次数 ×1。');
-            heal(t, rolling('1d8+4', '疗愈术').total);
+        else {
+            const target = s.actors.find(x => x.id === c.targetId);
+            need(target, 'BAD_TARGET', '请选择一个敌人。');
+            attack(target!, def.dice, def.range ?? a.range, def.name);
         }
-        else if (c.abilityId === 'radiance') {
-            need(a.id === 'cleric', 'NO_ABILITY', '该角色没有灯辉术。');
-            const t = s.actors.find(x => x.id === c.targetId);
-            need(t, 'BAD_TARGET', '请选择敌人。');
-            attack(t, '1d8+3', 8, '灯辉术');
-        }
-        else
-            throw new GameError('NO_ABILITY', '未知的职业能力。');
     }
     else if (c.type === 'end_turn') {
         need(s.combat, 'NO_ENCOUNTER', '探索阶段无需结束回合。');
@@ -298,10 +296,10 @@ export function resolve(original: GameState, raw: Command, source: 'player' | 'a
                     x.hp = x.maxHp;
                     x.tempHp = 0;
                     x.conditions = [];
-                    if (x.kind === 'pc')
-                        x.resources.secondWind = 1;
-                    if (x.id === 'cleric')
-                        x.resources.heal = 4;
+                    for (const def of actorAbilities(x.abilityIds)) {
+                        if (def.resource)
+                            x.resources[def.resource] = maxUses(def);
+                    }
                 }
                 s.worldTime += 8 * 3600;
                 emit('rested', '在营地长休八小时。全队 HP 与职业能力恢复，药水数量不变。');
@@ -443,17 +441,22 @@ export function tacticalPlan(s: GameState, id: string): Command[] {
         return [];
     const plan: Command[] = [];
     const allies = s.actors.filter(x => x.faction === a.faction);
-    if (a.id === 'cleric' && a.resources.heal > 0 && !s.combat.actionUsed) {
-        const hurt = allies.filter(x => x.hp < x.maxHp * 0.6 && distance(a, x) <= 6 && los(s, a, x)).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+    const abilities = actorAbilities(a.abilityIds);
+    const healDef = abilities.find((d) => d.kind === 'heal' && (!d.resource || (a.resources[d.resource] ?? 0) > 0));
+    if (healDef && !s.combat[healDef.cost === 'action' ? 'actionUsed' : 'bonusUsed']) {
+        const reach = healDef.target === 'self' ? 0 : healDef.range ?? 1;
+        const hurt = allies.filter((x) => x.hp < x.maxHp * 0.6 && (healDef.target === 'self' ? x.id === a.id : distance(a, x) <= reach && los(s, a, x)))
+            .sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0];
         if (hurt) {
-            plan.push({ type: 'use_ability', actorId: id, abilityId: 'heal', targetId: hurt.id });
+            plan.push({ type: 'use_ability', actorId: id, abilityId: healDef.id, targetId: hurt.id });
             return [...plan, { type: 'end_turn', actorId: id }];
         }
     }
     if (!s.combat.bonusUsed && a.hp < a.maxHp / 2 && (a.inventory.potion ?? 0) > 0)
         plan.push({ type: 'use_item', actorId: id, itemId: 'potion', targetId: id });
     const foes = s.actors.filter(x => x.faction !== a.faction && x.hp > 0 && s.combat!.order.includes(x.id)).sort((x, y) => distance(a, x) - distance(a, y) || x.hp - y.hp);
-    const range = a.id === 'cleric' ? 8 : a.range;
+    const attackDef = abilities.find((d) => d.kind === 'attack');
+    const range = Math.max(a.range, attackDef?.range ?? 0);
     let target = foes.find(x => distance(a, x) <= range && los(s, a, x));
     if (!target) {
         const budget = a.speed - s.combat.movementUsed;
@@ -483,8 +486,10 @@ export function tacticalPlan(s: GameState, id: string): Command[] {
             target = best.target;
         }
     }
-    if (target && !s.combat.actionUsed)
-        plan.push(a.id === 'cleric' ? { type: 'use_ability', actorId: id, abilityId: 'radiance', targetId: target.id } : { type: 'attack', actorId: id, targetId: target.id });
+    if (target && !s.combat.actionUsed) {
+        const useDef = attackDef && distance(a, target) <= (attackDef.range ?? a.range) ? attackDef : null;
+        plan.push(useDef ? { type: 'use_ability', actorId: id, abilityId: useDef.id, targetId: target.id } : { type: 'attack', actorId: id, targetId: target.id });
+    }
     plan.push({ type: 'end_turn', actorId: id });
     return plan.slice(0, 4);
 }

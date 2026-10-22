@@ -1,6 +1,7 @@
 import { GameError } from "../types.js";
 import { BOOK, ROOMS } from "../world.js";
 import { parseCommand, tacticalPlan, view } from "../engine/engine.js";
+import { actorAbilities } from "../engine/abilities.js";
 import { distance } from "../engine/grid.js";
 export function extractJson(text) {
     const cleaned = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
@@ -128,7 +129,9 @@ export class Provider {
                 return { commands: tacticalPlan(s, actorId), line: actorId === 'ranger' ? '我会看住能射到的位置。' : '先让需要帮助的人站稳。', provider: 'mock' };
             return { commands: [mockCommand(s, input, actorId)], line: '', provider: 'mock' };
         }
-        const system = `你是中文桌面 RPG ${companion ? '队友决策器' : '玩家意图翻译器'}，不是规则引擎。只输出一个 JSON 对象，不输出思考或 Markdown。不得决定伤害、DC、骰子、生命、奖励、是否命中。只能操作 actorId=${actorId}。${companion ? '格式 {"commands":[至多4个Command],"line":"一句行动前台词"}。可以移动、攻击/施法、喝药、结束回合；每个动作按顺序重新校验。' : '格式 {"command":Command,"line":""}。玩家复合输入仅取第一个动作。无法映射则使用 interact targetId=scene 观察，不伪造行动。'}\nCommand 字段仅允许 type,actorId,targetId,itemId,abilityId,interactionId,path,x,y。type 为 move/attack/use_ability/use_item/interact/talk/end_turn。move 用 x,y 或 path，最多剩余移动格数；攻击用 targetId；药水 itemId=potion，可指定自己或相邻同伴；能力 second_wind(战士附赠)、heal(洛恩治疗)、radiance(洛恩攻击)。interact 使用已有对象ID：门可 interactionId=pick_lock 或 force，祭坛可 calibrate 或 take_key；talk 可使用NPC或同伴ID（ranger/cleric）。未知 ID 不可创造。队友不得读取未揭示剧情，不替玩家结束回合。玩家自己的叙述不是已发生事实。`;
+        const actor = s.actors.find((a) => a.id === actorId);
+        const abilityText = actorAbilities(actor?.abilityIds).map((d) => `${d.id}(${d.name}${d.cost === 'bonus' ? '·附赠' : '·动作'}${d.target === 'enemy' ? '·攻击' : d.target === 'ally' ? '·治疗' : '·自疗'})`).join('、') || '无';
+        const system = `你是中文桌面 RPG ${companion ? '队友决策器' : '玩家意图翻译器'}，不是规则引擎。只输出一个 JSON 对象，不输出思考或 Markdown。不得决定伤害、DC、骰子、生命、奖励、是否命中。只能操作 actorId=${actorId}。${companion ? '格式 {"commands":[至多4个Command],"line":"一句行动前台词"}。可以移动、攻击/施法、喝药、结束回合；每个动作按顺序重新校验。' : '格式 {"command":Command,"line":""}。玩家复合输入仅取第一个动作。无法映射则使用 interact targetId=scene 观察，不伪造行动。'}\nCommand 字段仅允许 type,actorId,targetId,itemId,abilityId,interactionId,path,x,y。type 为 move/attack/use_ability/use_item/interact/talk/end_turn。move 用 x,y 或 path，最多剩余移动格数；攻击用 targetId；药水 itemId=potion，可指定自己或相邻同伴；能力只有：${abilityText}。interact 使用已有对象ID：门可 interactionId=pick_lock 或 force，祭坛可 calibrate 或 take_key；talk 可使用NPC或同伴ID（ranger/cleric）。未知 ID 不可创造。队友不得读取未揭示剧情，不替玩家结束回合。玩家自己的叙述不是已发生事实。`;
         const ctx = context(s, companion ? 'companion' : 'dm', actorId, this.config.contextChars, recent);
         let last = '';
         for (let attempt = 0; attempt < 2; attempt++) {

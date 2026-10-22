@@ -50,9 +50,42 @@ for (const p of OBSTACLES)
     TILES[p.y][p.x] = 2;
 export function roomAt(p: Point): string { return ROOMS.find(r => { const [x, y, w, h] = r.rect; return p.x >= x && p.x < x + w && p.y >= y && p.y < y + h; })?.id ?? 'passage'; }
 const obj = (id: string, name: string, kind: Interactable['kind'], x: number, y: number, roomId: string, description: string, locked = false): Interactable => ({ id, name, kind, x, y, roomId, open: false, locked, looted: false, description });
-function actor(id: string, name: string, role: string, x: number, y: number, kind: Actor['kind'], hp: number, ac: number, attack: number, damage: string, range: number): Actor { return { id, name, role, x, y, kind, controller: kind === 'pc' ? 'player' : kind === 'companion' ? 'ai' : 'engine', faction: kind === 'enemy' ? 'hostile' : 'party', hp, maxHp: hp, tempHp: 0, ac, speed: 6, attack, damage, range, weapon: range > 1 ? '短弓' : '短剑', dex: kind === 'enemy' ? 1 : 2, skills: { athletics: 5, perception: 3, thieves_tools: 2 }, inventory: { potion: kind === 'enemy' ? 0 : 2 }, resources: { heal: kind === 'companion' && id === 'cleric' ? 4 : 0, secondWind: kind === 'pc' ? 1 : 0 }, conditions: [], roomId: roomAt({ x, y }), description: '', personality: '' }; }
-export function newGame(name = '无声钟塔', playerName = '旅人'): GameState {
+function actor(id: string, name: string, role: string, x: number, y: number, kind: Actor['kind'], hp: number, ac: number, attack: number, damage: string, range: number): Actor { return { id, name, role, x, y, kind, controller: kind === 'pc' ? 'player' : kind === 'companion' ? 'ai' : 'engine', faction: kind === 'enemy' ? 'hostile' : 'party', hp, maxHp: hp, tempHp: 0, ac, speed: 6, attack, damage, range, weapon: range > 1 ? '短弓' : '短剑', dex: kind === 'enemy' ? 1 : 2, skills: { athletics: 5, perception: 3, thieves_tools: 2 }, inventory: { potion: kind === 'enemy' ? 0 : 2 }, resources: { heal: kind === 'companion' && id === 'cleric' ? 4 : 0, secondWind: kind === 'pc' ? 1 : 0 }, abilityIds: id === 'pc' ? ['second_wind'] : id === 'cleric' ? ['heal', 'radiance'] : [], conditions: [], roomId: roomAt({ x, y }), description: '', personality: '' }; }
+
+export type PlayerPreset = {
+    name?: string;
+    role?: string;
+    hp?: number;
+    maxHp?: number;
+    ac?: number;
+    attack?: number;
+    damage?: string;
+    range?: number;
+    weapon?: string;
+    speed?: number;
+    dex?: number;
+    skills?: Record<string, number>;
+    inventory?: Record<string, number>;
+    resources?: Record<string, number>;
+    abilityIds?: string[];
+    description?: string;
+};
+export function newGame(name = '无声钟塔', playerName = '旅人', pcPreset?: PlayerPreset): GameState {
     const actors = [actor('pc', playerName, '战士', 4, 15, 'pc', 36, 16, 5, '1d8+3', 1), actor('ranger', '沈鸢', '游侠', 3, 16, 'companion', 28, 14, 5, '1d6+3', 12), actor('cleric', '洛恩', '牧师', 4, 16, 'companion', 30, 15, 5, '1d6+2', 1), actor('g1', '灰齿哨兵', '哥布林', 13, 14, 'enemy', 9, 11, 3, '1d4+1', 1), actor('g2', '灰齿守卫', '哥布林', 19, 14, 'enemy', 10, 12, 3, '1d4+1', 1), actor('g3', '灰齿刀手', '哥布林', 21, 18, 'enemy', 10, 12, 3, '1d4+1', 1), actor('g4', '灰齿弓手', '弓手', 23, 14, 'enemy', 8, 11, 3, '1d4+1', 10), actor('g5', '灰齿斥候', '弓手', 23, 18, 'enemy', 8, 11, 3, '1d4+1', 10), actor('guardian', '祭坛守卫', '构装体', 24, 6, 'enemy', 28, 14, 4, '1d8+2', 1)];
+    if (pcPreset) {
+        const pc = actors[0];
+        const { hp, maxHp, skills, inventory, resources, abilityIds, ...rest } = pcPreset;
+        Object.assign(pc, rest);
+        pc.hp = hp ?? pc.hp;
+        pc.maxHp = maxHp ?? pc.hp;
+        pc.skills = skills ?? pc.skills;
+        pc.inventory = inventory ?? pc.inventory;
+        pc.resources = resources ?? pc.resources;
+        pc.abilityIds = abilityIds ?? pc.abilityIds;
+        pc.weapon = pcPreset.weapon ?? pc.weapon;
+        pc.name = pcPreset.name ?? playerName;
+        playerName = pc.name;
+    }
     actors[1].personality = BOOK.publicEntries.find(e => e.id === 'ranger')!.text;
     actors[2].personality = BOOK.publicEntries.find(e => e.id === 'cleric')!.text;
     actors[2].weapon = '铜柄短杖';

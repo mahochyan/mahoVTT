@@ -23,6 +23,7 @@ export type Actor = Point & {
     skills: Record<string, number>;
     inventory: Record<string, number>;
     resources: Record<string, number>;
+    abilityIds: string[];
     conditions: {
         id: string;
         remainingRounds: number;
