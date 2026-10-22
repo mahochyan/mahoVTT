@@ -1,3 +1,5 @@
+import { renderSceneArt } from './art/scene-art.js';
+
 const API = '/api/games/wrath-glory';
 const KEY = 'wg-training-session';
 
@@ -115,6 +117,7 @@ function renderPending(s) {
 function renderPlay(s) {
   session = s;
   const scenario = s.scenario;
+  void renderSceneArt({ scenarioId: s.scenarioId, sceneId: scenario?.id });
   $('start').hidden = true;
   $('play').hidden = false;
   $('scene-part').textContent = scenario?.part || 'SCENE';

@@ -56,10 +56,18 @@ function parseDecision(text) {
     try {
         const data = JSON.parse(cleaned.slice(start, end + 1));
         const narration = typeof data?.narration === 'string' ? data.narration.trim() : '';
-        const choiceId = typeof data?.choiceId === 'string' && data.choiceId ? data.choiceId : null;
         if (!narration)
             return null;
-        return { narration, choiceId };
+        let action = null;
+        if (data?.action && typeof data.action === 'object') {
+            if (data.action.type === 'choose' && typeof data.action.choiceId === 'string')
+                action = { type: 'choose', choiceId: data.action.choiceId };
+            else if (data.action.type === 'attack' && typeof data.action.attackerId === 'string' && typeof data.action.targetId === 'string')
+                action = { type: 'attack', attackerId: data.action.attackerId, targetId: data.action.targetId };
+        }
+        else if (typeof data?.choiceId === 'string' && data.choiceId)
+            action = { type: 'choose', choiceId: data.choiceId };
+        return { narration, action };
     }
     catch {
         return null;
@@ -68,25 +76,26 @@ function parseDecision(text) {
 /** AI GM proposal: narration plus at most one scenario choice. The server
  * validates the choice against the current public choices; no numbers or
  * resources are accepted from the model. */
-export async function gmDecide(state, input, choices) {
+export async function gmDecide(state, input, choices, attacks = []) {
     const config = new ConfigStore().config;
     if (config.mode === 'mock')
-        return { narration: '（规则演示模式）雨声压低了远处的钟声。你们可以继续查看线索，或向前推进。', choiceId: null };
+        return { narration: '（规则演示模式）雨声压低了远处的钟声。你们可以继续查看线索，或向前推进。', action: null };
     if (!config.model)
         throw new Error('AI 设置里没有模型 ID。');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), Math.min(config.timeoutMs, 60000));
     const system = [
         '你是《怒火与荣耀》C7 的 AI GM。返回严格 JSON，不要 Markdown，不要解释格式。',
-        '格式：{"narration":"120 字以内的中文叙述","choiceId":"可用 choice id 或 null"}。',
-        '只能从给定的 choices 里选一个 choiceId，或返回 null；不得发明 choice id。',
+        '格式：{"narration":"120 字以内的中文叙述","action":null | {"type":"choose","choiceId":"..."} | {"type":"attack","attackerId":"...","targetId":"..."}}。',
+        'choose 只能从给定 choices 里选；attack 只能从给定 attacks 里选；否则 action 必须为 null。',
         '不得输出骰子结果、伤害数字、资源变化；这些由引擎结算。',
-        '如果当前没有合适选择，或玩家只是询问/说话，choiceId 必须为 null。',
-        '叙述只描述当前场景与已发生事实，不替玩家做超出选择的决定。',
+        '如果当前没有合适动作，或玩家只是询问/说话，action 必须为 null。',
+        '叙述只描述当前场景与已发生事实，不替玩家做超出 action 的决定。',
     ].join('\n');
     const user = JSON.stringify({
         input: input.slice(0, 800),
         choices: choices.map((c) => ({ id: c.id, label: c.label })),
+        attacks,
         state,
     }).slice(0, 12000);
     try {
@@ -111,9 +120,17 @@ export async function gmDecide(state, input, choices) {
             throw new Error('模型没有返回文本。');
         const decision = parseDecision(content);
         if (!decision)
-            return { narration: content.trim().slice(0, 600), choiceId: null };
-        if (decision.choiceId && !choices.some((c) => c.id === decision.choiceId))
-            decision.choiceId = null;
+            return { narration: content.trim().slice(0, 600), action: null };
+        if (decision.action?.type === 'choose') {
+            const action = decision.action;
+            if (!choices.some((c) => c.id === action.choiceId))
+                decision.action = null;
+        }
+        if (decision.action?.type === 'attack') {
+            const action = decision.action;
+            if (!attacks.some((a) => a.attackerId === action.attackerId && a.targetId === action.targetId))
+                decision.action = null;
+        }
         return decision;
     }
     catch (error) {

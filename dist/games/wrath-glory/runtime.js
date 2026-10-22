@@ -361,6 +361,58 @@ function applyChoice(state, pack, choiceId, actorId) {
     enterScene(state, pack, choice.next);
     return { ok: true };
 }
+function applyAttack(state, attackerId, targetId, actionId) {
+    const attacker = state.party.find((a) => a.id === attackerId);
+    const target = state.enemies.find((a) => a.id === targetId);
+    if (!attacker || !target)
+        return { ok: false, code: 'BAD_TARGET', message: '攻击者或目标无效。', status: 404 };
+    if (!attacker.weapon)
+        return { ok: false, code: 'NO_WEAPON', message: '该角色没有可用武器。' };
+    const distance = 12;
+    const band = rangeBand(distance, attacker.weapon.short, attacker.weapon.medium, attacker.weapon.long);
+    if (band === 'out')
+        return { ok: false, code: 'OUT_OF_RANGE', message: '目标超出武器射程。' };
+    const pool = attackPool({
+        mode: 'ranged',
+        initiative: attacker.attributes.initiative,
+        weaponSkill: attacker.skills.weaponSkill ?? 0,
+        agility: attacker.attributes.agility,
+        ballisticSkill: attacker.skills.ballisticSkill ?? 0,
+    });
+    const bonus = band === 'short' ? 1 : 0;
+    const attackPenalty = woundedPenalty(attacker.woundsTaken);
+    const roll = rollTest(pool + bonus, target.defence + attackPenalty, rng);
+    state.log.push(`${attacker.name} 向 ${target.name} 开火：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${attackPenalty ? '，受伤 +1' : ''}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
+    if (!roll.success) {
+        state.log.push('未命中。');
+        enemyTurn(state);
+        return { ok: true, hit: false, pending: !!state.pending };
+    }
+    state.log.push('命中。');
+    const shiftable = shiftableExalted(roll, target.defence);
+    if (shiftable > 0) {
+        const decisionId = crypto.randomUUID();
+        state.pending = {
+            decisionId,
+            actionId,
+            actorId: attacker.id,
+            targetId: target.id,
+            phase: 'shift',
+            allowedChoices: ['damage', 'glory', 'skip'],
+            roll: { faces: roll.faces, icons: roll.icons, exalted: roll.exalted, shiftable, wrathSix: roll.wrathSix, wrathOne: roll.wrathOne },
+            weaponDamage: attacker.weapon.damage,
+            weaponName: attacker.weapon.name,
+        };
+        return { ok: true, hit: true, pending: true };
+    }
+    finishAttack(state, {
+        decisionId: '', actionId, actorId: attacker.id, targetId: target.id,
+        phase: 'shift', allowedChoices: ['damage', 'glory', 'skip'],
+        roll: { faces: roll.faces, icons: roll.icons, exalted: roll.exalted, shiftable: 0, wrathSix: roll.wrathSix, wrathOne: roll.wrathOne },
+        weaponDamage: attacker.weapon.damage, weaponName: attacker.weapon.name,
+    }, 'skip');
+    return { ok: true, hit: true, pending: !!state.pending };
+}
 function publicState(state) {
     if (state.scenarioId === 'graveyard-shift' && state.sceneId) {
         const pack = loadInstalledPack();
@@ -533,18 +585,33 @@ const runtime = {
                     return fail('SCENARIO_NOT_INSTALLED', '当前没有可推进的剧本包。', 404);
                 const view = publicState(state);
                 const choices = (view?.scenario?.choices || []);
+                const attacks = state.party
+                    .filter((p) => p.woundsTaken <= p.maxWounds && p.weapon)
+                    .flatMap((p) => state.enemies
+                    .filter((e) => e.woundsTaken <= e.maxWounds)
+                    .map((e) => ({ attackerId: p.id, targetId: e.id, label: `${p.name} 向 ${e.name} 开火` })));
                 try {
-                    const decision = await gmDecide(view, typeof body?.input === 'string' ? body.input : '', choices);
-                    if (decision.choiceId) {
-                        const applied = applyChoice(state, pack, decision.choiceId, body?.actorId);
-                        if (applied.ok) {
-                            state.lastRequests.push(`gm-${crypto.randomUUID()}`);
-                            const saved = store.save(id, loaded.version, state, { type: 'ai.choose', payload: { choiceId: decision.choiceId } });
-                            if (!saved)
-                                return fail('VERSION_CONFLICT', '状态已变化。', 409);
-                            return ok({ text: decision.narration, action: { type: 'choose', choiceId: decision.choiceId }, session: publicState(state) });
-                        }
-                        return ok({ text: decision.narration, action: null, warning: applied.message, session: publicState(state) });
+                    const decision = await gmDecide(view, typeof body?.input === 'string' ? body.input : '', choices, attacks);
+                    if (decision.action?.type === 'choose') {
+                        const applied = applyChoice(state, pack, decision.action.choiceId, body?.actorId);
+                        if (!applied.ok)
+                            return ok({ text: decision.narration, action: null, warning: applied.message, session: publicState(state) });
+                        state.lastRequests.push(`gm-${crypto.randomUUID()}`);
+                        const saved = store.save(id, loaded.version, state, { type: 'ai.choose', payload: { choiceId: decision.action.choiceId } });
+                        if (!saved)
+                            return fail('VERSION_CONFLICT', '状态已变化。', 409);
+                        return ok({ text: decision.narration, action: decision.action, session: publicState(state) });
+                    }
+                    if (decision.action?.type === 'attack') {
+                        const gmId = `gm-${crypto.randomUUID()}`;
+                        const applied = applyAttack(state, decision.action.attackerId, decision.action.targetId, gmId);
+                        if (!applied.ok)
+                            return ok({ text: decision.narration, action: null, warning: applied.message, session: publicState(state) });
+                        state.lastRequests.push(gmId);
+                        const saved = store.save(id, loaded.version, state, { type: 'ai.attack', payload: decision.action });
+                        if (!saved)
+                            return fail('VERSION_CONFLICT', '状态已变化。', 409);
+                        return ok({ text: decision.narration, action: decision.action, session: publicState(state) });
                     }
                     return ok({ text: decision.narration, action: null, session: publicState(state) });
                 }
@@ -578,63 +645,11 @@ const runtime = {
                 }
                 if (body?.command?.type !== 'attack')
                     return fail('BAD_COMMAND', '目前只实现攻击、场景选择命令。');
-                const attacker = state.party.find((a) => a.id === body.command.attackerId);
-                const target = state.enemies.find((a) => a.id === body.command.targetId);
-                if (!attacker || !target)
-                    return fail('BAD_TARGET', '攻击者或目标无效。', 404);
-                if (!attacker.weapon)
-                    return fail('NO_WEAPON', '该角色没有可用武器。');
-                const distance = 12;
-                const band = rangeBand(distance, attacker.weapon.short, attacker.weapon.medium, attacker.weapon.long);
-                if (band === 'out')
-                    return fail('OUT_OF_RANGE', '目标超出武器射程。');
-                const pool = attackPool({
-                    mode: 'ranged',
-                    initiative: attacker.attributes.initiative,
-                    weaponSkill: attacker.skills.weaponSkill ?? 0,
-                    agility: attacker.attributes.agility,
-                    ballisticSkill: attacker.skills.ballisticSkill ?? 0,
-                });
-                const bonus = band === 'short' ? 1 : 0;
-                const attackPenalty = woundedPenalty(attacker.woundsTaken);
-                const roll = rollTest(pool + bonus, target.defence + attackPenalty, rng);
+                const result = applyAttack(state, body.command.attackerId, body.command.targetId, requestId);
+                if (!result.ok)
+                    return fail(result.code, result.message, result.status ?? 400);
                 state.lastRequests.push(requestId);
-                state.log.push(`${attacker.name} 向 ${target.name} 开火：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${attackPenalty ? '，受伤 +1' : ''}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
-                if (!roll.success) {
-                    state.log.push('未命中。');
-                    enemyTurn(state);
-                    const saved = store.save(id, loaded.version, state, { type: 'attack.miss', payload: { requestId, attackerId: attacker.id } });
-                    if (!saved)
-                        return fail('VERSION_CONFLICT', '状态已变化。', 409);
-                    return ok({ session: publicState(state) });
-                }
-                state.log.push('命中。');
-                const shiftable = shiftableExalted(roll, target.defence);
-                if (shiftable > 0) {
-                    const decisionId = crypto.randomUUID();
-                    state.pending = {
-                        decisionId,
-                        actionId: requestId,
-                        actorId: attacker.id,
-                        targetId: target.id,
-                        phase: 'shift',
-                        allowedChoices: ['damage', 'glory', 'skip'],
-                        roll: { faces: roll.faces, icons: roll.icons, exalted: roll.exalted, shiftable, wrathSix: roll.wrathSix, wrathOne: roll.wrathOne },
-                        weaponDamage: attacker.weapon.damage,
-                        weaponName: attacker.weapon.name,
-                    };
-                    const saved = store.save(id, loaded.version, state, { type: 'attack.shift', payload: { requestId, decisionId } });
-                    if (!saved)
-                        return fail('VERSION_CONFLICT', '状态已变化。', 409);
-                    return ok({ session: publicState(state) });
-                }
-                finishAttack(state, {
-                    decisionId: '', actionId: requestId, actorId: attacker.id, targetId: target.id,
-                    phase: 'shift', allowedChoices: ['damage', 'glory', 'skip'],
-                    roll: { faces: roll.faces, icons: roll.icons, exalted: roll.exalted, shiftable: 0, wrathSix: roll.wrathSix, wrathOne: roll.wrathOne },
-                    weaponDamage: attacker.weapon.damage, weaponName: attacker.weapon.name,
-                }, 'skip');
-                const saved = store.save(id, loaded.version, state, { type: 'attack.resolve', payload: { requestId } });
+                const saved = store.save(id, loaded.version, state, { type: result.pending ? 'attack.pending' : 'attack.resolve', payload: { requestId, attackerId: body.command.attackerId, targetId: body.command.targetId } });
                 if (!saved)
                     return fail('VERSION_CONFLICT', '状态已变化。', 409);
                 return ok({ session: publicState(state) });
