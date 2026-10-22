@@ -73,6 +73,11 @@ function renderStart(listing) {
     <h3>${esc(p.name)}</h3>
     <div class="sub">${esc(p.archetype)} · Tier 1</div>
   </article>`).join('');
+  const scenarios = listing.scenarios || [];
+  $('scenarios').innerHTML = scenarios.map((sc, index) => `<button class="btn ${index === 0 ? 'primary' : 'ghost'}" data-start="${esc(sc.id)}">开始：${esc(sc.title)}${sc.installed ? ' · 本地包' : ''}</button>`).join('');
+  document.querySelectorAll('[data-start]').forEach((button) => {
+    button.addEventListener('click', () => start(button.dataset.start));
+  });
   $('start').hidden = false;
   $('play').hidden = true;
 }
@@ -98,15 +103,20 @@ function renderPending(s) {
 
 function renderPlay(s) {
   session = s;
+  const scenario = s.scenario;
   $('start').hidden = true;
   $('play').hidden = false;
-  $('scene-text').textContent = s.scene;
+  $('scene-part').textContent = scenario?.part || 'SCENE';
+  $('scene-title').textContent = scenario?.title || '训练场';
+  $('scene-text').textContent = scenario?.ending ? scenario.ending.text : (scenario?.text || s.scene);
+  $('clues').innerHTML = (scenario?.clues || []).map((clue) => `<span class="clue">${esc(clue)}</span>`).join('');
+  $('choices').innerHTML = (scenario?.choices || []).map((choice) => `<button class="btn" data-choice="${esc(choice.id)}">${esc(choice.label)}${choice.test ? ` <small>DN ${choice.test.dn}</small>` : ''}</button>`).join('');
   $('glory').textContent = s.glory;
   $('ruin').textContent = s.ruin;
   $('round').textContent = s.round;
-  const canAct = !s.pending && !s.result;
+  const canAct = !s.pending && !s.result && (s.enemies || []).length > 0;
   $('party').innerHTML = s.party.map((a) => partyCard(a, canAct)).join('');
-  $('enemy').innerHTML = s.enemies.map(enemyCard).join('');
+  $('enemy').innerHTML = (s.enemies || []).length ? (s.enemies || []).map(enemyCard).join('') : '<p class="empty" style="margin:0">当前场景没有战斗目标。</p>';
   renderPending(s);
   $('log').innerHTML = s.log.slice(-18).map((line) => `<li>${esc(line)}</li>`).join('');
   $('end').hidden = !s.result;
@@ -114,23 +124,25 @@ function renderPlay(s) {
     button.addEventListener('click', () => attack(button.dataset.attack));
   });
   document.querySelectorAll('[data-choice]').forEach((button) => {
-    button.addEventListener('click', () => decide(button.dataset.choice));
+    button.addEventListener('click', () => choose(button.dataset.choice));
+  });
+  document.querySelectorAll('[data-pending-choice]').forEach((button) => {
+    button.addEventListener('click', () => decide(button.dataset.pendingChoice));
   });
 }
 
-async function start() {
-  const button = $('start-btn');
-  button.disabled = true;
+async function start(scenarioId = 'training') {
   $('start-msg').textContent = '';
+  document.querySelectorAll('[data-start]').forEach((button) => { button.disabled = true; });
   try {
-    const result = await request('/sessions', { method: 'POST', body: JSON.stringify({ scenarioId: 'training' }) });
+    const result = await request('/sessions', { method: 'POST', body: JSON.stringify({ scenarioId }) });
     sessionId = result.session.id;
     localStorage.setItem(KEY, sessionId);
     renderPlay(result.session);
   } catch (error) {
     $('start-msg').textContent = error.message;
   } finally {
-    button.disabled = false;
+    document.querySelectorAll('[data-start]').forEach((button) => { button.disabled = false; });
   }
 }
 
@@ -142,6 +154,22 @@ async function attack(attackerId) {
       body: JSON.stringify({
         requestId: newRequestId(),
         command: { type: 'attack', attackerId, targetId: 'training-servitor' },
+      }),
+    });
+    renderPlay(result.session);
+  } catch (error) {
+    $('scene-text').textContent = `结算失败：${error.message}`;
+  }
+}
+
+async function choose(choiceId) {
+  if (!session || session.pending || session.result) return;
+  try {
+    const result = await request(`/sessions/${sessionId}/commands`, {
+      method: 'POST',
+      body: JSON.stringify({
+        requestId: newRequestId(),
+        command: { type: 'choose', choiceId },
       }),
     });
     renderPlay(result.session);
@@ -187,7 +215,7 @@ async function boot() {
   }
 }
 
-$('start-btn').addEventListener('click', start);
+
 $('restart-btn').addEventListener('click', () => {
   localStorage.removeItem(KEY);
   location.reload();

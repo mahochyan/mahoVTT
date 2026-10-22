@@ -54,10 +54,10 @@
 2. 帝国卫兵（Imperial Guardsman，C7 p.93）
 3. 技术侍从（Tech-Adept，Forsaken p.109；Tier 1，XP 22，IMPERIUM/ADEPTUS MECHANICUS）
 
-**当前状态：draft。**
+**当前状态：draft，已有本地三人预置队，但尚未逐项审计。**
 
 - 公开仓库只有 `content/wg/prefabs/example-original.json`，用于 schema 测试与公开 demo，**不是** Graveyard Shift 官方预置队。
-- 正式三人队与构筑记录放在本地私有包 `data/wg/packs/graveyard-shift/pregens.json`（不入 git）；需要补齐 XP、属性/技能成本、Talent、装备、派生数值后再过 Gate A。
+- 正式三人队与构筑记录放在本地私有包 `data/wg/packs/graveyard-shift/pregens.json`（不入 git）；已记录 XP、属性/技能成本、Talent、装备与派生数值，`validatePregen` 通过，但仍需逐页核规则。
 - 技术位不用 Tech-Priest（Tier 3），避免提前引入升阶。
 
 ## 5. 副本依赖表
@@ -85,7 +85,7 @@
 
 - [x] 勘误公式核对（官方检索文本；PDF 直连被拦，建议本地留档）
 - [x] `maxWounds` 状态改为 `verified`
-- [ ] 三人预置队构筑记录完整并通过 `validatePregen`
+- [ ] 三人预置队构筑记录完整并通过逐页审计（`validatePregen` 已通过）
 - [ ] 依赖表无 `missing`，关键项有实现计划与 testId
 - [ ] 中文词表 `待核` 条目确认
 - [ ] `npm run build && npm test` 通过

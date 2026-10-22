@@ -9,26 +9,25 @@
 <body>
   <header class="top">
     <a class="back" href="/games" data-link>← 游戏厅</a>
-    <div class="brand"><b>怒火与荣耀</b><span>Wrath &amp; Glory · C7 规则演示</span></div>
+    <div class="brand"><b>怒火与荣耀</b><span>Wrath &amp; Glory · 代达隆</span></div>
     <span class="tag">非官方授权 · 原创 demo</span>
   </header>
 
   <main>
     <section id="start" class="panel">
-      <p class="eyebrow">TRAINING ENCOUNTER</p>
-      <h1>训练遭遇</h1>
-      <p class="lead">三人小队在训练场校准武器。目标是一台静止的训练机仆；本演示只验证 C7 的骰池、图标、怒火骰、转化与伤害结算。</p>
+      <img id="cover" class="cover" src="/games/wrath-glory/art/graveyard-shift.webp" alt="代达隆墓地卫星" onerror="this.remove()">
+      <p class="eyebrow">GRAVEYARD SHIFT · TIER 1</p>
+      <h1>代达隆：Graveyard Shift</h1>
+      <p class="lead">墓地卫星代达隆。审判庭密探门德斯要你们从盖尔弗拉杜斯墓城取回“启示者”。五段调查、两场遭遇，所有判定走 C7 骰池与怒火骰结算。</p>
       <div id="start-party" class="cards"></div>
-      <div class="actions">
-        <button id="start-btn" class="btn primary">开始训练</button>
-        <span id="start-msg" class="msg"></span>
-      </div>
-      <p class="fine">公开 demo 使用原创预置队与训练目标。官方 Graveyard Shift 适配包需要本地私有内容。</p>
+      <div id="scenarios" class="actions"></div>
+      <p id="start-msg" class="msg"></p>
+      <p class="fine">Graveyard Shift 为本地私有改编包，不复刻官方原文；训练遭遇仍保留为规则演示。</p>
     </section>
 
     <section id="play" hidden>
       <div class="bar">
-        <div><span class="eyebrow">SCENE</span><h1 id="scene-title">训练场</h1></div>
+        <div><span id="scene-part" class="eyebrow">SCENE</span><h1 id="scene-title">训练场</h1></div>
         <div class="pools">
           <span class="pool">荣耀 <b id="glory">0</b></span>
           <span class="pool">毁灭 <b id="ruin">0</b></span>
@@ -36,6 +35,8 @@
         </div>
       </div>
       <p id="scene-text" class="lead small"></p>
+      <div id="clues" class="clues"></div>
+      <div id="choices" class="actions"></div>
 
       <div class="grid">
         <section>

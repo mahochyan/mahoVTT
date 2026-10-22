@@ -1,23 +1,27 @@
 import { randomInt } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { attackPool, damageVsResilience, rangeBand } from "./rules/formulas.js";
 import { rollDamage, rollTest, shiftableExalted } from "./rules/dice.js";
 import { WgStore } from "./store.js";
+import { findScene, loadScenarioPack, publicScene } from "./scenario.js";
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const DATA_DIR = process.env.SAGAS_DATA_DIR || join(ROOT, 'data');
 const STORE_PATH = join(DATA_DIR, 'games', 'wrath-glory.sqlite');
-const PREGEN_PATH = join(ROOT, 'content', 'wg', 'prefabs', 'example-original.json');
+const DEMO_PREGEN_PATH = join(ROOT, 'content', 'wg', 'prefabs', 'example-original.json');
+const LOCAL_PACK_DIR = join(ROOT, 'data', 'wg', 'packs', 'graveyard-shift');
+const LOCAL_PREGEN_PATH = join(LOCAL_PACK_DIR, 'pregens.json');
+const SCENARIO_PACK_PATH = join(LOCAL_PACK_DIR, 'scenario.json');
 const descriptor = {
     id: 'wrath-glory',
-    name: '怒火与荣耀 · 训练遭遇',
-    subtitle: 'Wrath & Glory · C7 核心规则演示',
+    name: '怒火与荣耀 · 代达隆',
+    subtitle: 'Wrath & Glory · C7 · Graveyard Shift',
     rulesetId: 'wg-c7',
     route: '/games/wrath-glory',
     creationRoute: '/games/wrath-glory',
     phase: 'experimental',
-    description: '按 C7 核心规则实现骰池、图标、怒火骰、转化与伤害结算的训练遭遇。公开 demo 使用原创预置队与训练目标；官方 Graveyard Shift 适配包需本地导入。',
+    description: '按 C7 核心规则实现骰池、图标、怒火骰、转化与伤害结算。Graveyard Shift 五段调查为本地私有改编包；公开仓库只带原创训练演示。',
     features: ['d6 图标骰池', '怒火骰与转化', '伤害/冲击分离', '可暂停的结算'],
     disclaimer: '非官方授权产品；公开仓库不含官方书籍正文、插画或完整 stat block。',
 };
@@ -25,12 +29,16 @@ const WEAPONS = {
     'demo-acolyte': { id: 'laspistol', name: '激光手枪（演示）', damage: 4, ed: 1, short: 12, medium: 24, long: 36 },
     'demo-guardsman': { id: 'lasgun', name: '激光步枪（演示）', damage: 5, ed: 1, short: 18, medium: 36, long: 54 },
     'demo-tech-adept': { id: 'laspistol', name: '激光手枪（演示）', damage: 4, ed: 1, short: 12, medium: 24, long: 36 },
+    'pc-acolyte': { id: 'laspistol', name: '激光手枪', damage: 4, ed: 1, short: 12, medium: 24, long: 36 },
+    'pc-guardsman': { id: 'lasgun', name: '激光步枪', damage: 5, ed: 1, short: 18, medium: 36, long: 54 },
+    'pc-tech-adept': { id: 'laspistol', name: '激光手枪', damage: 4, ed: 1, short: 12, medium: 24, long: 36 },
 };
 function rng() {
     return (randomInt(1, 7) - 0.5) / 6;
 }
-function loadDemoParty() {
-    const data = JSON.parse(readFileSync(PREGEN_PATH, 'utf8'));
+function loadParty() {
+    const path = existsSync(LOCAL_PREGEN_PATH) ? LOCAL_PREGEN_PATH : DEMO_PREGEN_PATH;
+    const data = JSON.parse(readFileSync(path, 'utf8'));
     return data.pregens;
 }
 function pcFromPregen(p) {
@@ -51,7 +59,7 @@ function pcFromPregen(p) {
     };
 }
 function createSession(id) {
-    const party = loadDemoParty().map(pcFromPregen);
+    const party = loadParty().map(pcFromPregen);
     return {
         schemaVersion: 1,
         gameId: 'wrath-glory',
@@ -86,7 +94,101 @@ function createSession(id) {
         lastRequests: [],
     };
 }
+function loadInstalledPack() {
+    try {
+        if (!existsSync(SCENARIO_PACK_PATH))
+            return null;
+        return loadScenarioPack(SCENARIO_PACK_PATH);
+    }
+    catch {
+        return null;
+    }
+}
+function threatActor(spec) {
+    return {
+        id: spec.id,
+        name: spec.name,
+        kind: 'enemy',
+        archetype: spec.archetype,
+        attributes: { strength: 3, toughness: 3, agility: 2, initiative: 2, willpower: 2, intellect: 1, fellowship: 1 },
+        skills: {},
+        defence: spec.defence,
+        resilience: spec.resilience,
+        woundsTaken: 0,
+        maxWounds: spec.maxWounds,
+        shockTaken: 0,
+        maxShock: spec.maxShock,
+        weapon: { id: spec.id + '-weapon', name: spec.name + '的攻击', damage: spec.damage, ed: spec.ed, short: spec.short, medium: spec.medium, long: spec.long },
+    };
+}
+function enterScene(state, pack, sceneId) {
+    const scene = findScene(pack, sceneId);
+    state.sceneId = scene.id;
+    state.sceneTitle = scene.title;
+    state.scenePart = scene.part;
+    state.scene = scene.text;
+    state.ending = scene.ending || null;
+    state.enemies = scene.combat ? scene.combat.enemies.map((id) => threatActor(pack.threats[id])) : [];
+    if (scene.ending)
+        state.result = 'victory';
+    state.log.push(`【${scene.part}】${scene.title}`);
+    if (scene.combat?.intro)
+        state.log.push(scene.combat.intro);
+}
+function createScenarioSession(id, pack) {
+    const party = loadParty().map(pcFromPregen);
+    const state = {
+        ...createSession(id),
+        scenarioId: 'graveyard-shift',
+        contentVersion: 'graveyard-shift-private-1',
+        party,
+        enemies: [],
+        sceneId: pack.startScene,
+        clues: [],
+        flags: {},
+        ending: null,
+        result: null,
+        log: ['Graveyard Shift：原创中文改编，五个 Part；官方数值请以本地规则书核对。'],
+    };
+    enterScene(state, pack, pack.startScene);
+    return state;
+}
+function advanceAfterCombat(state, pack) {
+    if (!state.sceneId)
+        return;
+    const scene = findScene(pack, state.sceneId);
+    if (!scene.combat)
+        return;
+    if (state.enemies.some((e) => e.woundsTaken <= e.maxWounds))
+        return;
+    state.log.push('遭遇结束。');
+    enterScene(state, pack, scene.combat.victory);
+}
 function publicState(state) {
+    if (state.scenarioId === 'graveyard-shift' && state.sceneId) {
+        const pack = loadInstalledPack();
+        if (pack) {
+            const scene = findScene(pack, state.sceneId);
+            const view = publicScene(pack, state.sceneId);
+            view.choices = view.choices.filter((c) => {
+                const full = scene.choices.find((x) => x.id === c.id);
+                if (!full)
+                    return false;
+                if (full.requires?.clue && !(state.clues || []).includes(full.requires.clue))
+                    return false;
+                if (full.requires?.flag && !state.flags?.[full.requires.flag])
+                    return false;
+                return true;
+            });
+            return {
+                ...state,
+                scenario: {
+                    ...view,
+                    clues: (state.clues || []).map((id) => pack.clues[id] || id),
+                },
+            };
+        }
+    }
     return state;
 }
 function ok(data, status = 200) {
@@ -101,7 +203,7 @@ function actor(state, id) {
 function applyDamage(state, target, damage, shockDie) {
     const result = damageVsResilience(damage, target.resilience, shockDie);
     const lines = [];
-    if (result.shock) {
+    if (result.shock && target.maxShock > 0) {
         target.shockTaken += result.shock;
         lines.push(`${target.name} 受到 ${result.shock} 点冲击（Shock）。`);
         if (target.shockTaken > target.maxShock) {
@@ -140,9 +242,19 @@ function finishAttack(state, pending, choice) {
     const dmg = rollDamage(pending.weaponDamage, extra, rng);
     state.log.push(`${attacker.name} 用 ${pending.weaponName} 命中，伤害 ${dmg.total}（武器 ${pending.weaponDamage} + 额外伤害骰 ${dmg.bonus}）。`);
     state.log.push(...applyDamage(state, target, dmg.total, randomInt(1, 4)));
-    if (target.woundsTaken > target.maxWounds) {
-        state.result = 'victory';
-        state.log.push('训练目标失能。训练遭遇完成。');
+    const down = target.woundsTaken > target.maxWounds;
+    if (down)
+        state.log.push(`${target.name} 失能。`);
+    if (state.scenarioId === 'training') {
+        if (down) {
+            state.result = 'victory';
+            state.log.push('训练目标失能。训练遭遇完成。');
+        }
+    }
+    else {
+        const pack = loadInstalledPack();
+        if (pack)
+            advanceAfterCombat(state, pack);
     }
     state.pending = null;
     state.round += 1;
@@ -151,23 +263,36 @@ const runtime = {
     descriptor,
     async handle(req) {
         const { method, tail } = req;
-        if (!tail.length && method === 'GET')
+        if (!tail.length && method === 'GET') {
+            const scenarios = [{ id: 'training', title: '训练遭遇', tier: 1, minutes: 10, note: '规则演示，不是官方剧本。' }];
+            const pack = loadInstalledPack();
+            if (pack)
+                scenarios.unshift({ id: pack.id, title: pack.title, subtitle: pack.subtitle, tier: pack.tier, minutes: pack.minutes, note: pack.adaptation, installed: true });
             return ok({
                 game: descriptor,
-                scenarios: [{ id: 'training', title: '训练遭遇', tier: 1, minutes: 10, note: '规则演示，不是官方剧本。' }],
-                party: loadDemoParty().map((p) => ({ id: p.id, name: p.name, archetype: p.archetype })),
+                scenarios,
+                party: loadParty().map((p) => ({ id: p.id, name: p.name, archetype: p.archetype })),
             });
+        }
         if (tail[0] !== 'sessions')
             return fail('NOT_FOUND', '未知游戏接口。', 404);
         const store = new WgStore(STORE_PATH);
         try {
             if (tail.length === 1 && method === 'POST') {
                 const body = await req.readBody();
-                if (body?.scenarioId && body.scenarioId !== 'training')
-                    return fail('SCENARIO_NOT_FOUND', '当前只安装了训练演示。', 404);
-                const id = crypto.randomUUID();
-                const state = createSession(id);
-                store.create(id, state);
+                const scenarioId = body?.scenarioId || 'training';
+                let state;
+                if (scenarioId === 'training')
+                    state = createSession(crypto.randomUUID());
+                else if (scenarioId === 'graveyard-shift') {
+                    const pack = loadInstalledPack();
+                    if (!pack)
+                        return fail('SCENARIO_NOT_INSTALLED', '未安装 Graveyard Shift 私有内容包。', 404);
+                    state = createScenarioSession(crypto.randomUUID(), pack);
+                }
+                else
+                    return fail('SCENARIO_NOT_FOUND', '未知剧本。', 404);
+                store.create(state.id, state);
                 return ok({ session: publicState(state) }, 201);
             }
             const id = tail[1];
@@ -188,10 +313,58 @@ const runtime = {
             if (tail.length === 3 && tail[2] === 'commands' && method === 'POST') {
                 if (body?.expectedVersion !== undefined && Number(body.expectedVersion) !== loaded.version)
                     return fail('VERSION_CONFLICT', '状态已变化，请刷新后重试。', 409);
-                if (body?.command?.type !== 'attack')
-                    return fail('BAD_COMMAND', '目前只实现攻击命令。');
                 if (state.pending)
                     return fail('PENDING_DECISION', '请先完成当前选择。', 409);
+                if (body?.command?.type === 'choose') {
+                    if (state.scenarioId !== 'graveyard-shift' || !state.sceneId)
+                        return fail('BAD_COMMAND', '当前会话没有剧本场景。');
+                    const pack = loadInstalledPack();
+                    if (!pack)
+                        return fail('SCENARIO_NOT_INSTALLED', '剧本包已被移除。', 404);
+                    const scene = findScene(pack, state.sceneId);
+                    const choice = scene.choices.find((c) => c.id === body.command.choiceId);
+                    if (!choice)
+                        return fail('BAD_CHOICE', '场景中没有这个选择。', 404);
+                    if (choice.requires?.clue && !(state.clues || []).includes(choice.requires.clue))
+                        return fail('MISSING_CLUE', '缺少必要的线索。', 409);
+                    if (choice.requires?.flag && !state.flags?.[choice.requires.flag])
+                        return fail('MISSING_FLAG', '缺少必要的前置条件。', 409);
+                    const who = state.party.find((a) => a.id === body.command.actorId) || state.party[0];
+                    let success = true;
+                    if (choice.test) {
+                        const attribute = who.attributes[choice.test.attribute];
+                        const skill = choice.test.skill ? (who.skills[choice.test.skill] || 0) : 0;
+                        const wounded = who.woundsTaken > 0 ? 1 : 0;
+                        const roll = rollTest(attribute + skill, choice.test.dn + wounded, rng);
+                        success = roll.success;
+                        state.log.push(`${who.name} 进行 ${choice.test.attribute}${choice.test.skill ? ' + ' + choice.test.skill : ''} 检定：${roll.faces.join('、')}，${roll.icons} 个图标（DN ${choice.test.dn}${wounded ? '，受伤 +1' : ''}）。`);
+                    }
+                    const branch = success ? choice.success : choice.failure;
+                    if (branch?.text)
+                        state.log.push(branch.text);
+                    if (branch?.clue && !(state.clues || []).includes(branch.clue)) {
+                        state.clues = [...(state.clues || []), branch.clue];
+                        state.log.push(`获得线索：${pack.clues[branch.clue] || branch.clue}。`);
+                    }
+                    if (branch?.flag) {
+                        state.flags = { ...(state.flags || {}), [branch.flag]: true };
+                        state.log.push(`标记：${branch.flag}。`);
+                    }
+                    if (branch?.shock) {
+                        who.shockTaken += branch.shock;
+                        state.log.push(`${who.name} 受到 ${branch.shock} 点冲击。`);
+                        if (who.shockTaken > who.maxShock)
+                            state.log.push(`${who.name} 力竭。`);
+                    }
+                    state.lastRequests.push(requestId);
+                    enterScene(state, pack, choice.next);
+                    const saved = store.save(id, loaded.version, state, { type: 'scenario.choose', payload: { requestId, choiceId: choice.id, success } });
+                    if (!saved)
+                        return fail('VERSION_CONFLICT', '状态已变化。', 409);
+                    return ok({ session: publicState(state) });
+                }
+                if (body?.command?.type !== 'attack')
+                    return fail('BAD_COMMAND', '目前只实现攻击、场景选择命令。');
                 const attacker = state.party.find((a) => a.id === body.command.attackerId);
                 const target = state.enemies.find((a) => a.id === body.command.targetId);
                 if (!attacker || !target)

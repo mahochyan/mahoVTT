@@ -60,27 +60,28 @@ test('W&G module is registered and exposes a training scenario', async () => {
     assert.equal(listing.data.game.id, 'wrath-glory');
     assert.equal(listing.data.game.rulesetId, 'wg-c7');
     assert.equal(listing.data.party.length, 3);
-    assert.equal(listing.data.scenarios[0].id, 'training');
+    assert.ok(listing.data.scenarios.some((s) => s.id === 'training'));
 });
 
 test('session creation, attack, persistence, and idempotent replay', async () => {
     const created = await post('/api/games/wrath-glory/sessions', { scenarioId: 'training' });
     assert.equal(created.status, 201);
     const id = created.data.session.id;
+    const attackerId = created.data.session.party[1].id;
     assert.equal(created.data.session.party.length, 3);
     assert.equal(created.data.session.enemies.length, 1);
     assert.equal(created.data.session.rulesRevision, 'c7-2020-07-24-errata');
 
     const first = await post(`/api/games/wrath-glory/sessions/${id}/commands`, {
         requestId: 'req-attack-1',
-        command: { type: 'attack', attackerId: 'demo-guardsman', targetId: 'training-servitor' },
+        command: { type: 'attack', attackerId, targetId: 'training-servitor' },
     });
     assert.equal(first.status, 200);
     assert.ok(first.data.session.log.some((line) => line.includes('开火')));
 
     const replay = await post(`/api/games/wrath-glory/sessions/${id}/commands`, {
         requestId: 'req-attack-1',
-        command: { type: 'attack', attackerId: 'demo-guardsman', targetId: 'training-servitor' },
+        command: { type: 'attack', attackerId, targetId: 'training-servitor' },
     });
     assert.equal(replay.status, 200);
     assert.equal(replay.data.session.log.length, first.data.session.log.length);
@@ -110,10 +111,42 @@ test('session creation, attack, persistence, and idempotent replay', async () =>
 });
 
 test('unknown scenario and missing session return explicit errors', async () => {
-    const bad = await post('/api/games/wrath-glory/sessions', { scenarioId: 'graveyard-shift' });
+    const bad = await post('/api/games/wrath-glory/sessions', { scenarioId: 'not-a-scenario' });
     assert.equal(bad.status, 404);
     assert.equal(bad.data.error.code, 'SCENARIO_NOT_FOUND');
     const missing = await get('/api/games/wrath-glory/sessions/not-a-session');
     assert.equal(missing.status, 404);
     assert.equal(missing.data.error.code, 'SESSION_NOT_FOUND');
+});
+
+test('Graveyard Shift private pack supports investigation scenes when installed', async (t) => {
+    const listing = await get('/api/games/wrath-glory');
+    const installed = listing.data.scenarios.some((s) => s.id === 'graveyard-shift');
+    if (!installed)
+        return t.skip('private Graveyard Shift pack is not installed in this checkout');
+
+    const created = await post('/api/games/wrath-glory/sessions', { scenarioId: 'graveyard-shift' });
+    assert.equal(created.status, 201);
+    const id = created.data.session.id;
+    assert.equal(created.data.session.scenarioId, 'graveyard-shift');
+    assert.ok(created.data.session.scenario.title.includes('停尸间'));
+
+    let session = created.data.session;
+    for (let i = 0; i < 6 && !(session.scenario.clues || []).includes('门德斯的简报'); i++) {
+        const r = await post(`/api/games/wrath-glory/sessions/${id}/commands`, {
+            requestId: `req-slate-${i}`,
+            command: { type: 'choose', choiceId: 'read-slate' },
+        });
+        assert.equal(r.status, 200);
+        session = r.data.session;
+    }
+    assert.ok(session.scenario.clues.includes('门德斯的简报'), 'investigation clue should be obtainable');
+
+    const moved = await post(`/api/games/wrath-glory/sessions/${id}/commands`, {
+        requestId: 'req-barastyr',
+        command: { type: 'choose', choiceId: 'to-barastyr' },
+    });
+    assert.equal(moved.status, 200);
+    assert.ok(moved.data.session.scenario.part.startsWith('Part II'));
+    assert.ok(moved.data.session.scenario.choices.some((c) => c.id === 'to-boneyards'));
 });
