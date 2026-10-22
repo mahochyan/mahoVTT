@@ -191,6 +191,13 @@ function renderPlay(s) {
     $('narration').textContent = '雨声压低了远处的钟声。你想做什么？';
   syncChat(s);
   activateSheet(shownTab);
+  if (fresh) {
+    requestAnimationFrame(() => {
+      const chat = $('chat');
+      chat.scrollTop = chat.scrollHeight;
+      $('to-bottom').hidden = true;
+    });
+  }
   document.querySelectorAll('[data-attack]').forEach((button) => {
     button.addEventListener('click', () => attack(button.dataset.attack));
   });
