@@ -1,10 +1,12 @@
 import type {GameDescriptor, GameReply, GameRequest, GameRuntime} from './contracts.ts';
+import {DATA_DIR, ConfigStore} from '../ai/config.ts';
+import {createRuntime} from '../../modules/deathwatch/runtime.mjs';
 
-/** First-tier lobby registry. Games register a descriptor + isolated runtime.
- * The old demo scenarios were removed; the registry is intentionally empty
- * until a ready-to-play scenario pack is installed. */
-export const games: GameDescriptor[] = [];
-const active = new Map<string, GameRuntime>();
+/** The hall discovers modules; each module owns rules, state and content.
+ * Keep the clean-slate main branch: removed legacy demos are not reintroduced. */
+const deathwatch = createRuntime({dataDir: DATA_DIR, getConfig: () => new ConfigStore().config});
+export const games: GameDescriptor[] = [deathwatch.descriptor];
+const active = new Map<string, GameRuntime>([[deathwatch.descriptor.id, deathwatch]]);
 
 export function listGames(): GameDescriptor[] {
   return games.map(g => ({...g, features:[...g.features]}));
