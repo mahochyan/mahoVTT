@@ -12,21 +12,21 @@ export const CHAPTERS=[
 ];
 const LOW=[200,500,1000,1500],MID=[500,1000,1500,2000],HIGH=[750,1500,2000,5000];
 export const SPECIALTIES=[
- {id:'tactical',name:'战术陆战队员',en:'Tactical Marine',ref:'Core p.84–87',gear:['bolter'],skills:['command'],options:[['bolter-mastery','爆矢精通','auto'],['tactical-expertise','战术专长','gm']],low:['wp','fel'],high:[]},
- {id:'assault',name:'突击陆战队员',en:'Assault Marine',ref:'Core p.72–75',gear:['chainsword'],skills:['pilot'],talents:['swift-attack'],options:[['wrathful-descent','愤怒降临','auto'],['wings-of-angels','天使之翼','gm']],low:['ws','s','ag','per'],high:['bs','int','wp']},
- {id:'devastator',name:'毁灭者陆战队员',en:'Devastator Marine',ref:'Core p.76–79; Errata p.2',gear:['heavy-bolter'],skills:[],options:[['unrelenting','无情毁灭','auto'],['immovable','不动战士','auto']],low:['bs','s','per'],high:['ws','ag','int']},
+ {id:'tactical',name:'战术小队队员',en:'Tactical Marine',ref:'Core p.84–87',gear:['bolter'],skills:['command'],options:[['bolter-mastery','爆矢精通','auto'],['tactical-expertise','战术专长','gm']],low:['wp','fel'],high:[]},
+ {id:'assault',name:'突击小队队员',en:'Assault Marine',ref:'Core p.72–75',gear:['chainsword'],skills:['pilot'],talents:['swift-attack'],options:[['wrathful-descent','愤怒降临','auto'],['wings-of-angels','天使之翼','gm']],low:['ws','s','ag','per'],high:['bs','int','wp']},
+ {id:'devastator',name:'毁灭者小队队员',en:'Devastator Marine',ref:'Core p.76–79; Errata p.2',gear:['heavy-bolter'],skills:[],options:[['unrelenting','无情毁灭','auto'],['immovable','不动战士','auto']],low:['bs','s','per'],high:['ws','ag','int']},
  {id:'apothecary',name:'药剂师',en:'Apothecary',ref:'Core p.68–71',gear:['bolter'],skills:['medicae'],options:[['enhance-healing','强化治疗','auto'],['purity','纯净守护','gm'],['toxins','制备毒素','gm']],low:['ws','int','per'],high:[]},
  {id:'librarian',name:'智库',en:'Librarian',ref:'Core p.80–83',gear:['bolter','force-sword'],skills:['psyniscience'],options:[['battle-psyker','战斗灵能者','partial']],low:['ws','int','per','wp'],high:['bs','ag','fel']},
  {id:'techmarine',name:'技术军士',en:'Techmarine',ref:'Core p.88–91',gear:['bolter'],skills:['tech'],options:[['improve-cover','强化掩体','auto']],low:['s','t','int'],high:['ag','wp','fel']},
 ];
 export function advanceCost(spec,attr,level=0){const s=SPECIALTIES.find(s=>s.id===spec);return (s.low.includes(attr)?LOW:s.high.includes(attr)?HIGH:MID)[level];}
 export const SKILLS={
- awareness:{name:'警觉',stat:'per',basic:true},search:{name:'搜索',stat:'per',basic:true},dodge:{name:'闪避',stat:'ag',basic:true},
- athletics:{name:'攀爬',stat:'s',basic:true},command:{name:'指挥',stat:'fel',basic:true},charm:{name:'魅惑',stat:'fel',basic:true},
- intimidate:{name:'威吓',stat:'s',basic:true},inquiry:{name:'打听',stat:'fel',basic:true},concealment:{name:'隐蔽',stat:'ag',basic:true},
- silentMove:{name:'潜行',stat:'ag',basic:true},medicae:{name:'医疗',stat:'int',basic:false},tech:{name:'技术运用',stat:'int',basic:false},
- pilot:{name:'驾驶（个人装备）',stat:'ag',basic:false},psyniscience:{name:'灵能感知',stat:'per',basic:false},
- xenos:{name:'禁忌知识（异形）',stat:'int',basic:false},tactics:{name:'战术',stat:'int',basic:false},demolition:{name:'爆破',stat:'int',basic:false},
+ awareness:{en:'Awareness',name:'警觉',stat:'per',basic:true},search:{en:'Search',name:'搜索',stat:'per',basic:true},dodge:{en:'Dodge',name:'闪避',stat:'ag',basic:true},
+ athletics:{en:'Climb',name:'攀爬',stat:'s',basic:true},command:{en:'Command',name:'指挥',stat:'fel',basic:true},charm:{en:'Charm',name:'魅惑',stat:'fel',basic:true},
+ intimidate:{en:'Intimidate',name:'威吓',stat:'s',basic:true},inquiry:{en:'Inquiry',name:'打听',stat:'fel',basic:true},concealment:{en:'Concealment',name:'隐蔽',stat:'ag',basic:true},
+ silentMove:{en:'Silent Move',name:'潜行',stat:'ag',basic:true},medicae:{en:'Medicae',name:'医疗',stat:'int',basic:false},tech:{en:'Tech-Use',name:'技术运用',stat:'int',basic:false},
+ pilot:{en:'Pilot',name:'驾驶（个人装备）',stat:'ag',basic:false},psyniscience:{en:'Psyniscience',name:'灵能感知',stat:'per',basic:false},
+ xenos:{en:'Forbidden Lore (Xenos)',name:'禁忌知识（异形）',stat:'int',basic:false},tactics:{en:'Tactics',name:'战术',stat:'int',basic:false},demolition:{en:'Demolition',name:'爆破',stat:'int',basic:false},
 };
 export const POWERS=[['smite','惩击','auto','Core p.195'],['telepathy','短程心灵感应','narrative','Core p.191'],['inspire','激励','gm','Core p.190'],['augury','占兆','gm','Core p.192'],['reading','解读气场','gm','Core p.193'],['avenger','复仇者','gm','Core p.194'],['iron-arm','铁臂','gm','Core p.194']];
 export const OATHS=[
@@ -54,19 +54,19 @@ export const SQUAD_ABILITIES=[
 // Core profile is the default. Optional revised weapons are a separate explicit profile.
 const weapon=(id,name,kind,range,rof,dice,add,type,pen,clip,reload,req,extra={})=>({id,name,kind,range,rof,dice,add,type,pen,clip,reload,req,renown:0,ref:'Core p.145,150,154',...extra});
 export const WEAPONS={
- bolter:weapon('bolter','阿斯塔特爆矢枪','basic',100,[1,2,4],2,5,'X',5,28,2,5,{tearing:true,bolt:true}),
- 'bolt-pistol':weapon('bolt-pistol','阿斯塔特爆矢手枪','pistol',30,[1,3,0],2,5,'X',5,14,2,5,{tearing:true,bolt:true}),
- 'heavy-bolter':weapon('heavy-bolter','阿斯塔特重爆矢枪','heavy',150,[0,0,10],2,10,'X',6,60,2,20,{tearing:true,bolt:true}),
- chainsword:weapon('chainsword','阿斯塔特链锯剑','melee',1,[1,0,0],1,3,'R',4,0,0,5,{tearing:true,balanced:true}),
- knife:weapon('knife','阿斯塔特战斗刀','melee',1,[1,0,0],1,2,'R',2,0,0,3),
- 'power-sword':weapon('power-sword','阿斯塔特动力剑','melee',1,[1,0,0],1,6,'E',6,0,0,20,{balanced:true,power:true,renown:20}),
- 'force-sword':weapon('force-sword','阿斯塔特灵能力量剑','melee',1,[1,0,0],1,2,'R',2,0,0,25,{balanced:true,force:true,renown:20}),
- frag:weapon('frag','阿斯塔特破片手雷','thrown',0,[1,0,0],2,0,'X',0,1,0,1,{blast:5}),
- krak:weapon('krak','阿斯塔特破甲手雷','thrown',0,[1,0,0],3,4,'X',6,1,0,1),
- autogun:weapon('autogun','自动枪','basic',90,[1,3,10],1,3,'I',0,30,4,0,{npc:true}),
- autopistol:weapon('autopistol','自动手枪','pistol',30,[1,0,6],1,2,'I',0,18,2,0,{npc:true}),
- claws:weapon('claws','利爪','melee',1,[1,0,0],1,5,'R',5,0,0,0,{tearing:true,npc:true}),
- club:weapon('club','近战武器','melee',1,[1,0,0],1,0,'I',0,0,0,0,{primitive:true,npc:true}),
+ bolter:weapon('bolter','爆矢枪','basic',100,[1,2,4],2,5,'X',5,28,2,5,{tearing:true,bolt:true,en:'Bolter'}),
+ 'bolt-pistol':weapon('bolt-pistol','爆矢手枪','pistol',30,[1,3,0],2,5,'X',5,14,2,5,{tearing:true,bolt:true,en:'Bolt Pistol'}),
+ 'heavy-bolter':weapon('heavy-bolter','重型爆矢枪','heavy',150,[0,0,10],2,10,'X',6,60,2,20,{tearing:true,bolt:true,en:'Heavy Bolter'}),
+ chainsword:weapon('chainsword','阿斯塔特链锯剑','melee',1,[1,0,0],1,3,'R',4,0,0,5,{tearing:true,balanced:true,en:'Astartes Chainsword'}),
+ knife:weapon('knife','战斗刀','melee',1,[1,0,0],1,2,'R',2,0,0,3,{en:'Combat Knife'}),
+ 'power-sword':weapon('power-sword','动力剑','melee',1,[1,0,0],1,6,'E',6,0,0,20,{balanced:true,power:true,renown:20,en:'Power Sword'}),
+ 'force-sword':weapon('force-sword','灵能剑','melee',1,[1,0,0],1,2,'R',2,0,0,25,{balanced:true,force:true,renown:20,en:'Force Sword'}),
+ frag:weapon('frag','破片手雷','thrown',0,[1,0,0],2,0,'X',0,1,0,1,{blast:5,en:'Frag Grenade'}),
+ krak:weapon('krak','破甲手雷','thrown',0,[1,0,0],3,4,'X',6,1,0,1,{en:'Krak Grenade'}),
+ autogun:weapon('autogun','自动枪','basic',90,[1,3,10],1,3,'I',0,30,4,0,{npc:true,en:'Autogun'}),
+ autopistol:weapon('autopistol','自动手枪','pistol',30,[1,0,6],1,2,'I',0,18,2,0,{npc:true,en:'Autopistol'}),
+ claws:weapon('claws','利爪','melee',1,[1,0,0],1,5,'R',5,0,0,0,{tearing:true,npc:true,en:'Claws'}),
+ club:weapon('club','近战武器','melee',1,[1,0,0],1,0,'I',0,0,0,0,{primitive:true,npc:true,en:'Close Combat Weapon'}),
 };
 export function weaponProfile(id,profile='core'){const w=structuredClone(WEAPONS[id]);if(!w)return null;
  if(profile==='revised'&&w.bolt){w.dice=1;w.add=id==='heavy-bolter'?12:9;w.pen=id==='heavy-bolter'?5:4;w.rof=id==='bolter'?[1,3,0]:id==='bolt-pistol'?[1,2,0]:[0,0,6];w.ref='Living Errata 1.1 p.10 (optional appendix)';}
