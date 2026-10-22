@@ -256,3 +256,39 @@ test('导入自定义内容包：出现在目录、可开局、同版本不同�
   const conflict = await req('/api/games/deathwatch-d100/missions', changed);
   assert.equal(conflict.status, 409);
 });
+
+test('导出导入：新存档不覆盖原局，篡改校验和被拒', async () => {
+  const s = await create();
+  await req(`/api/games/deathwatch-d100/sessions/${s.id}/commands`, {
+    requestId: randomUUID(), expectedVersion: 0,
+    command: {type: 'move', actorId: 'pc', x: 3, y: 8, pace: 'half'},
+  });
+  const exported = await req(`/api/games/deathwatch-d100/sessions/${s.id}/export`);
+  assert.equal(exported.status, 200);
+  assert.equal(exported.data.format, 'mahovtt-deathwatch-save');
+  const imported = await req('/api/games/deathwatch-d100/import', exported.data);
+  assert.equal(imported.status, 201, JSON.stringify(imported.data));
+  assert.notEqual(imported.data.state.id, s.id);
+  assert.equal(imported.data.state.version, 0);
+  const tampered = structuredClone(exported.data);
+  tampered.state.actors[0].stats.ws = 999;
+  const rejected = await req('/api/games/deathwatch-d100/import', tampered);
+  assert.equal(rejected.status, 400);
+});
+
+test('并发同 requestId 只结算一次', async () => {
+  const s = await create();
+  const body = {
+    requestId: randomUUID(), expectedVersion: 0,
+    command: {type: 'move', actorId: 'pc', x: 2, y: 6, pace: 'half'},
+  };
+  const [a, b] = await Promise.all([
+    req(`/api/games/deathwatch-d100/sessions/${s.id}/commands`, body),
+    req(`/api/games/deathwatch-d100/sessions/${s.id}/commands`, body),
+  ]);
+  assert.equal(a.status, 200, JSON.stringify(a.data));
+  assert.equal(b.status, 200, JSON.stringify(b.data));
+  assert.equal(a.data.stateVersion, b.data.stateVersion);
+  const snap = await req(`/api/games/deathwatch-d100/sessions/${s.id}`);
+  assert.equal(snap.data.state.version, 1);
+});
