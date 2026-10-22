@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>死亡守望 · D100 — mahoVTT</title>
+  <link rel="stylesheet" href="/games/deathwatch/style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="back" href="/games">← 游戏厅</a>
+    <div class="brand"><b>死亡守望 · D100</b><span>阿瓦洛斯 · 最终制裁</span></div>
+    <span class="tag" id="moduleState">开发中 · 实验</span>
+  </header>
+
+  <main>
+    <section id="start" class="panel">
+      <img id="cover" class="cover" src="/games/deathwatch/art/cover.webp" alt="阿瓦洛斯" onerror="this.remove()">
+      <p class="eyebrow">杀戮小队 · 私有改编副本</p>
+      <h1>最终制裁 · 阿瓦洛斯</h1>
+      <p class="lead" id="moduleDesc">正在读取模块状态…</p>
+      <div class="cards" id="missions"></div>
+      <h2>进行中的存档</h2>
+      <div class="cards" id="sessions"></div>
+      <p id="start-msg" class="msg"></p>
+      <div class="actions">
+        <button id="newSquad" class="btn primary" type="button">新建小队</button>
+      </div>
+      <p class="fine" id="rulesNote">依据 Deathwatch Core 2010 与 Living Errata 1.1；未自动化规则会明确交给裁定助手。</p>
+    </section>
+
+    <section id="creation" hidden>
+      <div class="panel" style="max-width:1120px;margin:0 auto">
+        <p class="eyebrow">建团</p>
+        <h1>创建杀戮小队</h1>
+        <p class="lead">六战团、六专长；属性由服务端掷 2d10+30 并落库，刷新不会重掷。每名角色只能重掷一次最低项。</p>
+        <div class="slots" id="slots"></div>
+        <div class="req-box">
+          <h2 style="margin-top:0">任务征用</h2>
+          <div class="req-list" id="requisition"></div>
+          <p id="reqBudget" class="msg"></p>
+        </div>
+        <div class="actions" style="flex-wrap:wrap;align-items:flex-end">
+          <label class="muted">战役名称<br><input id="title" maxlength="40" value="守望任务" style="font:inherit;color:var(--text);background:#0a0e14;border:1px solid var(--line);border-radius:7px;padding:6px 8px"></label>
+          <label class="muted">领队<br><select id="leader" class="slot-select"></select></label>
+          <label class="muted">誓言<br><select id="oath"></select></label>
+          <label class="muted">武器配置<br><select id="weaponProfile"><option value="core">核心原版</option><option value="revised">可选修订（勘误附录）</option></select></label>
+        </div>
+        <div class="creation-actions">
+          <button id="submitSquad" class="btn primary" type="button">开始任务</button>
+          <button id="cancelCreate" class="btn ghost" type="button">返回</button>
+          <span id="createError" class="error"></span>
+        </div>
+      </div>
+    </section>
+
+    <section id="play" hidden>
+      <div class="app-shell">
+        <nav class="rail" aria-label="快捷菜单">
+          <a class="rail-logo" href="/games" title="游戏厅">死</a>
+          <button type="button" data-sheet-tab="party" class="active" title="队伍">队</button>
+          <button type="button" data-sheet-tab="objectives" title="目标">目</button>
+          <button type="button" data-sheet-tab="lore" title="世界书">书</button>
+          <button type="button" data-sheet-tab="log" title="记录">录</button>
+          <a class="rail-bottom" href="/settings" title="设置">设</a>
+        </nav>
+
+        <main class="stage">
+          <header class="stage-head">
+            <div class="scene-head">
+              <span class="eyebrow" id="scene-part">场景</span>
+              <h1 id="scene-title">—</h1>
+              <p id="scene-desc" class="lead small" style="margin:2px 0 0"></p>
+            </div>
+            <div class="pools">
+              <span class="pool">轮次 <b id="round">—</b></span>
+              <span class="pool">动作 <b id="ap">—</b></span>
+              <span class="pool">凝聚力 <b id="cohesion">—</b></span>
+              <span class="pool">版本 <b id="version">0</b></span>
+            </div>
+          </header>
+
+          <div class="map-stage">
+            <div class="board">
+              <div class="board-head">
+                <span class="seal" aria-hidden="true">OX</span>
+                <span class="board-title">ORDO XENOS · 战术投影</span>
+                <span class="board-meta" id="board-meta">—</span>
+              </div>
+              <div class="board-body">
+                <div class="ruler ruler-col" id="col-ruler" aria-hidden="true"></div>
+                <div class="ruler ruler-row" id="row-ruler" aria-hidden="true"></div>
+                <div id="map" class="grid"></div>
+              </div>
+              <div class="board-foot">
+                <span class="legend"><i class="swatch party"></i>小队</span>
+                <span class="legend"><i class="swatch enemy"></i>敌人</span>
+                <span class="legend"><i class="swatch cover"></i>掩体</span>
+                <span class="legend"><i class="swatch wall"></i>墙体</span>
+                <span class="board-hint" id="board-hint"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage-foot">
+            <div id="pending" class="pending" hidden></div>
+            <div id="proposal" class="proposal" hidden></div>
+            <div id="action-bar" class="action-bar"></div>
+            <p id="play-msg" class="msg" style="margin:8px 0 0"></p>
+          </div>
+
+          <footer class="composer">
+            <div class="composer-bar">
+              <span class="composer-hint">用一句话描述行动，规则引擎先给出一个合法提案，确认后才结算</span>
+              <button id="ask" class="btn primary" type="button">提案</button>
+            </div>
+            <textarea id="input" maxlength="400" rows="2" placeholder="例如：我向叛军头目点射；或：让凯掩护我靠近压力阀"></textarea>
+          </footer>
+        </main>
+
+        <aside class="sheet">
+          <div class="sheet-tabs" role="tablist">
+            <button type="button" class="active" data-sheet-tab="party">队伍</button>
+            <button type="button" data-sheet-tab="objectives">目标</button>
+            <button type="button" data-sheet-tab="lore">世界书</button>
+            <button type="button" data-sheet-tab="log">记录</button>
+          </div>
+          <div class="sheet-body">
+            <section id="pane-party" class="sheet-pane"></section>
+            <section id="pane-objectives" class="sheet-pane" hidden></section>
+            <section id="pane-lore" class="sheet-pane" hidden></section>
+            <section id="pane-log" class="sheet-pane" hidden></section>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/games/deathwatch/app.js"></script>
+</body>
+</html>

@@ -8,3 +8,13 @@ tests/artifacts/
 tools/art/out/
 
 artifacts/
+
+# User-owned books, local indexes and licensed adventure adaptations stay private.
+private-packs/
+private-books/
+*.private.json
+*.pdf
+Deathwatch_PART*.zip
+
+# 本机私有插画（PDF 抽取，不入公开仓库）
+public/games/deathwatch/art/
