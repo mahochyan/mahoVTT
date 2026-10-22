@@ -681,7 +681,7 @@ function doAttack(next,a,c,random,events){
       continuation:{attackerId:a.id,targetId:target.id,weaponId:w.id,mode:c.mode,hits:pendingHits,melee,degrees:roll.degrees},
       parentActionId:roll.id,committedRollIds:[roll.id],
     };
-    if(target.controller==='engine')autoReact(next,random,events);
+    if(target.controller!=='player')autoReact(next,random,events);
     else events.push(event('decision',`等待 ${target.name} 选择闪避或格挡。`));
     return;
   }
