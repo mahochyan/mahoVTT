@@ -9,6 +9,7 @@ const required = [
     'public/games/wrath-glory/app.js',
     'public/games/wrath-glory/style.css',
     'public/games/wrath-glory/art/graveyard-shift.webp',
+    'public/games/wrath-glory/art/board-graveyard.webp',
     'public/games/wrath-glory/art/scene-art.js',
     'public/games/wrath-glory/art/scene-art.css',
     'public/games/wrath-glory/art/scene-art-manifest.js',

@@ -300,6 +300,37 @@ function setTokenPosition(node, actor, arena) {
   node.style.top = `${(actor.position.y / arena.height) * 100}%`;
 }
 
+function updateBoardLine(s, arena) {
+  const who = s.party.find((p) => p.id === selectedToken) || s.party[0];
+  const target = (s.enemies || [])[0];
+  const line = $('board-line');
+  const label = $('board-distance');
+  if (!who || !target) {
+    line.setAttribute('x1', 0);
+    line.setAttribute('y1', 0);
+    line.setAttribute('x2', 0);
+    line.setAttribute('y2', 0);
+    label.hidden = true;
+    return;
+  }
+  const dist = tokenDistance(who, target);
+  line.setAttribute('x1', who.position.x);
+  line.setAttribute('y1', who.position.y);
+  line.setAttribute('x2', target.position.x);
+  line.setAttribute('y2', target.position.y);
+  const weapon = who.weapon;
+  let band = '超距';
+  if (weapon) {
+    if (dist <= weapon.short) band = '近距';
+    else if (dist <= weapon.medium) band = '中距';
+    else if (dist <= weapon.long) band = '远距';
+  }
+  label.textContent = `${dist.toFixed(0)} 米 · ${band}`;
+  label.style.left = `${((who.position.x + target.position.x) / 2 / arena.width) * 100}%`;
+  label.style.top = `${((who.position.y + target.position.y) / 2 / arena.height) * 100}%`;
+  label.hidden = false;
+}
+
 function renderBoard(s) {
   const panel = $('board-panel');
   const hasEnemies = (s.enemies || []).length > 0;
@@ -308,7 +339,8 @@ function renderBoard(s) {
     return;
   const arena = s.arena || { width: 32, height: 24 };
   const board = $('board');
-  board.style.backgroundSize = `calc(100% / ${arena.width / 2}) calc(100% / ${arena.height / 2})`;
+  board.style.setProperty('--cell-x', `${100 / (arena.width / 2)}%`);
+  board.style.setProperty('--cell-y', `${100 / (arena.height / 2)}%`);
   const tokens = $('tokens');
   tokens.replaceChildren();
   const all = [...s.party, ...s.enemies];
@@ -319,7 +351,20 @@ function renderBoard(s) {
     node.dataset.actor = actor.id;
     node.title = `${actor.name} · ${actor.position.x.toFixed(0)} 米 / ${actor.position.y.toFixed(0)} 米`;
     node.setAttribute('aria-label', `${actor.name}，坐标 ${actor.position.x.toFixed(0)} 米、${actor.position.y.toFixed(0)} 米`);
-    node.textContent = actor.name.replace('·', '').slice(0, 2);
+    const face = document.createElement('span');
+    face.textContent = actor.name.replace('·', '').slice(0, 2);
+    node.append(face);
+    const name = document.createElement('span');
+    name.className = 'token-name';
+    name.textContent = actor.name;
+    node.append(name);
+    const badgeText = actor.down ? '倒' : actor.onFire ? '燃' : actor.woundsTaken > 0 ? '伤' : '';
+    if (badgeText) {
+      const badge = document.createElement('span');
+      badge.className = 'token-badge';
+      badge.textContent = badgeText;
+      node.append(badge);
+    }
     setTokenPosition(node, actor, arena);
     let dragging = false;
     let moved = false;
@@ -330,6 +375,7 @@ function renderBoard(s) {
       actor.position = { x: Math.round(x * 2) / 2, y: Math.round(y * 2) / 2 };
       setTokenPosition(node, actor, arena);
       $('board-range').textContent = boardSummary(s, selectedToken || actor.id);
+      updateBoardLine(s, arena);
       moved = true;
     };
     node.addEventListener('pointerdown', (event) => {
@@ -341,6 +387,7 @@ function renderBoard(s) {
       node.classList.add('dragging');
       document.querySelectorAll('.token').forEach((t) => t.classList.toggle('selected', t.dataset.actor === actor.id));
       $('board-range').textContent = boardSummary(s, actor.id);
+      updateBoardLine(s, arena);
     });
     node.addEventListener('pointermove', (event) => {
       if (dragging)
@@ -358,6 +405,7 @@ function renderBoard(s) {
       selectedToken = actor.id;
       document.querySelectorAll('.token').forEach((t) => t.classList.toggle('selected', t.dataset.actor === actor.id));
       $('board-range').textContent = boardSummary(s, actor.id);
+      updateBoardLine(s, arena);
     });
     node.addEventListener('keydown', (event) => {
       const step = event.shiftKey ? 4 : 2;
@@ -375,6 +423,7 @@ function renderBoard(s) {
     tokens.append(node);
   }
   $('board-range').textContent = boardSummary(s, selectedToken || s.party[0]?.id);
+  updateBoardLine(s, arena);
   board.hidden = boardCollapsed;
   $('board-toggle').textContent = boardCollapsed ? '展开战场' : '收起战场';
 }

@@ -45,7 +45,7 @@ content:       private Graveyard Shift pack (local, not in public repo)
 
 ```text
 npm test              -> 89/89
-npm run test:browser  -> 34/34 (private pack installed; includes 1440/1920 三栏布局、无英文可见文案、字号、回车发送、检定卡结构、棋子移动检查)
+npm run test:browser  -> 37/37 (private pack installed; includes 1440/1920 三栏布局、无英文可见文案、字号、回车发送、检定卡结构、棋子移动检查)
 npm run verify        -> ok
 POST /api/ai/ping     -> ok, 3 models
 ```

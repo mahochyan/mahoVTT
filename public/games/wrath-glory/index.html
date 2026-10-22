@@ -52,9 +52,19 @@
           <section id="board-panel" class="board-panel" hidden>
             <div class="board-head">
               <div><span class="eyebrow">战场</span><b id="board-range">拖动棋子调整站位</b></div>
-              <button id="board-toggle" class="btn small ghost" type="button">收起战场</button>
+              <div class="board-meta">
+                <span class="board-legend"><i class="dot pc"></i>我方</span>
+                <span class="board-legend"><i class="dot enemy"></i>敌方</span>
+                <span class="board-legend">两米一格</span>
+                <button id="board-toggle" class="btn small ghost" type="button">收起战场</button>
+              </div>
             </div>
-            <div id="board" class="board"><div id="tokens" class="tokens"></div></div>
+            <div id="board" class="board">
+              <svg id="board-line-layer" class="board-line-layer" viewBox="0 0 32 24" preserveAspectRatio="none" aria-hidden="true"><line id="board-line"></line></svg>
+              <div id="tokens" class="tokens"></div>
+              <div id="board-distance" class="board-distance" hidden></div>
+              <div class="board-footnote">战斗可视化层 · 非原档地图</div>
+            </div>
           </section>
 
           <div id="chat" class="chat">

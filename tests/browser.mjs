@@ -138,6 +138,9 @@ async function main() {
     await cdp.evaluate('document.querySelector("[data-start=training]").click()');
     check('W&G session starts', await cdp.waitFor('!document.querySelector("#play").hidden && document.querySelectorAll("#party .card").length === 3', 20000));
     check('battlefield tokens render', await cdp.evaluate('document.querySelectorAll("#tokens .token").length >= 4'));
+    check('battlefield art layer is present', await cdp.evaluate('getComputedStyle(document.querySelector("#board")).backgroundImage.includes("board-graveyard")'));
+    check('battlefield art file loads', await cdp.evaluate('fetch("/games/wrath-glory/art/board-graveyard.webp").then((r) => r.ok)'));
+    check('battlefield distance line is visible', await cdp.evaluate('!document.querySelector("#board-distance").hidden && document.querySelector("#board-distance").textContent.includes("米")'));
     await cdp.evaluate(`(() => { const t = document.querySelector('#tokens .token'); t.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); })()`);
     check('token moves with the arrow keys', await cdp.waitFor('document.querySelector("#tokens .token").getAttribute("title").includes("8 米")', 20000));
     await cdp.evaluate('document.querySelector("[data-attack]").click()');
