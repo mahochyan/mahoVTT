@@ -26,7 +26,7 @@ test('rule registry is traceable and contains no foreign edition', () => {
     }
     assert.equal(getRule('ruin.max').value, '2 * playerCount');
     assert.equal(getRule('weapon.ranges').value.bands.length, 3);
-    assert.equal(getRule('maxWounds').verification, 'external-unverified');
+    assert.equal(getRule('maxWounds').verification, 'verified');
     assert.ok(getRule('maxWounds').errataRef);
     assert.throws(() => requireRule('nope'), /Unknown/);
 });

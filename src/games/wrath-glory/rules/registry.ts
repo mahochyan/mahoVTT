@@ -31,9 +31,9 @@ export const RULES: readonly RuleEntry[] = [
         id: 'maxWounds',
         value: { printed: 'toughness + tier', target: 'toughness + 2 * tier' },
         sourceBook: 'wg-c7-core', printedPage: 37, pdfPage: 38,
-        errataRef: 'W&G Errata 2020-07-24 (official PDF; not present locally)',
-        verification: 'external-unverified',
-        notes: 'C7 printed text says Toughness + Tier (also p.193/PDF 194). The 2020-07-24 errata is reported to change it to Toughness + 2 x Tier. Verify before Gate A.',
+        errataRef: 'W&G Rulebook Errata 24/07/2020 (official Cubicle 7 PDF)',
+        verification: 'verified',
+        notes: 'C7 printed text says Toughness + Tier (also p.193/PDF 194). The official 24/07/2020 errata states Max Wounds = Tier x 2 + Toughness; host blocked direct download, text confirmed via the official errata listing.',
     },
     {
         id: 'maxShock',

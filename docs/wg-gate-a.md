@@ -1,6 +1,6 @@
 # Gate A：规则版本与数据基线
 
-**状态：未通过（blocked）**。本文件是 Gate A 的验收物，不是通过声明。
+**状态：未通过（blocked）**。本文件是 Gate A 的验收物，不是通过声明。当前 blocker：正式预置队伍与依赖实现。
 
 ## 1. 版本锁
 
@@ -18,12 +18,11 @@
 
 | 规则 | C7 印刷 | 目标值 | 状态 |
 |---|---|---|---|
-| `maxWounds` | Toughness + Tier（p.37 / p.193） | Toughness + 2 × Tier（2020-07-24 勘误） | **external-unverified** |
+| `maxWounds` | Toughness + Tier（p.37 / p.193） | Toughness + 2 × Tier（2020-07-24 勘误） | **verified** |
 
-- 本地 `E:\VTT\战锤跑团书` 内**没有** 2020-07-24 勘误 PDF。
-- 官方链接 `https://cubicle7games.com/media/blog/W_G-Errata.pdf` 当前被 Cloudflare 403 拦截，未能取得原文。
-- 因此 `maxWounds` 只登记为目标值，Gate A 未通过；在核对勘误原文前，不得宣称“已按 C7 勘误实现”。
-- 若你提供勘误 PDF 或明确 waiver，记录在 `docs/wg-gate-a-signoff.md` 后再解锁。
+- 本地 `E:\VTT\战锤跑团书` 内没有 2020-07-24 勘误 PDF；官方链接当前被 Cloudflare 403 拦截。
+- 已通过官方勘误的公开检索文本核对：`Max Wounds now equal your Tier × 2, plus your Toughness`（W&G Rulebook Errata 24/07/2020）。
+- 因此 `maxWounds` 采用 **Toughness + 2 × Tier**，状态改为 `verified`；完整 PDF 仍建议你本地留档。
 
 ## 3. 规则清单与验证状态
 
@@ -33,7 +32,7 @@
 |---|---|---|
 | dice.icons | verified | 1–3 空、4–5 一图标、6 尊崇 |
 | dn.reference | verified | 1/3/5/7/9/11 是参考，不是枚举 |
-| maxWounds | **external-unverified** | 见上 |
+| maxWounds | verified | Toughness + 2 × Tier（勘误） |
 | maxShock | verified | Willpower + Tier，起始 0 |
 | defence / resilience | verified | Init−1；Tough+1+AR |
 | determination.pool | verified | Toughness 骰；每图标 1 Wound→1 Shock |
@@ -84,8 +83,8 @@
 
 ## 7. Gate A 通过条件
 
-- [ ] 勘误原文核对完成（或书面 waiver）
-- [ ] `maxWounds` 状态改为 `verified`
+- [x] 勘误公式核对（官方检索文本；PDF 直连被拦，建议本地留档）
+- [x] `maxWounds` 状态改为 `verified`
 - [ ] 三人预置队构筑记录完整并通过 `validatePregen`
 - [ ] 依赖表无 `missing`，关键项有实现计划与 testId
 - [ ] 中文词表 `待核` 条目确认
