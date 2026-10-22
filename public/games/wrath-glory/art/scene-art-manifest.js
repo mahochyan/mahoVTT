@@ -9,6 +9,14 @@ export default {
         width: 1600,
         height: 900,
         stage: 'preview'
+      },
+      barastyr: {
+        id: 'graveyard-shift.barastyr.v001',
+        src: 'scenes/barastyr-v001-preview.webp',
+        alt: '巴拉斯特的雨夜街道通往宏伟的死亡档案馆，旧墓石路面映着棚屋里的琥珀色灯光。',
+        width: 1600,
+        height: 900,
+        stage: 'preview'
       }
     }
   }

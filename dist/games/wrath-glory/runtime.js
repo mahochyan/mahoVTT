@@ -16,15 +16,15 @@ const LOCAL_PREGEN_PATH = join(LOCAL_PACK_DIR, 'pregens.json');
 const SCENARIO_PACK_PATH = join(LOCAL_PACK_DIR, 'scenario.json');
 const descriptor = {
     id: 'wrath-glory',
-    name: '怒火与荣耀 · 代达隆',
-    subtitle: 'Wrath & Glory · C7 · Graveyard Shift',
+    name: '怒火与荣耀 · 墓地夜班',
+    subtitle: '核心规则 · 墓地夜班',
     rulesetId: 'wg-c7',
     route: '/games/wrath-glory',
     creationRoute: '/games/wrath-glory',
     phase: 'experimental',
-    description: '按 C7 核心规则实现骰池、图标、怒火骰、转化与伤害结算。Graveyard Shift 五段调查为本地私有改编包；公开仓库只带原创训练演示。',
-    features: ['d6 图标骰池', '怒火骰与转化', '伤害/冲击分离', '可暂停的结算'],
-    disclaimer: '非官方授权产品；公开仓库不含官方书籍正文、插画或完整 stat block。',
+    description: '按核心规则实现骰池、图标、怒火骰、转化与伤害结算。墓地夜班五段调查为本地私有改编包；公开仓库只带原创训练演示。',
+    features: ['六面骰图标池', '怒火骰与转化', '创伤与冲击分离', '可暂停的结算'],
+    disclaimer: '非官方授权产品；公开仓库不含官方书籍正文、插画或完整数据表。',
 };
 const WEAPONS = {
     'demo-acolyte': { id: 'laspistol', name: '激光手枪（演示）', damage: 7, ed: 1, short: 6, medium: 12, long: 18 },
@@ -152,7 +152,7 @@ function enterScene(state, pack, sceneId) {
             .filter((dn) => typeof dn === 'number');
         if (fear.length) {
             const dn = Math.max(...fear);
-            state.log.push(`恐惧（Fear）检定 DN ${dn}。`);
+            state.log.push(`恐惧（恐惧）检定 难度 ${dn}。`);
             for (const pc of state.party) {
                 const roll = rollTest(Math.max(1, pc.attributes.willpower - 1), dn, rng);
                 if (roll.success)
@@ -172,14 +172,14 @@ function enterScene(state, pack, sceneId) {
         state.log.push(scene.combat.intro);
 }
 function resolveCorruption(state, check) {
-    state.log.push(`腐化检定（DN ${check.dn}）：${check.text}`);
+    state.log.push(`腐化检定（难度 ${check.dn}）：${check.text}`);
     for (const pc of state.party) {
         const roll = rollTest(pc.attributes.willpower, check.dn, rng);
         if (roll.success)
             state.log.push(`${pc.name} 抵抗住腐化（${roll.icons} 个图标）。`);
         else {
             state.ruin = Math.min(2 * state.party.length, state.ruin + 1);
-            state.log.push(`${pc.name} 腐化检定失败；GM 获得 1 点毁灭（Ruin）。`);
+            state.log.push(`${pc.name} 腐化检定失败；主持人获得 1 点毁灭。`);
         }
     }
 }
@@ -196,7 +196,7 @@ function createScenarioSession(id, pack) {
         flags: {},
         ending: null,
         result: null,
-        log: ['Graveyard Shift：原创中文改编，五个 Part；官方数值请以本地规则书核对。'],
+        log: ['墓地夜班：原创中文改编，共五幕；官方数值请以本地规则书核对。'],
     };
     enterScene(state, pack, pack.startScene);
     return state;
@@ -229,7 +229,7 @@ function createDeterminationPending(state, target, damage, source) {
         shockDie: d3(),
         source,
     };
-    state.log.push(`${target.name} 将承受 ${woundCount} 点创伤（Wounds）；可以选择掷 Determination 把创伤转为冲击。`);
+    state.log.push(`${target.name} 将承受 ${woundCount} 点创伤；可以选择掷决心检定，把创伤转为冲击。`);
 }
 function beginEnemyTurn(state) {
     if (state.pending || state.result)
@@ -274,7 +274,7 @@ function processEnemyQueue(state) {
         const target = candidates[0];
         const penalty = woundedPenalty(target.woundsTaken);
         const roll = rollTest(enemy.attackPool ?? 5, target.defence + penalty, rng);
-        state.log.push(`${enemy.name} 反击 ${target.name}：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${penalty ? '，受伤 +1' : ''}）。`);
+        state.log.push(`${enemy.name} 反击 ${target.name}：${roll.faces.join('、')}，${roll.icons} 个图标（防御 ${target.defence}${penalty ? '，受伤 +1' : ''}）。`);
         if (!roll.success) {
             state.log.push(`${enemy.name} 未命中。`);
             continue;
@@ -283,13 +283,13 @@ function processEnemyQueue(state) {
         if (enemy.special?.ruin && state.ruin >= enemy.special.ruin.cost) {
             state.ruin -= enemy.special.ruin.cost;
             bonusDamage = enemy.special.ruin.bonusDamage;
-            state.log.push(`${enemy.name} 消耗 ${enemy.special.ruin.cost} 点毁灭（Ruin）：${enemy.special.ruin.text}`);
+            state.log.push(`${enemy.name} 消耗 ${enemy.special.ruin.cost} 点毁灭：${enemy.special.ruin.text}`);
         }
         const dmg = rollDamage(enemy.weapon.damage + bonusDamage, 0, rng);
-        state.log.push(`${enemy.name} 命中，伤害 ${dmg.total}（Resilience ${target.resilience}）。`);
+        state.log.push(`${enemy.name} 命中，伤害 ${dmg.total}（抗性 ${target.resilience}）。`);
         if (enemy.special?.onFire) {
             target.onFire = true;
-            state.log.push(`${target.name} 被点燃（On Fire）——下一次敌方回合受到 1 点创伤。`);
+            state.log.push(`${target.name} 被点燃——下一次敌方回合受到 1 点创伤。`);
         }
         if (dmg.total > target.resilience) {
             state.enemyQueue = queue;
@@ -314,24 +314,24 @@ function resolveDetermination(state, pending, choice) {
         const converted = Math.min(det.icons, wounds);
         wounds -= converted;
         shock += converted;
-        state.log.push(`${target.name} 掷 Determination：${det.faces.join('、')}，把 ${converted} 点创伤转为冲击。`);
+        state.log.push(`${target.name} 掷决心检定：${det.faces.join('、')}，把 ${converted} 点创伤转为冲击。`);
     }
     else
-        state.log.push(`${target.name} 放弃 Determination，承受全部创伤。`);
+        state.log.push(`${target.name} 放弃决心检定，承受全部创伤。`);
     if (shock) {
         target.shockTaken += shock;
-        state.log.push(`${target.name} 受到 ${shock} 点冲击（Shock）。`);
+        state.log.push(`${target.name} 受到 ${shock} 点冲击。`);
         if (target.maxShock > 0 && target.shockTaken > target.maxShock) {
             target.exhausted = true;
-            state.log.push(`${target.name} 超过冲击上限，力竭（Exhausted）。`);
+            state.log.push(`${target.name} 超过冲击上限，力竭。`);
         }
     }
     if (wounds) {
         target.woundsTaken += wounds;
-        state.log.push(`${target.name} 受到 ${wounds} 点创伤（Wounds）。`);
+        state.log.push(`${target.name} 受到 ${wounds} 点创伤。`);
         if (target.woundsTaken > target.maxWounds) {
             target.down = true;
-            state.log.push(`${target.name} 超过创伤上限，进入濒死（Dying）。`);
+            state.log.push(`${target.name} 超过创伤上限，进入濒死。`);
         }
     }
     state.pending = null;
@@ -361,7 +361,9 @@ function applyChoice(state, pack, choiceId, actorId) {
         const wounded = who.woundsTaken > 0 ? 1 : 0;
         const roll = rollTest(attribute + skill, choice.test.dn + wounded, rng);
         success = roll.success;
-        state.log.push(`${who.name} 进行 ${choice.test.attribute}${choice.test.skill ? ' + ' + choice.test.skill : ''} 检定：${roll.faces.join('、')}，${roll.icons} 个图标（DN ${choice.test.dn}${wounded ? '，受伤 +1' : ''}）。`);
+        const attrName = { strength: '力量', toughness: '坚韧', agility: '敏捷', initiative: '先攻', willpower: '意志', intellect: '智力', fellowship: '交际' }[choice.test.attribute] || '属性';
+        const skillName = choice.test.skill ? ({ athletics: '运动', awareness: '觉察', ballisticSkill: '射击', insight: '洞察', intimidation: '威吓', investigation: '调查', persuasion: '说服', scholar: '学识', stealth: '潜行', survival: '生存', tech: '技术', weaponSkill: '格斗' }[choice.test.skill] || '技能') : '';
+        state.log.push(`${who.name} 进行 ${attrName}${skillName ? ' + ' + skillName : ''} 检定：${roll.faces.join('、')}，${roll.icons} 个图标（难度 ${choice.test.dn}${wounded ? '，受伤 +1' : ''}）。`);
     }
     const branch = success ? choice.success : choice.failure;
     if (branch?.text)
@@ -404,7 +406,7 @@ function applyAttack(state, attackerId, targetId, actionId) {
     const bonus = band === 'short' ? 1 : 0;
     const attackPenalty = woundedPenalty(attacker.woundsTaken);
     const roll = rollTest(pool + bonus, target.defence + attackPenalty, rng);
-    state.log.push(`${attacker.name} 向 ${target.name} 开火：${roll.faces.join('、')}，${roll.icons} 个图标（Defence ${target.defence}${attackPenalty ? '，受伤 +1' : ''}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
+    state.log.push(`${attacker.name} 向 ${target.name} 开火：${roll.faces.join('、')}，${roll.icons} 个图标（防御 ${target.defence}${attackPenalty ? '，受伤 +1' : ''}${roll.wrathSix ? '，怒火暴击' : ''}）。`);
     if (!roll.success) {
         state.log.push('未命中。');
         beginEnemyTurn(state);
@@ -476,7 +478,7 @@ function applyDamage(state, target, damage, shockDie) {
     const lines = [];
     if (result.shock && target.maxShock > 0) {
         target.shockTaken += result.shock;
-        lines.push(`${target.name} 受到 ${result.shock} 点冲击（Shock）。`);
+        lines.push(`${target.name} 受到 ${result.shock} 点冲击。`);
         if (target.shockTaken > target.maxShock) {
             target.woundsTaken = target.maxWounds + 1;
             lines.push(`${target.name} 超过冲击上限，失去战斗能力。`);
@@ -484,7 +486,7 @@ function applyDamage(state, target, damage, shockDie) {
     }
     if (result.wounds) {
         target.woundsTaken += result.wounds;
-        lines.push(`${target.name} 受到 ${result.wounds} 点创伤（Wounds）。`);
+        lines.push(`${target.name} 受到 ${result.wounds} 点创伤。`);
         if (target.mob) {
             const destroyed = Math.min(target.mob.components, Math.floor(target.woundsTaken / target.mob.componentWounds));
             if (destroyed > target.mob.destroyed) {
@@ -497,7 +499,7 @@ function applyDamage(state, target, damage, shockDie) {
         }
     }
     if (!result.wounds && !result.shock)
-        lines.push(`伤害未穿透 ${target.name} 的抗性（Resilience ${target.resilience}）。`);
+        lines.push(`伤害未穿透 ${target.name} 的抗性（抗性 ${target.resilience}）。`);
     return lines;
 }
 function finishAttack(state, pending, choice) {
@@ -513,7 +515,7 @@ function finishAttack(state, pending, choice) {
     else if (choice === 'glory') {
         state.glory += 1;
         extra = Math.max(0, pending.roll.shiftable - 1);
-        state.log.push(`转化 1 个尊崇图标为 1 点荣耀（Glory）。`);
+        state.log.push(`转化 1 个尊崇图标为 1 点荣耀（荣耀）。`);
     }
     else
         state.log.push('未转化剩余的尊崇图标。');
@@ -578,7 +580,7 @@ const runtime = {
                 else if (scenarioId === 'graveyard-shift') {
                     const pack = loadInstalledPack();
                     if (!pack)
-                        return fail('SCENARIO_NOT_INSTALLED', '未安装 Graveyard Shift 私有内容包。', 404);
+                        return fail('SCENARIO_NOT_INSTALLED', '未安装 墓地夜班 私有内容包。', 404);
                     state = createScenarioSession(crypto.randomUUID(), pack);
                 }
                 else
@@ -608,7 +610,7 @@ const runtime = {
             if (tail.length === 3 && tail[2] === 'gm' && method === 'POST') {
                 const body = await req.readBody();
                 if (state.pending)
-                    return fail('PENDING_DECISION', '请先完成当前选择，再让 GM 推进。', 409);
+                    return fail('PENDING_DECISION', '请先完成当前选择，再让 主持人 推进。', 409);
                 const pack = loadInstalledPack();
                 if (!pack)
                     return fail('SCENARIO_NOT_INSTALLED', '当前没有可推进的剧本包。', 404);

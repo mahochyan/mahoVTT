@@ -13,6 +13,7 @@ const required = [
     'public/games/wrath-glory/art/scene-art.css',
     'public/games/wrath-glory/art/scene-art-manifest.js',
     'public/games/wrath-glory/art/scenes/morgue-v001-preview.webp',
+    'public/games/wrath-glory/art/scenes/barastyr-v001-preview.webp',
     'public/app.js',
     'public/js/platform.js',
     'public/js/core.js',

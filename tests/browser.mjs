@@ -191,6 +191,13 @@ async function main() {
         check('Graveyard scene art loads', await cdp.waitFor('!!document.querySelector("#scene-art:not([hidden]) img")', 20000));
         await cdp.evaluate('document.querySelector("[data-choice]").click()');
         check('Graveyard choice resolves', await cdp.waitFor('document.querySelectorAll("#log li").length > 1 && (document.body.innerText.includes("线索") || document.body.innerText.includes("检定"))', 20000));
+        check('desktop shell uses wide layout', await cdp.evaluate('document.querySelector(".app-shell").getBoundingClientRect().width > 1300'));
+        const latinWords = await cdp.evaluate('(document.querySelector("main").innerText.match(/[A-Za-z]+/g) || [])');
+        check('W&G visible text has no English labels', latinWords.length === 0, latinWords.slice(0, 8).join(','));
+        await cdp.viewport(1920, 1080);
+        await cdp.navigate(base + '/games/wrath-glory');
+        await cdp.waitFor('!document.querySelector("#play").hidden', 20000);
+        check('wide viewport keeps three columns', await cdp.evaluate('document.querySelector(".app-shell").getBoundingClientRect().width > 1700 && getComputedStyle(document.querySelector(".sheet")).display !== "none"'));
     }
     else
         console.log('SKIP: private Graveyard Shift pack is not installed');

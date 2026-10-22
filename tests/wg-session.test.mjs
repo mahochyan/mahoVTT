@@ -147,7 +147,7 @@ test('Graveyard Shift private pack supports investigation scenes when installed'
         command: { type: 'choose', choiceId: 'to-barastyr' },
     });
     assert.equal(moved.status, 200);
-    assert.ok(moved.data.session.scenario.part.startsWith('Part II'));
+    assert.ok(moved.data.session.scenario.part.includes('第二幕'));
     assert.ok(moved.data.session.scenario.choices.some((c) => c.id === 'to-boneyards'));
 });
 

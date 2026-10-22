@@ -8,6 +8,9 @@ const esc = (value) => String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;',
 
 let session = null;
 let sessionId = localStorage.getItem(KEY);
+let renderedSessionId = null;
+let renderedLog = 0;
+let shownTab = 'party';
 
 async function request(path, options = {}) {
   const response = await fetch(API + path, {
@@ -45,13 +48,13 @@ function partyCard(actor, canAct) {
     <h3>${esc(actor.name)}</h3>
     <div class="sub">${esc(actor.archetype)} · ${esc(actor.weapon?.name || '无武器')}</div>
     <div class="stats">
-      <div class="stat"><small>DEFENCE</small><b>${actor.defence}</b></div>
-      <div class="stat"><small>RESILIENCE</small><b>${actor.resilience}</b></div>
-      <div class="stat"><small>WOUNDS</small><b>${actor.woundsTaken}/${actor.maxWounds}</b></div>
-      <div class="stat"><small>SHOCK</small><b>${actor.shockTaken}/${actor.maxShock}</b></div>
-      <div class="stat"><small>AGILITY</small><b>${actor.attributes.agility}</b></div>
-      <div class="stat"><small>BALLISTIC</small><b>${actor.skills.ballisticSkill ?? 0}</b></div>
-      <div class="stat"><small>STATUS</small><b>${status}</b></div>
+      <div class="stat"><small>防御</small><b>${actor.defence}</b></div>
+      <div class="stat"><small>抗性</small><b>${actor.resilience}</b></div>
+      <div class="stat"><small>创伤</small><b>${actor.woundsTaken}/${actor.maxWounds}</b></div>
+      <div class="stat"><small>冲击</small><b>${actor.shockTaken}/${actor.maxShock}</b></div>
+      <div class="stat"><small>敏捷</small><b>${actor.attributes.agility}</b></div>
+      <div class="stat"><small>射击</small><b>${actor.skills.ballisticSkill ?? 0}</b></div>
+      <div class="stat"><small>状态</small><b>${status}</b></div>
     </div>
     <div class="actions">${attack}</div>
   </article>`;
@@ -62,12 +65,12 @@ function enemyCard(actor) {
     <h3>${esc(actor.name)}</h3>
     <div class="sub">${esc(actor.archetype)} · 静止</div>
     <div class="stats">
-      <div class="stat"><small>DEFENCE</small><b>${actor.defence}</b></div>
-      <div class="stat"><small>RESILIENCE</small><b>${actor.resilience}</b></div>
-      <div class="stat"><small>WOUNDS</small><b>${actor.woundsTaken}/${actor.maxWounds}</b></div>
-      <div class="stat"><small>SHOCK</small><b>${actor.shockTaken}/${actor.maxShock}</b></div>
-      <div class="stat"><small>STATUS</small><b>${actor.woundsTaken > actor.maxWounds ? '失能' : '待机'}</b></div>
-      <div class="stat"><small>RANGE</small><b>12m</b></div>
+      <div class="stat"><small>防御</small><b>${actor.defence}</b></div>
+      <div class="stat"><small>抗性</small><b>${actor.resilience}</b></div>
+      <div class="stat"><small>创伤</small><b>${actor.woundsTaken}/${actor.maxWounds}</b></div>
+      <div class="stat"><small>冲击</small><b>${actor.shockTaken}/${actor.maxShock}</b></div>
+      <div class="stat"><small>状态</small><b>${actor.woundsTaken > actor.maxWounds ? '失能' : '待机'}</b></div>
+      <div class="stat"><small>距离</small><b>12m</b></div>
     </div>
   </article>`;
 }
@@ -75,7 +78,7 @@ function enemyCard(actor) {
 function renderStart(listing) {
   $('start-party').innerHTML = (listing.party || []).map((p) => `<article class="card">
     <h3>${esc(p.name)}</h3>
-    <div class="sub">${esc(p.archetype)} · Tier 1</div>
+    <div class="sub">${esc(p.archetype)} · 第一级</div>
   </article>`).join('');
   const scenarios = listing.scenarios || [];
   $('scenarios').innerHTML = scenarios.map((sc, index) => `<button class="btn ${index === 0 ? 'primary' : 'ghost'}" data-start="${esc(sc.id)}">开始：${esc(sc.title)}${sc.installed ? ' · 本地包' : ''}</button>`).join('');
@@ -96,16 +99,16 @@ function renderPending(s) {
   }
   box.hidden = false;
   if (pending.phase === 'determination') {
-    box.innerHTML = `<h3>结算：Determination</h3>
-      <p class="lead small">${esc(pending.source)} 的伤害将造成 <b>${pending.woundCount}</b> 点创伤（Resilience ${pending.resilience}）。你可以掷 Toughness 骰，把每个图标转为 1 点冲击。</p>
+    box.innerHTML = `<h3>结算：决心检定</h3>
+      <p class="lead small">${esc(pending.source)} 的伤害将造成 <b>${pending.woundCount}</b> 点创伤（抗性 ${pending.resilience}）。你可以掷坚韧骰，把每个图标转为 1 点冲击。</p>
       <div class="actions">
-        <button class="btn primary" data-pending-choice="determination">掷 Determination（Toughness）</button>
+        <button class="btn primary" data-pending-choice="determination">掷决心检定（坚韧）</button>
         <button class="btn ghost" data-pending-choice="accept">承受全部创伤</button>
       </div>`;
     return;
   }
   box.innerHTML = `<h3>结算：转化尊崇图标</h3>
-    <p class="lead small">命中后还有 <b>${pending.roll.shiftable}</b> 个尊崇图标可转化（Exalted）。每次测试最多 1 个转为荣耀。</p>
+    <p class="lead small">命中后还有 <b>${pending.roll.shiftable}</b> 个尊崇图标可转化。每次测试最多 1 个转为荣耀。</p>
     <div class="dice">${pending.roll.faces.map((face, index) => `<span class="${dieClass(face, index)}" title="${index === 0 ? '怒火骰' : ''}">${glyph(face)}</span>`).join('')}</div>
     <div class="actions">
       <button class="btn primary" data-pending-choice="damage">全部转为额外伤害骰</button>
@@ -114,26 +117,76 @@ function renderPending(s) {
     </div>`;
 }
 
+function appendChat(role, text) {
+  if (!text) return;
+  const node = document.createElement('article');
+  node.className = `msg ${role}`;
+  if (role === 'fact')
+    node.textContent = text;
+  else {
+    const label = document.createElement('div');
+    label.className = 'msg-role';
+    label.textContent = role === 'player' ? '你' : '主持人';
+    const body = document.createElement('div');
+    body.textContent = text;
+    node.append(label, body);
+  }
+  $('chat-stream').append(node);
+  const chat = $('chat');
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function syncChat(s) {
+  if (renderedSessionId !== s.id) {
+    $('chat-stream').replaceChildren();
+    renderedSessionId = s.id;
+    renderedLog = 0;
+  }
+  for (const line of s.log.slice(renderedLog))
+    appendChat('fact', line);
+  renderedLog = s.log.length;
+}
+
+function activateSheet(name) {
+  shownTab = name;
+  document.querySelectorAll('[data-sheet-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.sheetTab === name);
+  });
+  document.querySelectorAll('.sheet-pane').forEach((pane) => {
+    pane.hidden = pane.id !== `sheet-${name}`;
+  });
+}
+
 function renderPlay(s) {
   session = s;
   const scenario = s.scenario;
+  const fresh = renderedSessionId !== s.id;
   void renderSceneArt({ scenarioId: s.scenarioId, sceneId: scenario?.id });
   $('start').hidden = true;
   $('play').hidden = false;
-  $('scene-part').textContent = scenario?.part || 'SCENE';
+  $('scene-part').textContent = scenario?.part || '场景';
   $('scene-title').textContent = scenario?.title || '训练场';
   $('scene-text').textContent = scenario?.ending ? scenario.ending.text : (scenario?.text || s.scene);
-  $('clues').innerHTML = (scenario?.clues || []).map((clue) => `<span class="clue">${esc(clue)}</span>`).join('');
-  $('choices').innerHTML = (scenario?.choices || []).map((choice) => `<button class="btn" data-choice="${esc(choice.id)}">${esc(choice.label)}${choice.test ? ` <small>DN ${choice.test.dn}</small>` : ''}</button>`).join('');
+  $('clues').innerHTML = (scenario?.clues || []).length
+    ? (scenario?.clues || []).map((clue) => `<span class="clue">${esc(clue)}</span>`).join('')
+    : '<p class="empty" style="margin:0">尚未获得线索。</p>';
+  $('choices').innerHTML = (scenario?.choices || []).map((choice) => `<button class="btn" data-choice="${esc(choice.id)}">${esc(choice.label)}${choice.test ? ` <small>难度 ${choice.test.dn}</small>` : ''}</button>`).join('');
   $('glory').textContent = s.glory;
   $('ruin').textContent = s.ruin;
   $('round').textContent = s.round;
   const canAct = !s.pending && !s.result && (s.enemies || []).length > 0;
+  const hasEnemies = (s.enemies || []).length > 0;
+  $('target-section').hidden = !hasEnemies;
+  $('no-target').hidden = hasEnemies;
   $('party').innerHTML = s.party.map((a) => partyCard(a, canAct)).join('');
-  $('enemy').innerHTML = (s.enemies || []).length ? (s.enemies || []).map(enemyCard).join('') : '<p class="empty" style="margin:0">当前场景没有战斗目标。</p>';
+  $('enemy').innerHTML = hasEnemies ? s.enemies.map(enemyCard).join('') : '';
   renderPending(s);
-  $('log').innerHTML = s.log.slice(-18).map((line) => `<li>${esc(line)}</li>`).join('');
+  $('log').innerHTML = s.log.slice(-30).map((line) => `<li>${esc(line)}</li>`).join('');
   $('end').hidden = !s.result;
+  if (fresh)
+    $('narration').textContent = '雨声压低了远处的钟声。你想做什么？';
+  syncChat(s);
+  activateSheet(shownTab);
   document.querySelectorAll('[data-attack]').forEach((button) => {
     button.addEventListener('click', () => attack(button.dataset.attack));
   });
@@ -162,6 +215,8 @@ async function start(scenarioId = 'training') {
 
 async function attack(attackerId) {
   if (!session || session.pending || session.result) return;
+  const who = session.party.find((p) => p.id === attackerId);
+  appendChat('player', `${who?.name || '我'} 向目标开火。`);
   try {
     const result = await request(`/sessions/${sessionId}/commands`, {
       method: 'POST',
@@ -178,6 +233,8 @@ async function attack(attackerId) {
 
 async function choose(choiceId) {
   if (!session || session.pending || session.result) return;
+  const label = session.scenario?.choices?.find((c) => c.id === choiceId)?.label;
+  if (label) appendChat('player', label);
   try {
     const result = await request(`/sessions/${sessionId}/commands`, {
       method: 'POST',
@@ -197,7 +254,7 @@ async function askGm() {
   const input = $('gm-input').value.trim();
   const button = $('ask-gm');
   button.disabled = true;
-  $('narration').textContent = 'GM 正在读取场景…';
+  $('narration').textContent = '主持人正在读取场景…';
   try {
     const result = await request(`/sessions/${sessionId}/gm`, {
       method: 'POST',
@@ -205,11 +262,11 @@ async function askGm() {
     });
     if (result.session)
       renderPlay(result.session);
-    const action = result.action?.type === 'choose' ? '（GM 已按你的描述推进场景）' : '';
+    const action = result.action?.type === 'choose' ? '（主持人已按你的描述推进场景）' : '';
     $('narration').textContent = `${result.text}${action}${result.warning ? `（${result.warning}）` : ''}`;
     $('gm-input').value = '';
   } catch (error) {
-    $('narration').textContent = `GM 暂时离线：${error.message}`;
+    $('narration').textContent = `主持人暂时离线：${error.message}`;
   } finally {
     button.disabled = false;
   }
@@ -253,6 +310,7 @@ async function boot() {
 }
 
 
+document.querySelectorAll('[data-sheet-tab]').forEach((button) => button.addEventListener('click', () => activateSheet(button.dataset.sheetTab)));
 $('ask-gm').addEventListener('click', askGm);
 $('gm-input').addEventListener('keydown', (event) => { if (event.key === 'Enter') askGm(); });
 $('restart-btn').addEventListener('click', () => {
