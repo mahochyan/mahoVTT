@@ -1,14 +1,12 @@
 // Optional presentation layer. Rules and scenario state never depend on artwork.
-const manifest = fetch(new URL('./scene-art.json', import.meta.url))
-  .then((response) => response.ok ? response.json() : null)
-  .catch(() => null);
+import manifest from './scene-art-manifest.js';
 const stylesheet = document.createElement('link');
 stylesheet.rel = 'stylesheet';
 stylesheet.href = new URL('./scene-art.css', import.meta.url).href;
 document.head.append(stylesheet);
 let revision = 0;
 
-export async function renderSceneArt({ scenarioId, sceneId }) {
+export function renderSceneArt({ scenarioId, sceneId }) {
   const current = ++revision;
   const anchor = document.getElementById('scene-text');
   if (!anchor) return;
@@ -20,9 +18,7 @@ export async function renderSceneArt({ scenarioId, sceneId }) {
     figure.hidden = true;
     anchor.before(figure);
   }
-  const data = await manifest;
-  if (current !== revision) return;
-  const asset = data?.scenarios?.[scenarioId]?.[sceneId];
+  const asset = manifest.scenarios?.[scenarioId]?.[sceneId];
   if (!asset) {
     figure.hidden = true;
     figure.replaceChildren();

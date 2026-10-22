@@ -11,7 +11,7 @@ const required = [
     'public/games/wrath-glory/art/graveyard-shift.webp',
     'public/games/wrath-glory/art/scene-art.js',
     'public/games/wrath-glory/art/scene-art.css',
-    'public/games/wrath-glory/art/scene-art.json',
+    'public/games/wrath-glory/art/scene-art-manifest.js',
     'public/games/wrath-glory/art/scenes/morgue-v001-preview.webp',
     'public/app.js',
     'public/js/platform.js',
