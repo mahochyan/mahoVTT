@@ -59,6 +59,7 @@ type Actor = {
     exhausted?: boolean;
     onFire?: boolean;
     special?: { fear?: number; onFire?: boolean; deathSplit?: string; ruin?: { cost: number; bonusDamage: number; text: string } };
+    mob?: { components: number; componentWounds: number; destroyed: number };
 };
 
 type ShiftPending = {
@@ -116,16 +117,26 @@ type SessionState = {
 };
 
 const WEAPONS: Record<string, Weapon> = {
-    'demo-acolyte': { id: 'laspistol', name: '激光手枪（演示）', damage: 4, ed: 1, short: 12, medium: 24, long: 36 },
-    'demo-guardsman': { id: 'lasgun', name: '激光步枪（演示）', damage: 5, ed: 1, short: 18, medium: 36, long: 54 },
-    'demo-tech-adept': { id: 'laspistol', name: '激光手枪（演示）', damage: 4, ed: 1, short: 12, medium: 24, long: 36 },
-    'pc-acolyte': { id: 'laspistol', name: '激光手枪', damage: 4, ed: 1, short: 12, medium: 24, long: 36 },
-    'pc-guardsman': { id: 'lasgun', name: '激光步枪', damage: 5, ed: 1, short: 18, medium: 36, long: 54 },
-    'pc-tech-adept': { id: 'laspistol', name: '激光手枪', damage: 4, ed: 1, short: 12, medium: 24, long: 36 },
+    'demo-acolyte': { id: 'laspistol', name: '激光手枪（演示）', damage: 7, ed: 1, short: 6, medium: 12, long: 18 },
+    'demo-guardsman': { id: 'lasgun', name: '激光步枪（演示）', damage: 7, ed: 1, short: 12, medium: 24, long: 36 },
+    'demo-tech-adept': { id: 'laspistol', name: '激光手枪（演示）', damage: 7, ed: 1, short: 6, medium: 12, long: 18 },
+    'pc-acolyte': { id: 'laspistol', name: '激光手枪', damage: 7, ed: 1, short: 6, medium: 12, long: 18 },
+    'pc-guardsman': { id: 'lasgun', name: '激光步枪', damage: 7, ed: 1, short: 12, medium: 24, long: 36 },
+    'pc-tech-adept': { id: 'laspistol', name: '激光手枪', damage: 7, ed: 1, short: 6, medium: 12, long: 18 },
 };
 
+let seed = Number(process.env.WG_SEED || 0);
+
 function rng(): number {
+    if (Number.isFinite(seed) && seed > 0) {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return (seed + 0.5) / 4294967296;
+    }
     return (randomInt(1, 7) - 0.5) / 6;
+}
+
+function d3(): number {
+    return Math.floor(rng() * 3) + 1;
 }
 
 function loadParty(): any[] {
@@ -143,7 +154,7 @@ function pcFromPregen(p: any): Actor {
         attributes: p.attributes,
         skills: p.skills,
         defence: Math.max(1, p.attributes.initiative - 1),
-        resilience: p.attributes.toughness + 1,
+        resilience: p.attributes.toughness + 1 + (Number(p.armour) || 0),
         woundsTaken: 0,
         maxWounds: p.attributes.toughness + 2 * p.tier,
         shockTaken: 0,
@@ -217,6 +228,7 @@ function threatActor(spec: ScenarioPack['threats'][string]): Actor {
         weapon: { id: spec.id + '-weapon', name: spec.name + '的攻击', damage: spec.damage, ed: spec.ed, short: spec.short, medium: spec.medium, long: spec.long },
         attackPool: spec.attackPool ?? 5,
         special: { fear: spec.fear, onFire: spec.onFire, deathSplit: spec.deathSplit, ruin: spec.ruin },
+        mob: spec.mob ? { ...spec.mob, destroyed: 0 } : undefined,
     };
 }
 
@@ -317,7 +329,7 @@ function createDeterminationPending(state: SessionState, target: Actor, damage: 
         damageValue: damage,
         resilience: target.resilience,
         woundCount,
-        shockDie: randomInt(1, 4),
+        shockDie: d3(),
         source,
     };
     state.log.push(`${target.name} 将承受 ${woundCount} 点创伤（Wounds）；可以选择掷 Determination 把创伤转为冲击。`);
@@ -378,7 +390,7 @@ function enemyTurn(state: SessionState): void {
         createDeterminationPending(state, target, dmg.total, enemy.name);
         return;
     }
-    state.log.push(...applyDamage(state, target, dmg.total, randomInt(1, 4)));
+    state.log.push(...applyDamage(state, target, dmg.total, d3()));
     state.round += 1;
 }
 
@@ -576,6 +588,13 @@ function applyDamage(state: SessionState, target: Actor, damage: number, shockDi
     if (result.wounds) {
         target.woundsTaken += result.wounds;
         lines.push(`${target.name} 受到 ${result.wounds} 点创伤（Wounds）。`);
+        if (target.mob) {
+            const destroyed = Math.min(target.mob.components, Math.floor(target.woundsTaken / target.mob.componentWounds));
+            if (destroyed > target.mob.destroyed) {
+                lines.push(`${target.name} 的 ${destroyed - target.mob.destroyed} 个组件被摧毁（${destroyed}/${target.mob.components}）。`);
+                target.mob.destroyed = destroyed;
+            }
+        }
         if (target.woundsTaken > target.maxWounds) {
             lines.push(`${target.name} 超过创伤上限，进入濒死/失能。`);
         }
@@ -605,7 +624,7 @@ function finishAttack(state: SessionState, pending: ShiftPending, choice: 'damag
 
     const dmg = rollDamage(pending.weaponDamage, extra, rng);
     state.log.push(`${attacker.name} 用 ${pending.weaponName} 命中，伤害 ${dmg.total}（武器 ${pending.weaponDamage} + 额外伤害骰 ${dmg.bonus}）。`);
-    state.log.push(...applyDamage(state, target, dmg.total, randomInt(1, 4)));
+    state.log.push(...applyDamage(state, target, dmg.total, d3()));
     const down = target.woundsTaken > target.maxWounds;
     if (down)
         state.log.push(`${target.name} 失能。`);

@@ -17,7 +17,7 @@
 ## 未完成/未声称
 
 - **中文词表仍有 `待核` 条目**：W&G 专有机制词没有随书官方中文对照表；需你确认或提供官方中文版。
-- 预置队是按 C7 `Suggested Attributes/Skills` 组成的 draft 队伍；逐页规则审计尚未完成，不能称为“官方预置角色”。
+- 预置队是按 C7 `Suggested Attributes/Skills` 组成的 draft 队伍；Flak Armour AR 3 已计入 Resilience；逐页规则审计尚未完成，不能称为“官方预置角色”。
 - Guardian 的 Mob 组件分配尚未做；当前为单体 12 Wounds。
 - 官方 PDF 的完整勘误文本未本地留档（官方站点 Cloudflare 403；公式通过公开检索文本核对）。
 

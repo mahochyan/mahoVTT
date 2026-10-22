@@ -23,6 +23,7 @@ export type Pregen = {
     abilities: string[];
     gear: string[];
     keywords: string[];
+    armour?: number;
     sourceBook: SourceBookId;
     printedPage: number;
     verification: 'verified' | 'draft' | 'missing';
@@ -63,7 +64,7 @@ export function derivedTraits(p: Pregen, options: { errataWounds?: boolean } = {
     const a = p.attributes;
     return {
         defence: defence(a.initiative),
-        resilience: resilience(a.toughness, 0),
+        resilience: resilience(a.toughness, Number(p.armour) || 0),
         maxWounds: maxWounds(a.toughness, p.tier, { errata: options.errataWounds ?? true }),
         maxShock: maxShock(a.willpower, p.tier),
         resolve: resolve(a.willpower),

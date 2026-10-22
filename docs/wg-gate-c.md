@@ -1,6 +1,6 @@
 # Gate C 进度：Graveyard Shift 无 AI 跑通
 
-**状态：部分完成。** 五段场景骨架、两场遭遇、敌方回合、Determination 待决与 Corruption DN1/DN3 已接通；Pink Horror 与 Guardian 的特殊能力仍不完整。
+**状态：核心闭环通过。** 五段场景、两场遭遇、敌方回合、Determination、Corruption、Pink Horror 特殊能力、Guardian Mob 组件与 Ruin 行动均已接通；固定种子 42 的端到端测试可从开场走到 `dawn` 结局。
 
 ## 已接入
 
@@ -17,9 +17,10 @@
 ## 尚未接入
 
 - Pink Horror 的 Fear / On Fire / 死亡分裂已实现简化版（Fear DN3、命中点燃、死亡分裂蓝色恐魔）。
-- Guardian 的 Ruin 行动已接入（花 1 Ruin 加伤）；Mob 组件分配仍是单体 12 Wounds。
-- 敌方多目标选择与多敌人同一轮行动队列（目前每轮一个敌人）。
-- 全部五段/四结局的自动验收（已有手动 API 走查，尚未写成固定回归）。
+- Guardian 的 Ruin 行动已接入（花 1 Ruin 加伤）；Mob 按 3 个组件 × 4 Wounds 记录，每 4 点创伤摧毁一个组件。
+- 端到端回归：`tests/wg-scenario-run.test.mjs`，`WG_SEED=42` 跑完五段并到达 `dawn`。
+- 敌方多目标选择与多敌人同一轮行动队列（目前每轮一个敌人；Pink Horror 分裂后也只轮到一个敌人）。
+- 其他三个结局的固定回归（目前只回归 `dawn`）。
 - 结局条件与奖励的完整审计。
 - 结局条件与奖励的完整审计。
 

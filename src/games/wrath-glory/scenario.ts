@@ -50,6 +50,7 @@ export type ThreatSpec = {
     onFire?: boolean;
     deathSplit?: string;
     ruin?: { cost: number; bonusDamage: number; text: string };
+    mob?: { components: number; componentWounds: number };
 };
 
 export type ScenarioPack = {
