@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out", "concepts")
-MODEL = os.environ.get("QWEN_IMAGE_MODEL", r"E:\AIprogram\models\Qwen-Image-2.1")
+MODEL = os.environ.get("QWEN_IMAGE_MODEL", "models/Qwen-Image-2.1")
 W, H = 768, 432
 STEPS = int(os.environ.get("CONCEPT_STEPS", "22"))
 

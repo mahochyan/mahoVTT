@@ -76,7 +76,7 @@ catch {
 function ensureOrigin(req: IncomingMessage) { const host = req.headers.host ?? ''; if (!/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host))
     throw new GameError('HOST_REJECTED', '此版本只允许本机访问。', 403); if (req.headers.origin && req.headers.origin !== `http://${host}`)
     throw new GameError('ORIGIN_REJECTED', '拒绝跨站请求。', 403); }
-function snapshot(id: string) { const s = store.get(id); return { state: view(s), turns: store.history(id), events: store.recentEvents(id), dice: store.dice(id), autoRunning: runningAuto.has(id), provider: configs.public() }; }
+function snapshot(id: string) { const s = store.get(id); const meta = store.list().find((c) => c.id === id); return { state: view(s), pack: meta ? getWorld(meta.packId) ?? null : null, turns: store.history(id), events: store.recentEvents(id), dice: store.dice(id), autoRunning: runningAuto.has(id), provider: configs.public() }; }
 function recent(id: string) { return store.history(id).slice(-8).map(t => t.narrative || t.input).filter(Boolean); }
 function stream(res: ServerResponse) { res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' }); res.flushHeaders(); const send = (type: string, data: unknown) => { if (!res.destroyed && !res.writableEnded)
     res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`); }; const timer = setInterval(() => send('ping', { at: Date.now() }), 15000); return { send, end: () => { clearInterval(timer); if (!res.destroyed && !res.writableEnded)

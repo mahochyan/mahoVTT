@@ -10,7 +10,7 @@ import time
 
 import torch
 
-MODEL = os.environ.get("QWEN_IMAGE_MODEL", r"E:\AIprogram\models\Qwen-Image-2.1")
+MODEL = os.environ.get("QWEN_IMAGE_MODEL", "models/Qwen-Image-2.1")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out", "smoke.png")
 PROMPT = os.environ.get(
     "SMOKE_PROMPT",

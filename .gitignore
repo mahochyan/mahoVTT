@@ -6,3 +6,5 @@ tests/artifacts/
 *.log
 
 tools/art/out/
+
+artifacts/

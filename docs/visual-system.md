@@ -50,8 +50,8 @@
 
 ## 本地生成流水线
 
-- 模型：`E:\AIprogram\models\Qwen-Image-2.1`，4-bit 量化，`tools/art/concepts.py`。
-- 实测：加载 ~43–61s；512×512/6 步 17s；768×416/22 步 60–120s；显存峰值 9.46GB。
+- 模型：本地 `Qwen-Image-2.1`（`QWEN_IMAGE_MODEL` 指向模型目录），4-bit 量化，`tools/art/concepts.py`。
+- 实测（12GB GPU）：加载约 45–120s；512×512/6 步约 17s；768×416/22 步约 60–120s；显存峰值 9.46GB。
 - 尺寸需为 32 的倍数；批量生成用固定 seed 与统一风格块。
 - 生成产物在 `tools/art/out/`（git 忽略），选定素材复制到 `public/art/`。
 - 方向小样：`tools/art/out/concepts/`（A 暗色铜器 / B 暖色酒馆 / C 灰烬极简）。

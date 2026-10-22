@@ -5,8 +5,8 @@
 
 ## M0 本地图像模型可行性（已通过）
 
-- 模型：`E:\AIprogram\models\Qwen-Image-2.1`（31GB，diffusers `QwenImage21Pipeline`）
-- venv：`E:\AIprogram\models\.venv-qwenimg`（torch 2.14.0+cu126，CUDA，RTX 4070 SUPER 12GB）
+- 模型：本地 `Qwen-Image-2.1`（约 31GB，diffusers `QwenImage21Pipeline`），路径由 `QWEN_IMAGE_MODEL` 指定
+- venv：独立 Python 环境（torch 2.14.0+cu126，CUDA，12GB NVIDIA GPU）
 - 方案：bitsandbytes **4-bit** 量化 text_encoder + transformer，`enable_model_cpu_offload()`
 - 实测：
   - 加载 42.9s（冒烟）/ 60.9s（批量）

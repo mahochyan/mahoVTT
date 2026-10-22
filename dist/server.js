@@ -95,7 +95,7 @@ function ensureOrigin(req) {
     if (req.headers.origin && req.headers.origin !== `http://${host}`)
         throw new GameError('ORIGIN_REJECTED', '拒绝跨站请求。', 403);
 }
-function snapshot(id) { const s = store.get(id); return { state: view(s), turns: store.history(id), events: store.recentEvents(id), dice: store.dice(id), autoRunning: runningAuto.has(id), provider: configs.public() }; }
+function snapshot(id) { const s = store.get(id); const meta = store.list().find((c) => c.id === id); return { state: view(s), pack: meta ? getWorld(meta.packId) ?? null : null, turns: store.history(id), events: store.recentEvents(id), dice: store.dice(id), autoRunning: runningAuto.has(id), provider: configs.public() }; }
 function recent(id) { return store.history(id).slice(-8).map(t => t.narrative || t.input).filter(Boolean); }
 function stream(res) {
     res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
